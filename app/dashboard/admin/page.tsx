@@ -981,7 +981,7 @@ export default function AdminPage() {
         </>
       ) : (
         <>
-          {adminListingsError && (
+          {adminListingsError && cars.length === 0 && (
             <div className="mb-4 rounded border border-amber-500 bg-amber-50 p-4 text-[11px] dark:bg-amber-900/20 dark:border-amber-600">
               <p className="font-semibold text-amber-800 dark:text-amber-400">Admin setup required</p>
               <p className="mt-1 text-amber-700 dark:text-amber-300">
