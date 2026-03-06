@@ -103,6 +103,7 @@ export default function AdminPage() {
   };
   const [visitStats, setVisitStats] = useState<VisitStats | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [adminListingsError, setAdminListingsError] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -124,7 +125,7 @@ export default function AdminPage() {
       if (!carsRpcError && Array.isArray(carsRpc)) {
         carsList = carsRpc as Car[];
       } else {
-        // Fallback: direct select (in case RPC not deployed yet)
+        // Fallback: direct select (RLS applies - may hide cars if is_admin() fails)
         const { data: carsData } = await supabase
           .from("cars")
           .select("id, title, price, make, model, year, is_approved, is_draft, boost_score, rejection_reason, owner_id, owner_phone, owner_whatsapp, owner_address")
@@ -133,6 +134,7 @@ export default function AdminPage() {
         carsList = (carsData as Car[]) ?? [];
       }
       setCars(carsList);
+      setAdminListingsError(carsRpcError?.message ?? null);
 
       const ownerIds = [...new Set(carsList.map((c) => c.owner_id).filter(Boolean))];
       if (ownerIds.length > 0) {
@@ -979,12 +981,26 @@ export default function AdminPage() {
         </>
       ) : (
         <>
+          {adminListingsError && (
+            <div className="mb-4 rounded border border-amber-500 bg-amber-50 p-4 text-[11px] dark:bg-amber-900/20 dark:border-amber-600">
+              <p className="font-semibold text-amber-800 dark:text-amber-400">Admin setup required</p>
+              <p className="mt-1 text-amber-700 dark:text-amber-300">
+                Run the SQL in <code className="rounded bg-amber-100 px-1 dark:bg-amber-900/40">supabase/RUN_THIS_FOR_ADMIN_LISTINGS.sql</code> in Supabase → SQL Editor.
+                Replace YOUR_ADMIN_EMAIL with your admin email, then click Refresh.
+              </p>
+            </div>
+          )}
           <p className="mb-6 text-caption text-[var(--muted-foreground)]">
             Approve listings so they appear on the site. Seller contact info only visible here.
           </p>
           {cars.length === 0 ? (
             <div className="card-premium flex flex-col items-center justify-center gap-2 p-12 text-center">
               <p className="text-body text-[var(--muted-foreground)]">No listings yet.</p>
+              {adminListingsError && (
+                <p className="mt-2 max-w-md text-[10px] text-amber-600 dark:text-amber-400">
+                  If sellers have submitted listings, run the admin setup SQL in Supabase (see above).
+                </p>
+              )}
             </div>
           ) : (
             <ul className="space-y-4">
