@@ -35,6 +35,7 @@ type Car = {
   condition?: string | null;
   transmission?: string | null;
   fuel_type?: string | null;
+  owner_id?: string | null;
   owner_phone?: string | null;
   owner_whatsapp?: string | null;
   owner_address?: string | null;
@@ -76,6 +77,7 @@ export default function CarDetailPage() {
     id_verified?: boolean;
     dealer_verified?: boolean;
   } | null>(null);
+  const [sellerProfile, setSellerProfile] = useState<{ company_name?: string | null; city?: string | null; avatar_url?: string | null } | null>(null);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user: u } }) => setUser(u ?? null));
@@ -116,7 +118,7 @@ export default function CarDetailPage() {
     async function load() {
       let query = supabase
         .from("cars")
-        .select("id, title, description, price, make, model, year, mileage, type, province, city, country, images, currency, condition, discount_percent, transmission, fuel_type, created_at, listing_type, rental_price_per_hour, rental_price_per_day, rental_price_per_week, rental_price_per_month, rental_currency, rental_min_hours, rental_event_type, features, is_sold")
+        .select("id, title, description, price, make, model, year, mileage, type, province, city, country, images, currency, condition, discount_percent, transmission, fuel_type, owner_id, created_at, listing_type, rental_price_per_hour, rental_price_per_day, rental_price_per_week, rental_price_per_month, rental_currency, rental_min_hours, rental_event_type, features, is_sold")
         .eq("id", id);
 
       if (isPreview) {
@@ -137,7 +139,16 @@ export default function CarDetailPage() {
       }
 
       const { data } = await query.single();
-      setCar(data as Car | null);
+      const carData = data as Car | null;
+      setCar(carData);
+      if (carData?.owner_id) {
+        const { data: prof } = await supabase
+          .from("profiles")
+          .select("company_name, city, avatar_url")
+          .eq("id", carData.owner_id)
+          .maybeSingle();
+        setSellerProfile(prof ?? null);
+      }
       const { data: verData } = await supabase.rpc("get_seller_verification", { p_car_id: id });
       const ver = Array.isArray(verData) && verData[0] ? verData[0] : null;
       setSellerVerification(ver);
@@ -394,13 +405,33 @@ export default function CarDetailPage() {
 
             {/* Contact & actions: grouped and clear hierarchy */}
             <div id="contact" className="mt-1 flex flex-col gap-3 border-t border-[var(--border)] pt-4">
-              {sellerVerification && (
-                <VerifiedSellerBadge
-                  phoneVerified={sellerVerification.phone_verified}
-                  idVerified={sellerVerification.id_verified}
-                  dealerVerified={sellerVerification.dealer_verified}
-                />
-              )}
+              <div className="flex items-center gap-3">
+                {sellerProfile?.avatar_url && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={sellerProfile.avatar_url}
+                    alt={sellerProfile.company_name ?? "Seller"}
+                    className="h-10 w-10 rounded-full object-cover"
+                  />
+                )}
+                <div className="min-w-0">
+                  <p className="text-[11px] font-semibold text-[var(--foreground)]">
+                    {sellerProfile?.company_name || t("seller")}
+                  </p>
+                  <p className="text-[10px] text-[var(--muted-foreground)]">
+                    {[sellerProfile?.city, car.city, car.province].filter(Boolean).join(" · ")}
+                  </p>
+                  {sellerVerification && (
+                    <div className="mt-1">
+                      <VerifiedSellerBadge
+                        phoneVerified={sellerVerification.phone_verified}
+                        idVerified={sellerVerification.id_verified}
+                        dealerVerified={sellerVerification.dealer_verified}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
               <div className="flex flex-wrap items-center gap-2">
                 <FavoriteButton
                   carId={id}
