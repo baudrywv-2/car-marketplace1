@@ -60,7 +60,7 @@ function Header() {
             aria-hidden
             onClick={() => setMobileOpen(false)}
           />
-          <div className="fixed right-0 top-0 z-50 flex h-full w-[min(100vw,20rem)] flex-col border-l border-[var(--border)] bg-[var(--card)] shadow-[var(--shadow-lg)] md:hidden safe-area-top">
+          <div className="fixed inset-x-0 top-0 z-50 flex h-full w-full flex-col border-b border-[var(--border)] bg-[var(--card)] shadow-[var(--shadow-lg)] md:hidden safe-area-top">
             <div className="flex h-16 min-h-[44px] items-center justify-between border-b border-[var(--border)] px-4">
               <Logo showTagline={false} size="sm" />
               <button

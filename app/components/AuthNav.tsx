@@ -14,6 +14,7 @@ export default function AuthNav({ mobile, onNavigate }: Props) {
   const { t } = useLocale();
   const [user, setUser] = useState<User | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -28,6 +29,7 @@ export default function AuthNav({ mobile, onNavigate }: Props) {
   useEffect(() => {
     if (!user) {
       setUserName(null);
+      setAvatarUrl(null);
       return;
     }
     const meta = user.user_metadata as { full_name?: string } | undefined;
@@ -40,15 +42,20 @@ export default function AuthNav({ mobile, onNavigate }: Props) {
       try {
         const { data } = await supabase
           .from("profiles")
-          .select("full_name")
+          .select("full_name, avatar_url")
           .eq("id", user.id)
           .single();
         if (!cancelled) {
-          const name = (data as { full_name?: string | null } | null)?.full_name;
+          const row = data as { full_name?: string | null; avatar_url?: string | null } | null;
+          const name = row?.full_name;
           setUserName(name && typeof name === "string" ? name.trim() : null);
+          setAvatarUrl(row?.avatar_url ?? null);
         }
       } catch {
-        if (!cancelled) setUserName(null);
+        if (!cancelled) {
+          setUserName(null);
+          setAvatarUrl(null);
+        }
       }
     })();
     return () => { cancelled = true; };
@@ -140,9 +147,18 @@ export default function AuthNav({ mobile, onNavigate }: Props) {
         aria-label="Account menu"
       >
         <span className="hidden max-w-[120px] truncate sm:inline">{user.email}</span>
-        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--accent)] text-[10px] font-bold text-[var(--accent-foreground)]">
-          {(user.email?.[0] ?? "?").toUpperCase()}
-        </span>
+        {avatarUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={avatarUrl}
+            alt={userName ?? user.email ?? "Profile"}
+            className="h-7 w-7 rounded-full object-cover"
+          />
+        ) : (
+          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--accent)] text-[10px] font-bold text-[var(--accent-foreground)]">
+            {(user.email?.[0] ?? "?").toUpperCase()}
+          </span>
+        )}
         <svg
           className={`h-4 w-4 shrink-0 transition-transform ${userMenuOpen ? "rotate-180" : ""}`}
           fill="none"
