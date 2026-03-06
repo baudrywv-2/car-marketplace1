@@ -11,15 +11,27 @@ const LOCALES: Locale[] = ["en", "fr", "ln", "sw"];
 
 type Props = { mobile?: boolean; onNavigate?: () => void; inOverlay?: boolean };
 
-function useCloseOnClickOutside(ref: React.RefObject<HTMLElement | null>, isOpen: boolean, onClose: () => void) {
+function useCloseOnClickOutside(
+  ref: React.RefObject<HTMLElement | null>,
+  isOpen: boolean,
+  onClose: () => void,
+  dropdownRef?: React.RefObject<HTMLElement | null>
+) {
   useEffect(() => {
     if (!isOpen) return;
     function handleClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
+      const target = e.target as Node;
+      const insideBtn = ref.current?.contains(target);
+      const insideDropdown = dropdownRef?.current?.contains(target);
+      if (!insideBtn && !insideDropdown) onClose();
     }
     document.addEventListener("click", handleClick, true);
-    return () => document.removeEventListener("click", handleClick, true);
-  }, [isOpen, onClose, ref]);
+    document.addEventListener("touchend", handleClick as EventListener, true);
+    return () => {
+      document.removeEventListener("click", handleClick, true);
+      document.removeEventListener("touchend", handleClick as EventListener, true);
+    };
+  }, [isOpen, onClose, ref, dropdownRef]);
 }
 
 function LangDropdown({ mobile, inOverlay }: { mobile?: boolean; inOverlay?: boolean }) {
@@ -28,7 +40,8 @@ function LangDropdown({ mobile, inOverlay }: { mobile?: boolean; inOverlay?: boo
   const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
   const ref = useRef<HTMLDivElement>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
-  useCloseOnClickOutside(ref, open, () => setOpen(false));
+  const dropdownRef = useRef<HTMLUListElement>(null);
+  useCloseOnClickOutside(ref, open, () => setOpen(false), mobile && inOverlay ? dropdownRef : undefined);
 
   useEffect(() => {
     if (open && mobile && btnRef.current && typeof document !== "undefined") {
@@ -39,6 +52,7 @@ function LangDropdown({ mobile, inOverlay }: { mobile?: boolean; inOverlay?: boo
 
   const dropdownList = open ? (
     <ul
+      ref={dropdownRef}
       className={`fixed min-w-[4rem] rounded-[var(--radius)] border border-[var(--border)] bg-[var(--card)] py-1 shadow-[var(--shadow-lg)] ${inOverlay ? "z-[100000]" : "z-[100]"}`}
       style={mobile ? { top: pos.top, left: pos.left, width: pos.width } : undefined}
       role="listbox"
@@ -48,7 +62,8 @@ function LangDropdown({ mobile, inOverlay }: { mobile?: boolean; inOverlay?: boo
           <button
             type="button"
             onClick={() => { setLocale(loc); setOpen(false); }}
-            className={`block w-full min-h-[44px] px-3 py-3 text-left text-[10px] font-medium md:min-h-0 md:py-2.5 ${locale === loc ? "bg-[var(--accent-vivid)] text-white" : "text-[var(--foreground)] hover:bg-[var(--border)]"}`}
+            onPointerDown={(e) => { e.preventDefault(); setLocale(loc); setOpen(false); }}
+            className={`block w-full min-h-[44px] px-3 py-3 text-left text-[10px] font-medium md:min-h-0 md:py-2.5 touch-manipulation ${locale === loc ? "bg-[var(--accent-vivid)] text-white" : "text-[var(--foreground)] hover:bg-[var(--border)]"}`}
           >
             {LOCALE_LABELS[loc]}
           </button>
@@ -103,7 +118,8 @@ function CurrencyDropdown({ mobile, inOverlay }: { mobile?: boolean; inOverlay?:
   const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
   const ref = useRef<HTMLDivElement>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
-  useCloseOnClickOutside(ref, open, () => setOpen(false));
+  const dropdownRef = useRef<HTMLUListElement>(null);
+  useCloseOnClickOutside(ref, open, () => setOpen(false), mobile && inOverlay ? dropdownRef : undefined);
 
   useEffect(() => {
     if (open && mobile && btnRef.current && typeof document !== "undefined") {
@@ -114,6 +130,7 @@ function CurrencyDropdown({ mobile, inOverlay }: { mobile?: boolean; inOverlay?:
 
   const dropdownList = open ? (
     <ul
+      ref={dropdownRef}
       className={`fixed min-w-[4.5rem] rounded-[var(--radius)] border border-[var(--border)] bg-[var(--card)] py-1 shadow-[var(--shadow-lg)] ${inOverlay ? "z-[100000]" : "z-[100]"}`}
       style={mobile ? { top: pos.top, left: pos.left, width: pos.width } : undefined}
       role="listbox"
@@ -123,7 +140,8 @@ function CurrencyDropdown({ mobile, inOverlay }: { mobile?: boolean; inOverlay?:
           <button
             type="button"
             onClick={() => { setCurrency(c); setOpen(false); }}
-            className={`block w-full min-h-[44px] px-3 py-3 text-left text-[10px] font-medium md:min-h-0 md:py-2.5 ${currency === c ? "bg-[var(--accent-vivid)] text-white" : "text-[var(--foreground)] hover:bg-[var(--border)]"}`}
+            onPointerDown={(e) => { e.preventDefault(); setCurrency(c); setOpen(false); }}
+            className={`block w-full min-h-[44px] px-3 py-3 text-left text-[10px] font-medium md:min-h-0 md:py-2.5 touch-manipulation ${currency === c ? "bg-[var(--accent-vivid)] text-white" : "text-[var(--foreground)] hover:bg-[var(--border)]"}`}
           >
             {c}
           </button>

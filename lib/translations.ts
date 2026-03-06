@@ -529,7 +529,7 @@ export const translations = {
     townCity: "Mboka / Engumba",
     minPrice: "Prix moke",
     maxPrice: "Prix monene",
-    homeTitle: "Motuka sika mpe occasion na République Démocratique du Congo",
+    homeTitle: "Motuka ya sika mpe ya occasion na République Démocratique du Congo",
     homeSubtitle: "Tala to kotiya motuka sika mpe occasion na RDC. Kosomba te na site — benga vendeur to kosenga rendez-vous.",
     adPlacement: "Publicité",
     myFavorites: "Bapreferé na ngai",
