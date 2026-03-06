@@ -17,6 +17,7 @@ export default function SignupPage() {
   const { t } = useLocale();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [role, setRole] = useState<"buyer" | "seller">("buyer");
@@ -140,13 +141,22 @@ export default function SignupPage() {
             </label>
             <input
               id="password"
-              type="password"
+              type={showPassword ? "text" : "password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={6}
               className="input-premium"
             />
+            <label className="mt-1 flex cursor-pointer items-center gap-2 text-[11px] text-[var(--muted-foreground)]">
+              <input
+                type="checkbox"
+                checked={showPassword}
+                onChange={(e) => setShowPassword(e.target.checked)}
+                className="h-3 w-3"
+              />
+              <span>Show password</span>
+            </label>
           </div>
           <div className="flex flex-col gap-3">
             <label className="flex cursor-pointer items-start gap-2 text-small text-[var(--foreground)]">
