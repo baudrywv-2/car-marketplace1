@@ -77,6 +77,10 @@ export default function SettingsPage() {
     e.preventDefault();
     setError("");
     setSuccess(false);
+    if ((profile?.role === "seller" || profile?.role === "admin") && !companyName.trim()) {
+      setError("Company / Brand name is required for sellers.");
+      return;
+    }
     const ph = phone.replace(/\D/g, "");
     if (ph.length < 9) {
       setError(t("signupPhoneInvalid") || "Please enter a valid phone number (9–15 digits).");
@@ -193,7 +197,6 @@ export default function SettingsPage() {
               onChange={handleAvatarChange}
               className="text-[11px] text-[var(--muted-foreground)]"
             />
-            <p className="text-[10px] text-[var(--muted-foreground)]">Square photos work best. Stored in Supabase Storage (avatars).</p>
             {avatarUploading && <p className="text-[10px] text-[var(--muted-foreground)]">Uploading…</p>}
           </div>
         </div>
@@ -201,7 +204,7 @@ export default function SettingsPage() {
         {(profile?.role === "seller" || profile?.role === "admin") && (
           <div>
             <label className="mb-1.5 block text-caption font-medium text-[var(--foreground)]">
-              Company / Brand name
+              Company / Brand name *
             </label>
             <input
               type="text"
