@@ -190,16 +190,16 @@ export default function Home() {
           <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/60 to-black/90" aria-hidden />
         </div>
 
-        <div className="relative z-10 mx-auto max-w-5xl px-4 sm:px-6 py-8 sm:py-10">
+        <div className="relative z-10 mx-auto max-w-5xl px-4 sm:px-6 pt-8 pb-8 sm:pt-10 sm:pb-10 md:pt-16 md:pb-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
             <div>
               <p className="text-sm font-logo text-[var(--accent)] mb-1">
                 <span className="opacity-60">&gt;</span> {t("siteName")}
               </p>
-              <h1 className="text-display text-white font-mono">
+              <h1 className="text-display text-white font-mono md:text-[32px] lg:text-[36px]">
                 {t("homeTitle")}
               </h1>
-              <p className="mt-2 text-sm text-white/70 font-mono">{t("trustedIn")}</p>
+              <p className="mt-2 text-sm md:text-[15px] lg:text-base text-white/70 font-mono">{t("trustedIn")}</p>
               <div className="mt-4 flex flex-wrap gap-2">
                 <Link href="/cars" className="btn-accent shrink-0 px-4 py-2 text-sm">
                   {t("browseCars")}
