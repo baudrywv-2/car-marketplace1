@@ -60,7 +60,20 @@ function Header() {
             aria-hidden
             onClick={() => setMobileOpen(false)}
           />
-          <div className="fixed inset-x-0 top-12 bottom-0 z-50 flex w-full flex-col border-t border-[var(--border)] bg-[var(--card)] shadow-[var(--shadow-lg)] md:hidden">
+          <div className="fixed inset-0 z-50 flex h-full w-full flex-col bg-[var(--card)] shadow-[var(--shadow-lg)] md:hidden safe-area-top">
+            <div className="flex h-12 min-h-[44px] items-center justify-between border-b border-[var(--border)] px-4">
+              <Logo showTagline={false} size="sm" />
+              <button
+                type="button"
+                onClick={() => setMobileOpen(false)}
+                className="flex h-9 w-9 items-center justify-center rounded-[var(--radius)] text-[var(--foreground)] hover:bg-[var(--border)]"
+                aria-label="Close menu"
+              >
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
             <nav className="flex min-h-0 flex-1 flex-col gap-2 overflow-auto p-4 pt-3">
               <Link
                 href="/cars"
