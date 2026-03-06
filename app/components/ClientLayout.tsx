@@ -136,9 +136,6 @@ function Footer() {
         <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex flex-col gap-0.5">
             <Logo showTagline size="sm" className="scale-95 origin-left [&_.font-logo]:text-[13px] [&_.font-mono]:text-[10px]" />
-            <p className="mt-0.5 max-w-xs text-[10px] text-[var(--muted-foreground)]">
-              {t("tagline")}
-            </p>
           </div>
           <nav className="flex flex-wrap gap-x-5 gap-y-0.5 sm:flex-nowrap sm:gap-5">
             <div className="flex flex-col gap-0.5">

@@ -18,14 +18,14 @@ type LocaleContextType = {
 const LocaleContext = createContext<LocaleContextType | null>(null);
 
 export function LocaleProvider({ children }: { children: React.ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>("en");
+  const [locale, setLocaleState] = useState<Locale>("fr");
   const [currency, setCurrencyState] = useState<Currency>("USD");
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    const l = (localStorage.getItem(LOCALE_KEY) as Locale) || "en";
+    const l = (localStorage.getItem(LOCALE_KEY) as Locale) || "fr";
     const c = (localStorage.getItem(CURRENCY_KEY) as Currency) || "USD";
-    const locale = l in translations ? l : "en";
+    const locale = l in translations ? l : "fr";
     setLocaleState(locale);
     setCurrencyState(c === "CDF" ? "CDF" : "USD");
     document.documentElement.lang = locale === "ln" ? "ln" : locale === "sw" ? "sw" : locale;
@@ -54,11 +54,11 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
     return (
       <LocaleContext.Provider
         value={{
-          locale: "en",
+          locale: "fr",
           setLocale,
           currency: "USD",
           setCurrency,
-          t: (key) => translations.en[key],
+          t: (key) => translations.fr[key] ?? translations.en[key],
         }}
       >
         {children}

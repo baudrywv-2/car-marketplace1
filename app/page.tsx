@@ -199,7 +199,7 @@ export default function Home() {
               <h1 className="text-display text-white font-mono md:text-[32px] lg:text-[36px]">
                 {t("homeTitle")}
               </h1>
-              <p className="mt-2 text-sm md:text-[15px] lg:text-base text-white/70 font-mono">{t("trustedIn")}</p>
+              <p className="mt-2 text-xs md:text-[11px] text-white/70 font-mono">{t("trustedIn")}</p>
               <div className="mt-4 flex flex-wrap gap-2">
                 <Link href="/cars" className="btn-accent shrink-0 px-4 py-2 text-sm">
                   {t("browseCars")}
