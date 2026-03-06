@@ -131,7 +131,7 @@ function Header() {
 function Footer() {
   const { t } = useLocale();
   return (
-    <footer className="mt-4 md:mt-10 lg:mt-16 border-t border-[var(--border)] bg-[var(--background)] safe-area-bottom text-[9px] sm:text-[10px]">
+    <footer className="mt-2 md:mt-4 lg:mt-6 border-t border-[var(--border)] bg-[var(--background)] safe-area-bottom text-[9px] sm:text-[10px]">
       <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex flex-col gap-0.5">
