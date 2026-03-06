@@ -41,34 +41,6 @@
   --font-display: var(--font-display), var(--font-logo), ui-sans-serif, system-ui, sans-serif;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    --background: #fafafa;
-    --foreground: #09090b;
-    --muted: #52525b;
-    --muted-foreground: #71717a;
-    --card: #ffffff;
-    --card-foreground: #09090b;
-    --header-bg: rgba(250, 250, 250, 0.9);
-    --border: #e4e4e7;
-    --border-strong: #d4d4d8;
-    --shadow: 0 2px 8px rgb(0 0 0 / 0.06);
-    --shadow-md: 0 8px 30px rgb(0 0 0 / 0.08);
-    --shadow-lg: 0 20px 50px rgb(0 0 0 / 0.1);
-    --shadow-xl: 0 30px 60px rgb(0 0 0 / 0.12);
-    --header-shadow: 0 1px 0 var(--border);
-    --accent: #ca8a04;
-    --accent-hover: #a16207;
-    --accent-foreground: #ffffff;
-    --accent-muted: rgba(202, 138, 4, 0.12);
-    --accent-glow: rgba(202, 138, 4, 0.2);
-    --accent-red: #dc2626;
-    --accent-red-hover: #ef4444;
-    --accent-red-muted: rgba(220, 38, 38, 0.12);
-    --accent-red-glow: rgba(220, 38, 38, 0.2);
-  }
-}
-
 * {
   -webkit-tap-highlight-color: transparent;
 }
