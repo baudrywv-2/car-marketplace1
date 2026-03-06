@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { LocaleProvider, useLocale } from "@/app/contexts/LocaleContext";
 import { ToastProvider } from "@/app/contexts/ToastContext";
@@ -13,6 +14,75 @@ import Logo from "./Logo";
 function Header() {
   const { t } = useLocale();
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  useEffect(() => {
+    if (mobileOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [mobileOpen]);
+
+  useEffect(() => {
+    if (!mobileOpen) return;
+    function handleEscape(e: KeyboardEvent) {
+      if (e.key === "Escape") setMobileOpen(false);
+    }
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [mobileOpen]);
+
+  const mobileMenu = mobileOpen && typeof document !== "undefined" ? (
+    <>
+      <div
+        className="fixed inset-0 bg-black/70"
+        style={{ zIndex: 99998 }}
+        aria-hidden
+        onClick={() => setMobileOpen(false)}
+      />
+      <div
+        className="fixed inset-0 flex flex-col bg-[#18181b] text-[#fafafa]"
+        style={{ zIndex: 99999 }}
+      >
+        <div className="flex h-12 min-h-[44px] shrink-0 items-center justify-between border-b border-[#27272a] px-4 pt-[env(safe-area-inset-top)]">
+          <Logo showTagline={false} size="sm" />
+          <button
+            type="button"
+            onClick={() => setMobileOpen(false)}
+            className="flex h-9 w-9 items-center justify-center rounded text-[#fafafa] hover:bg-[#27272a]"
+            aria-label="Close menu"
+          >
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <nav className="flex min-h-0 flex-1 flex-col gap-2 overflow-auto p-4 pt-3">
+          <Link
+            href="/cars"
+            onClick={() => setMobileOpen(false)}
+            className="py-2.5 text-[11px] font-medium text-[#fafafa] hover:text-[#eab308]"
+          >
+            {t("browseCars")}
+          </Link>
+          <Link
+            href="/rent"
+            onClick={() => setMobileOpen(false)}
+            className="inline-flex px-3 py-2 text-[11px] font-medium text-white bg-[#ef4444] hover:bg-[#f87171] rounded"
+          >
+            {t("rentCars")}
+          </Link>
+          <div className="my-1 border-t border-[#27272a]" />
+          <LocaleSwitcher mobile inOverlay onNavigate={() => setMobileOpen(false)} />
+          <div className="my-1 border-t border-[#27272a]" />
+          <AuthNav mobile onNavigate={() => setMobileOpen(false)} />
+        </nav>
+      </div>
+    </>
+  ) : null;
 
   return (
     <header className="sticky top-0 z-40 border-b border-[var(--border)] bg-[var(--header-bg)] backdrop-blur-xl safe-area-top">
@@ -52,51 +122,8 @@ function Header() {
         </button>
       </div>
 
-      {/* Mobile overlay + drawer */}
-      {mobileOpen && (
-        <>
-          <div
-            className="fixed inset-0 z-40 bg-black/50 md:hidden"
-            aria-hidden
-            onClick={() => setMobileOpen(false)}
-          />
-          <div className="fixed inset-0 z-50 flex h-full w-full flex-col bg-[var(--card)] shadow-[var(--shadow-lg)] md:hidden safe-area-top">
-            <div className="flex h-12 min-h-[44px] items-center justify-between border-b border-[var(--border)] px-4">
-              <Logo showTagline={false} size="sm" />
-              <button
-                type="button"
-                onClick={() => setMobileOpen(false)}
-                className="flex h-9 w-9 items-center justify-center rounded-[var(--radius)] text-[var(--foreground)] hover:bg-[var(--border)]"
-                aria-label="Close menu"
-              >
-                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <nav className="flex min-h-0 flex-1 flex-col gap-2 overflow-auto p-4 pt-3">
-              <Link
-                href="/cars"
-                onClick={() => setMobileOpen(false)}
-                className="text-[11px] font-medium text-[var(--foreground)] py-2.5 hover:text-[var(--accent)]"
-              >
-                {t("browseCars")}
-              </Link>
-              <Link
-                href="/rent"
-                onClick={() => setMobileOpen(false)}
-                className="btn-rent inline-flex px-3 py-2 text-[11px] font-medium"
-              >
-                {t("rentCars")}
-              </Link>
-              <div className="my-1 border-t border-[var(--border)]" />
-              <LocaleSwitcher mobile onNavigate={() => setMobileOpen(false)} />
-              <div className="my-1 border-t border-[var(--border)]" />
-              <AuthNav mobile onNavigate={() => setMobileOpen(false)} />
-            </nav>
-          </div>
-        </>
-      )}
+      {/* Mobile menu: rendered via portal to body, always on top */}
+      {typeof document !== "undefined" && createPortal(mobileMenu, document.body)}
     </header>
   );
 }

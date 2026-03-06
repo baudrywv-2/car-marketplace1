@@ -9,7 +9,7 @@ import type { Locale } from "@/lib/translations";
 const LOCALE_LABELS: Record<Locale, string> = { en: "EN", fr: "FR", ln: "LN", sw: "SW" };
 const LOCALES: Locale[] = ["en", "fr", "ln", "sw"];
 
-type Props = { mobile?: boolean; onNavigate?: () => void };
+type Props = { mobile?: boolean; onNavigate?: () => void; inOverlay?: boolean };
 
 function useCloseOnClickOutside(ref: React.RefObject<HTMLElement | null>, isOpen: boolean, onClose: () => void) {
   useEffect(() => {
@@ -22,7 +22,7 @@ function useCloseOnClickOutside(ref: React.RefObject<HTMLElement | null>, isOpen
   }, [isOpen, onClose, ref]);
 }
 
-function LangDropdown({ mobile }: { mobile?: boolean }) {
+function LangDropdown({ mobile, inOverlay }: { mobile?: boolean; inOverlay?: boolean }) {
   const { locale, setLocale } = useLocale();
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
@@ -39,7 +39,7 @@ function LangDropdown({ mobile }: { mobile?: boolean }) {
 
   const dropdownList = open ? (
     <ul
-      className="fixed z-[100] min-w-[4rem] rounded-[var(--radius)] border border-[var(--border)] bg-[var(--card)] py-1 shadow-[var(--shadow-lg)]"
+      className={`fixed min-w-[4rem] rounded-[var(--radius)] border border-[var(--border)] bg-[var(--card)] py-1 shadow-[var(--shadow-lg)] ${inOverlay ? "z-[100000]" : "z-[100]"}`}
       style={mobile ? { top: pos.top, left: pos.left, width: pos.width } : undefined}
       role="listbox"
     >
@@ -97,7 +97,7 @@ function LangDropdown({ mobile }: { mobile?: boolean }) {
   );
 }
 
-function CurrencyDropdown({ mobile }: { mobile?: boolean }) {
+function CurrencyDropdown({ mobile, inOverlay }: { mobile?: boolean; inOverlay?: boolean }) {
   const { currency, setCurrency } = useLocale();
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
@@ -114,7 +114,7 @@ function CurrencyDropdown({ mobile }: { mobile?: boolean }) {
 
   const dropdownList = open ? (
     <ul
-      className="fixed z-[100] min-w-[4.5rem] rounded-[var(--radius)] border border-[var(--border)] bg-[var(--card)] py-1 shadow-[var(--shadow-lg)]"
+      className={`fixed min-w-[4.5rem] rounded-[var(--radius)] border border-[var(--border)] bg-[var(--card)] py-1 shadow-[var(--shadow-lg)] ${inOverlay ? "z-[100000]" : "z-[100]"}`}
       style={mobile ? { top: pos.top, left: pos.left, width: pos.width } : undefined}
       role="listbox"
     >
@@ -172,13 +172,13 @@ function CurrencyDropdown({ mobile }: { mobile?: boolean }) {
   );
 }
 
-export default function LocaleSwitcher({ mobile }: Props) {
+export default function LocaleSwitcher({ mobile, inOverlay }: Props) {
   const container = mobile ? "flex flex-col gap-4" : "flex items-center gap-2";
 
   return (
     <div className={container}>
-      <LangDropdown mobile={mobile} />
-      <CurrencyDropdown mobile={mobile} />
+      <LangDropdown mobile={mobile} inOverlay={inOverlay} />
+      <CurrencyDropdown mobile={mobile} inOverlay={inOverlay} />
     </div>
   );
 }
