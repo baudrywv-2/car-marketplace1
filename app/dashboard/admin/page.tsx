@@ -102,6 +102,7 @@ export default function AdminPage() {
     error?: string;
   };
   const [visitStats, setVisitStats] = useState<VisitStats | null>(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   useEffect(() => {
     async function load() {
@@ -117,12 +118,20 @@ export default function AdminPage() {
       }
       setProfile(profileData);
 
-      const { data: carsData } = await supabase
-        .from("cars")
-        .select("id, title, price, make, model, year, is_approved, is_draft, boost_score, rejection_reason, owner_id, owner_phone, owner_whatsapp, owner_address")
-        .order("boost_score", { ascending: false, nullsFirst: false })
-        .order("created_at", { ascending: false });
-      const carsList = (carsData as Car[]) ?? [];
+      // Use admin_get_cars RPC (bypasses RLS) so admin always sees all listings including pending
+      const { data: carsRpc, error: carsRpcError } = await supabase.rpc("admin_get_cars");
+      let carsList: Car[] = [];
+      if (!carsRpcError && Array.isArray(carsRpc)) {
+        carsList = carsRpc as Car[];
+      } else {
+        // Fallback: direct select (in case RPC not deployed yet)
+        const { data: carsData } = await supabase
+          .from("cars")
+          .select("id, title, price, make, model, year, is_approved, is_draft, boost_score, rejection_reason, owner_id, owner_phone, owner_whatsapp, owner_address")
+          .order("boost_score", { ascending: false, nullsFirst: false })
+          .order("created_at", { ascending: false });
+        carsList = (carsData as Car[]) ?? [];
+      }
       setCars(carsList);
 
       const ownerIds = [...new Set(carsList.map((c) => c.owner_id).filter(Boolean))];
@@ -156,7 +165,7 @@ export default function AdminPage() {
       setLoading(false);
     }
     load();
-  }, [router]);
+  }, [router, refreshTrigger]);
 
   useEffect(() => {
     if (activeTab !== "analytics" || !profile) return;
@@ -348,9 +357,18 @@ export default function AdminPage() {
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <h1 className="text-heading text-[var(--foreground)]">Admin Dashboard</h1>
-        <Link href="/dashboard" className="text-caption text-[var(--muted-foreground)] hover:text-[var(--foreground)]">
-          ← {t("backToDashboard")}
-        </Link>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => { setLoading(true); setRefreshTrigger((t) => t + 1); }}
+            className="rounded border border-[var(--border)] px-3 py-1.5 text-[10px] font-medium text-[var(--foreground)] hover:bg-[var(--border)]"
+          >
+            Refresh
+          </button>
+          <Link href="/dashboard" className="text-caption text-[var(--muted-foreground)] hover:text-[var(--foreground)]">
+            ← {t("backToDashboard")}
+          </Link>
+        </div>
       </div>
 
       <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-6">
