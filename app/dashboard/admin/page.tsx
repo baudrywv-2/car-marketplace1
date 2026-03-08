@@ -147,15 +147,41 @@ export default function AdminPage() {
         setProfiles(profMap);
       }
 
-      const { data: rdvData } = await supabase
-        .from("rendezvous_requests")
-        .select(`
-          id, car_id, message, preferred_date, suggested_price, status, created_at,
-          buyer_email, buyer_name, buyer_phone,
-          cars(title, owner_id, owner_phone, owner_whatsapp, owner_address)
-        `)
-        .order("created_at", { ascending: false });
-      const rdvList = (rdvData ?? []) as RdvRequest[];
+      // Use admin_get_rdv RPC (bypasses RLS) so admin always sees all RDV
+      const { data: rdvRpc, error: rdvRpcError } = await supabase.rpc("admin_get_rdv");
+      let rdvList: RdvRequest[] = [];
+      if (!rdvRpcError && Array.isArray(rdvRpc)) {
+        rdvList = (rdvRpc as Array<{
+          id: string; car_id: string; message: string | null; preferred_date: string | null;
+          suggested_price: number | null; status: string; created_at: string;
+          buyer_email: string | null; buyer_name: string | null; buyer_phone: string | null;
+          car_title: string | null; car_owner_id: string | null;
+          car_owner_phone: string | null; car_owner_whatsapp: string | null; car_owner_address: string | null;
+        }>).map((r) => ({
+          id: r.id,
+          car_id: r.car_id,
+          message: r.message,
+          preferred_date: r.preferred_date,
+          suggested_price: r.suggested_price,
+          status: r.status,
+          created_at: r.created_at,
+          buyer_email: r.buyer_email,
+          buyer_name: r.buyer_name,
+          buyer_phone: r.buyer_phone,
+          cars: r.car_title ? [{ title: r.car_title, owner_id: r.car_owner_id ?? "", owner_phone: r.car_owner_phone, owner_whatsapp: r.car_owner_whatsapp, owner_address: r.car_owner_address }] : null,
+        }));
+      } else {
+        // Fallback: direct select (RLS applies)
+        const { data: rdvData } = await supabase
+          .from("rendezvous_requests")
+          .select(`
+            id, car_id, message, preferred_date, suggested_price, status, created_at,
+            buyer_email, buyer_name, buyer_phone,
+            cars(title, owner_id, owner_phone, owner_whatsapp, owner_address)
+          `)
+          .order("created_at", { ascending: false });
+        rdvList = (rdvData ?? []) as RdvRequest[];
+      }
       setRdvRequests(rdvList);
 
       const { data: msgData } = await supabase

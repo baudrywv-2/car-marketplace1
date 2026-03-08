@@ -533,26 +533,41 @@ export default function CarDetailPage() {
                       return;
                     }
                     setRdvLoading(true);
-                    const { data: profile } = await supabase
-                      .from("profiles")
-                      .select("full_name, phone")
-                      .eq("id", user.id)
-                      .single();
-                    const suggestedPriceNum = rdvSuggestedPrice.trim() ? parseFloat(String(rdvSuggestedPrice).replace(/,/g, "")) : null;
-                    await supabase.from("rendezvous_requests").insert({
-                      buyer_id: user.id,
-                      car_id: id,
-                      message: rdvMessage.trim() || null,
-                      preferred_date: rdvDate || null,
-                      suggested_price: !isNaN(suggestedPriceNum as number) && (suggestedPriceNum as number) > 0 ? suggestedPriceNum : null,
-                      buyer_email: user.email ?? null,
-                      buyer_name: profile?.full_name ?? user.email ?? null,
-                      buyer_phone: profile?.phone ?? null,
-                      status: "pending",
-                    });
+                    try {
+                      const { data: profile } = await supabase
+                        .from("profiles")
+                        .select("full_name, phone")
+                        .eq("id", user.id)
+                        .single();
+                      const profilePhone = (profile?.phone ?? "").trim();
+                      if (!profilePhone) {
+                        toast.error(t("rdvPhoneRequired") || "Please add your phone number in Settings before requesting a meeting.");
+                        setRdvLoading(false);
+                        return;
+                      }
+                      const suggestedPriceNum = rdvSuggestedPrice.trim() ? parseFloat(String(rdvSuggestedPrice).replace(/,/g, "")) : null;
+                      const { error: insertError } = await supabase.from("rendezvous_requests").insert({
+                        buyer_id: user.id,
+                        car_id: id,
+                        message: rdvMessage.trim() || null,
+                        preferred_date: rdvDate || null,
+                        suggested_price: !isNaN(suggestedPriceNum as number) && (suggestedPriceNum as number) > 0 ? suggestedPriceNum : null,
+                        buyer_email: user.email ?? null,
+                        buyer_name: profile?.full_name ?? user.email ?? null,
+                        buyer_phone: profilePhone || null,
+                        status: "pending",
+                      });
+                      if (insertError) {
+                        toast.error(t("rdvSubmitError") || insertError.message || "Failed to send request. Please try again.");
+                        setRdvLoading(false);
+                        return;
+                      }
+                      setRdvSent(true);
+                      toast.success(t("meetingRequestSent"));
+                    } catch (err) {
+                      toast.error(t("rdvSubmitError") || "Failed to send request. Please try again.");
+                    }
                     setRdvLoading(false);
-                    setRdvSent(true);
-                    toast.success(t("meetingRequestSent"));
                   }}
                   className="btn-primary disabled:opacity-50"
                 >

@@ -6,11 +6,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useLocale } from "@/app/contexts/LocaleContext";
 import TurnstileWidget from "@/app/components/TurnstileWidget";
-
-function isValidPhone(val: string): boolean {
-  const digits = val.replace(/\D/g, "");
-  return digits.length >= 9 && digits.length <= 15;
-}
+import { isValidDRCPhone } from "@/lib/phone-validation";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -46,8 +42,8 @@ export default function SignupPage() {
       setError(t("signupPasswordRequired") || "Password must be at least 6 characters.");
       return;
     }
-    if (!isValidPhone(phone)) {
-      setError(t("signupPhoneInvalid") || "Please enter a valid phone number (9–15 digits).");
+    if (!isValidDRCPhone(phone)) {
+      setError(t("signupPhoneInvalid") || "Please enter a valid DRC phone number (e.g. +243 812 345 678 or 0812 345 678).");
       return;
     }
     if (turnstileRequired && !turnstileToken) {

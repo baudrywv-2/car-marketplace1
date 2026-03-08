@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useLocale } from "@/app/contexts/LocaleContext";
+import { isValidDRCPhone } from "@/lib/phone-validation";
 
 type Profile = {
   id: string;
@@ -81,9 +82,13 @@ export default function SettingsPage() {
       setError("Company / Brand name is required for sellers.");
       return;
     }
-    const ph = phone.replace(/\D/g, "");
-    if (ph.length < 9) {
-      setError(t("signupPhoneInvalid") || "Please enter a valid phone number (9–15 digits).");
+    const ph = phone.trim().replace(/\D/g, "");
+    if (!phone.trim()) {
+      setError(t("signupPhoneInvalid") || "Phone number is required. Please enter a valid DRC phone (e.g. +243 812 345 678 or 0812 345 678).");
+      return;
+    }
+    if (!isValidDRCPhone(phone)) {
+      setError(t("signupPhoneInvalid") || "Please enter a valid DRC phone number (e.g. +243 812 345 678 or 0812 345 678).");
       return;
     }
     const wa = (whatsapp.trim() || ph).replace(/\D/g, "");
