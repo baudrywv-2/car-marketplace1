@@ -36,6 +36,7 @@ type Profile = {
 type RdvRequest = {
   id: string;
   car_id: string;
+  intent?: string | null;
   message: string | null;
   preferred_date: string | null;
   suggested_price: number | null;
@@ -44,7 +45,7 @@ type RdvRequest = {
   buyer_email: string | null;
   buyer_name: string | null;
   buyer_phone: string | null;
-  cars: { title: string; owner_id: string }[] | null;
+  cars: { title?: string; listing_type?: string; owner_id?: string }[] | { title?: string; listing_type?: string; owner_id?: string } | null;
   seller_profile?: Profile | null;
   car_owner_phone?: string | null;
   car_owner_whatsapp?: string | null;
@@ -914,7 +915,8 @@ export default function AdminPage() {
               {rdvRequests.map((rdv) => {
                 const carRel = rdv.cars;
                 const carData = Array.isArray(carRel) ? carRel[0] : carRel;
-                const title = (carData && typeof carData === "object" && "title" in carData) ? (carData as { title?: string }).title : "Car";
+                const title = (carData && typeof carData === "object" && carData?.title) ? carData.title : "Car";
+                const intentLabel = rdv.intent === "rent" ? "Rent" : rdv.intent === "sale" ? "Buy" : ((carData && "listing_type" in carData) ? (carData.listing_type === "rent" ? "Rent" : "Buy") : null);
                 const ownerId = (carData && typeof carData === "object" && "owner_id" in carData) ? (carData as { owner_id?: string }).owner_id : null;
                 const sellerProfile = ownerId ? profiles[ownerId] : null;
                 const brand = sellerProfile?.company_name ?? sellerProfile?.full_name ?? "—";
@@ -932,7 +934,22 @@ export default function AdminPage() {
                   <li key={rdv.id} className="card-premium overflow-hidden p-4">
                     <div className="flex flex-wrap items-start justify-between gap-4">
                       <div className="min-w-0 flex-1">
-                        <p className="font-semibold text-[var(--foreground)]">{title}</p>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Link href={`/cars/${rdv.car_id}`} className="font-semibold text-[var(--foreground)] hover:underline">
+                            {title}
+                          </Link>
+                          <span className="text-[10px] text-[var(--muted-foreground)] font-mono">
+                            ID: {rdv.car_id.slice(0, 8)}…
+                          </span>
+                          {intentLabel && (
+                            <span className="rounded bg-[var(--border)] px-2 py-0.5 text-[10px] font-medium text-[var(--muted-foreground)]">
+                              {intentLabel}
+                            </span>
+                          )}
+                          <Link href={`/cars/${rdv.car_id}`} className="text-[10px] font-medium text-[var(--accent)] hover:underline">
+                            View listing
+                          </Link>
+                        </div>
                         <div className="mt-3 grid gap-2 text-[11px] sm:grid-cols-2">
                           <div className="rounded bg-[var(--background)] p-2">
                             <p className="font-semibold text-[var(--muted-foreground)]">Buyer</p>

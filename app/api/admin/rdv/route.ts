@@ -25,9 +25,9 @@ export async function GET() {
     const { data: rdvData, error } = await admin
       .from("rendezvous_requests")
       .select(`
-        id, car_id, message, preferred_date, suggested_price, status, created_at,
+        id, car_id, intent, message, preferred_date, suggested_price, status, created_at,
         buyer_email, buyer_name, buyer_phone, buyer_id,
-        cars(title, owner_id, owner_phone, owner_whatsapp, owner_address)
+        cars(title, listing_type, owner_id, owner_phone, owner_whatsapp, owner_address)
       `)
       .order("created_at", { ascending: false });
 

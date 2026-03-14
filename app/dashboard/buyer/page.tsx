@@ -5,14 +5,16 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useLocale } from "@/app/contexts/LocaleContext";
+import { LISTING_TYPE_TRANSLATION_KEYS } from "@/lib/constants";
 
 type RdvRequest = {
   id: string;
   car_id: string;
+  intent?: string | null;
   status: string;
   created_at: string;
   suggested_price: number | null;
-  cars: { title: string } | null;
+  cars: { title?: string; listing_type?: string } | { title?: string; listing_type?: string }[] | null;
 };
 
 function StatCard({ label, value, href }: { label: string; value: string | number; href?: string }) {
@@ -109,7 +111,7 @@ export default function BuyerDashboardPage() {
         supabase.from("contact_unlocks").select("id", { count: "exact", head: true }).eq("buyer_id", user.id),
         supabase
           .from("rendezvous_requests")
-          .select("id, car_id, status, created_at, suggested_price, cars(title)")
+          .select("id, car_id, intent, status, created_at, suggested_price, cars(title, listing_type)")
           .eq("buyer_id", user.id)
           .order("created_at", { ascending: false }),
       ]);
@@ -273,13 +275,25 @@ export default function BuyerDashboardPage() {
           </p>
           <ul className="space-y-3">
             {rdvRequests.map((rdv) => {
-              const title = (rdv.cars && typeof rdv.cars === "object" && "title" in rdv.cars) ? (rdv.cars as { title: string }).title : "Car";
+              const carObj = Array.isArray(rdv.cars) ? rdv.cars[0] : rdv.cars;
+              const title = (carObj && carObj.title) ? carObj.title : "Car";
+              const intentLabel = rdv.intent === "rent" ? t(LISTING_TYPE_TRANSLATION_KEYS.rent as Parameters<typeof t>[0]) : rdv.intent === "sale" ? t(LISTING_TYPE_TRANSLATION_KEYS.sale as Parameters<typeof t>[0]) : null;
               return (
                 <li key={rdv.id} className="card-compact flex flex-wrap items-center justify-between gap-4 p-4">
                   <div>
-                    <Link href={`/cars/${rdv.car_id}`} className="font-medium text-[var(--foreground)] hover:underline">
-                      {title}
-                    </Link>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Link href={`/cars/${rdv.car_id}`} className="font-medium text-[var(--foreground)] hover:underline">
+                        {title}
+                      </Link>
+                      <span className="text-[10px] font-mono text-[var(--muted-foreground)]">
+                        #{rdv.car_id.slice(0, 8)}
+                      </span>
+                      {intentLabel && (
+                        <span className="rounded bg-[var(--border)] px-2 py-0.5 text-[10px] text-[var(--muted-foreground)]">
+                          {intentLabel}
+                        </span>
+                      )}
+                    </div>
                     <p className="mt-0.5 text-[10px] text-[var(--muted-foreground)]">
                       {new Date(rdv.created_at).toLocaleDateString()}
                     </p>

@@ -1,12 +1,11 @@
 # Rendez-vous (RDV) Setup
 
-## 1. Run the migration
+## 1. Run the migrations
 
-In **Supabase Dashboard → SQL Editor**, run:
+In **Supabase Dashboard → SQL Editor**, run (in order):
 
-```
-supabase/migrations/ensure_rdv_complete.sql
-```
+1. `supabase/migrations/ensure_rdv_complete.sql`
+2. `supabase/migrations/add_rdv_intent.sql` (adds rent/buy intent)
 
 (Copy the file contents and paste, then Run.)
 

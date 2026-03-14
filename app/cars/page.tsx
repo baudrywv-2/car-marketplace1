@@ -44,6 +44,7 @@ type Car = {
   rental_currency?: string | null;
   rental_event_type?: string[] | null;
   is_sold?: boolean | null;
+  boost_score?: number | null;
 };
 
 type Profile = { id: string; full_name: string | null; phone_verified?: boolean; id_verified?: boolean; dealer_verified?: boolean };
@@ -105,21 +106,6 @@ function CarsPageContent() {
   const [compareIds, setCompareIds] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<"newest" | "priceLow" | "priceHigh">("newest");
   const [listingType, setListingType] = useState<"" | "sale" | "rent">("");
-  const [shuffleSeed, setShuffleSeed] = useState(() => Date.now());
-
-  function fisherYatesShuffle<T>(arr: T[]): T[] {
-    const copy = [...arr];
-    for (let i = copy.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [copy[i], copy[j]] = [copy[j], copy[i]];
-    }
-    return copy;
-  }
-
-  useEffect(() => {
-    const interval = setInterval(() => setShuffleSeed(Date.now()), 5 * 60 * 1000);
-    return () => clearInterval(interval);
-  }, []);
 
   function readSavedSearches() {
     try {
@@ -235,7 +221,7 @@ function CarsPageContent() {
       setLoading(true);
       let query = supabase
         .from("cars")
-        .select("id, title, price, make, model, year, type, province, city, images, currency, condition, discount_percent, transmission, fuel_type, owner_id, created_at, listing_type, rental_price_per_hour, rental_price_per_day, rental_price_per_week, rental_price_per_month, rental_currency, rental_event_type, is_sold")
+        .select("id, title, price, make, model, year, type, province, city, images, currency, condition, discount_percent, transmission, fuel_type, owner_id, created_at, listing_type, rental_price_per_hour, rental_price_per_day, rental_price_per_week, rental_price_per_month, rental_currency, rental_event_type, is_sold, boost_score")
         .eq("is_approved", true)
         .eq("is_draft", false);
 
@@ -315,6 +301,9 @@ function CarsPageContent() {
 
   const cars = allCars;
   const newArrivals = [...cars].sort((a, b) => {
+    const aBoost = a.boost_score ?? 0;
+    const bBoost = b.boost_score ?? 0;
+    if (bBoost !== aBoost) return bBoost - aBoost;
     const aT = a.created_at ? new Date(a.created_at).getTime() : 0;
     const bT = b.created_at ? new Date(b.created_at).getTime() : 0;
     return bT - aT;
@@ -392,13 +381,15 @@ function CarsPageContent() {
     return [...cars].sort((a, b) => {
       if (sortBy === "priceLow") return getSortPrice(a) - getSortPrice(b);
       if (sortBy === "priceHigh") return getSortPrice(b) - getSortPrice(a);
+      const aBoost = a.boost_score ?? 0;
+      const bBoost = b.boost_score ?? 0;
+      if (bBoost !== aBoost) return bBoost - aBoost;
       const aT = a.created_at ? new Date(a.created_at).getTime() : 0;
       const bT = b.created_at ? new Date(b.created_at).getTime() : 0;
       return bT - aT;
     });
   }, [cars, sortBy]);
-  const shuffledCars = useMemo(() => fisherYatesShuffle(sortedCars), [sortedCars, shuffleSeed]);
-  const visibleCars = shuffledCars.slice(0, visibleCount);
+  const visibleCars = sortedCars.slice(0, visibleCount);
 
   const hasActiveFilters = !!(keyword || make || province || type || priceRange || discountRange || transmission || fuelType || minPrice || maxPrice || listingType);
   function clearAllFilters() {

@@ -14,7 +14,7 @@ import CarImageGallery from "@/app/components/CarImageGallery";
 import VerifiedSellerBadge from "@/app/components/VerifiedSellerBadge";
 import CarProductJsonLd from "@/app/components/CarProductJsonLd";
 import { formatListedDate } from "@/lib/date-utils";
-import { RENTAL_EVENT_TRANSLATION_KEYS, CAR_FEATURES } from "@/lib/constants";
+import { RENTAL_EVENT_TRANSLATION_KEYS, LISTING_TYPE_TRANSLATION_KEYS, CAR_FEATURES } from "@/lib/constants";
 
 type Car = {
   id: string;
@@ -69,6 +69,7 @@ export default function CarDetailPage() {
   const [rdvMessage, setRdvMessage] = useState("");
   const [rdvDate, setRdvDate] = useState("");
   const [rdvSuggestedPrice, setRdvSuggestedPrice] = useState("");
+  const [rdvIntent, setRdvIntent] = useState<"sale" | "rent">("sale");
   const [hasUnlocked, setHasUnlocked] = useState(false);
   const [contact, setContact] = useState<Pick<Car, "owner_phone" | "owner_whatsapp" | "owner_address"> | null>(null);
   const [isFav, setIsFav] = useState(false);
@@ -82,6 +83,11 @@ export default function CarDetailPage() {
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user: u } }) => setUser(u ?? null));
   }, []);
+
+  useEffect(() => {
+    if (car?.listing_type === "rent") setRdvIntent("rent");
+    else if (car?.listing_type === "sale") setRdvIntent("sale");
+  }, [car?.listing_type]);
 
   useEffect(() => {
     if (!user) {
@@ -498,6 +504,21 @@ export default function CarDetailPage() {
             {user && !rdvSent && (
               <div id="rdv-form" className="mt-3 hidden rounded-lg border border-[var(--border)] bg-[var(--background)] p-3">
                 <p className="text-[12px] mb-2 text-[var(--muted-foreground)]">{t("meetingReassurance")}</p>
+                {(car.listing_type === "both") && (
+                  <div className="mb-3">
+                    <label className="text-caption mb-1.5 block">I am interested in</label>
+                    <div className="flex gap-3">
+                      <label className="flex cursor-pointer items-center gap-2 text-[12px]">
+                        <input type="radio" name="rdvIntent" checked={rdvIntent === "sale"} onChange={() => setRdvIntent("sale")} className="rounded-full" />
+                        {t(LISTING_TYPE_TRANSLATION_KEYS.sale as Parameters<typeof t>[0])}
+                      </label>
+                      <label className="flex cursor-pointer items-center gap-2 text-[12px]">
+                        <input type="radio" name="rdvIntent" checked={rdvIntent === "rent"} onChange={() => setRdvIntent("rent")} className="rounded-full" />
+                        {t(LISTING_TYPE_TRANSLATION_KEYS.rent as Parameters<typeof t>[0])}
+                      </label>
+                    </div>
+                  </div>
+                )}
                 <textarea
                   placeholder="Your message (optional)"
                   value={rdvMessage}
@@ -540,9 +561,11 @@ export default function CarDetailPage() {
                         .eq("id", user.id)
                         .single();
                       const suggestedPriceNum = rdvSuggestedPrice.trim() ? parseFloat(String(rdvSuggestedPrice).replace(/,/g, "")) : null;
+                      const intentValue = car.listing_type === "both" ? rdvIntent : (car.listing_type === "rent" ? "rent" : "sale");
                       const { error: insertError } = await supabase.from("rendezvous_requests").insert({
                         buyer_id: user.id,
                         car_id: id,
+                        intent: intentValue,
                         message: rdvMessage.trim() || null,
                         preferred_date: rdvDate || null,
                         suggested_price: !isNaN(suggestedPriceNum as number) && (suggestedPriceNum as number) > 0 ? suggestedPriceNum : null,

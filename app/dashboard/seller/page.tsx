@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabase";
 import { useLocale } from "@/app/contexts/LocaleContext";
 import { SUPPORT_EMAIL, SITE_URL } from "@/lib/constants";
 import { formatPrice } from "@/lib/format-utils";
+import { LISTING_TYPE_TRANSLATION_KEYS } from "@/lib/constants";
 
 type Profile = { id: string; full_name: string | null; role: string; company_name: string | null; phone?: string | null; whatsapp?: string | null };
 type Car = {
@@ -23,7 +24,7 @@ type Car = {
   created_at: string;
 };
 
-type ApprovedRdv = { id: string; car_id: string; created_at: string; suggested_price: number | null; cars: { title: string } | null };
+type ApprovedRdv = { id: string; car_id: string; intent?: string | null; created_at: string; suggested_price: number | null; cars: { title?: string; listing_type?: string } | null };
 
 function StatCard({ label, value }: { label: string; value: string | number }) {
   return (
@@ -142,7 +143,7 @@ export default function SellerDashboardPage() {
 
       const { data: rdvData } = await supabase
         .from("rendezvous_requests")
-        .select("id, car_id, created_at, suggested_price, cars(title)")
+        .select("id, car_id, intent, created_at, suggested_price, cars(title, listing_type)")
         .eq("status", "approved")
         .in("car_id", list.map((c) => c.id))
         .order("created_at", { ascending: false });
@@ -328,12 +329,26 @@ export default function SellerDashboardPage() {
             </div>
           ) : (
             <ul className="space-y-2">
-              {visibleApprovedRdv.map((rdv) => (
+              {visibleApprovedRdv.map((rdv) => {
+                const carObj = rdv.cars && typeof rdv.cars === "object" ? rdv.cars : null;
+                const title = carObj?.title ?? "Car";
+                const intentLabel = rdv.intent === "rent" ? t(LISTING_TYPE_TRANSLATION_KEYS.rent as Parameters<typeof t>[0]) : rdv.intent === "sale" ? t(LISTING_TYPE_TRANSLATION_KEYS.sale as Parameters<typeof t>[0]) : null;
+                return (
                 <li key={rdv.id} className="card-compact flex items-center justify-between gap-4 p-3">
                   <div>
-                    <span className="text-caption text-[var(--foreground)]">
-                      {(rdv.cars && typeof rdv.cars === "object" && "title" in rdv.cars) ? (rdv.cars as { title: string }).title : "Car"}
-                    </span>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Link href={`/cars/${rdv.car_id}`} className="text-caption font-medium text-[var(--foreground)] hover:underline">
+                        {title}
+                      </Link>
+                      <span className="text-[10px] font-mono text-[var(--muted-foreground)]">
+                        #{rdv.car_id.slice(0, 8)}
+                      </span>
+                      {intentLabel && (
+                        <span className="rounded bg-[var(--border)] px-2 py-0.5 text-[10px] text-[var(--muted-foreground)]">
+                          {intentLabel}
+                        </span>
+                      )}
+                    </div>
                     {rdv.suggested_price != null && rdv.suggested_price > 0 && (
                       <p className="mt-0.5 text-[10px] font-medium text-[var(--foreground)]">
                         Buyer offer: {formatPrice(rdv.suggested_price, "USD", null)}
@@ -344,10 +359,11 @@ export default function SellerDashboardPage() {
                     <span className="text-[10px] text-[var(--muted-foreground)]">
                       {new Date(rdv.created_at).toLocaleDateString()}
                     </span>
+                    <Link href={`/cars/${rdv.car_id}`} className="text-[10px] font-medium text-[var(--accent)] hover:underline">View</Link>
                     <button type="button" onClick={() => dismissRdv(rdv.id)} className="text-[10px] font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)]">Dismiss</button>
                   </div>
                 </li>
-              ))}
+              );})}
             </ul>
           )}
         </div>
