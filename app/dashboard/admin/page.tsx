@@ -103,6 +103,8 @@ export default function AdminPage() {
     error?: string;
   };
   const [visitStats, setVisitStats] = useState<VisitStats | null>(null);
+  const [trafficFrom, setTrafficFrom] = useState("");
+  const [trafficTo, setTrafficTo] = useState("");
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [adminListingsError, setAdminListingsError] = useState<string | null>(null);
   const [rdvFetchError, setRdvFetchError] = useState<string | null>(null);
@@ -230,7 +232,12 @@ export default function AdminPage() {
   useEffect(() => {
     if (activeTab !== "traffic" || !profile) return;
     (async () => {
-      const { data, error } = await supabase.rpc("admin_get_visit_stats");
+      const fromDate = trafficFrom.trim() || null;
+      const toDate = trafficTo.trim() || null;
+      const { data, error } = await supabase.rpc("admin_get_visit_stats_filtered", {
+        p_from_date: fromDate,
+        p_to_date: toDate,
+      });
       if (error) {
         setVisitStats({ error: error.message });
         return;
@@ -248,7 +255,7 @@ export default function AdminPage() {
         byYear: Array.isArray(raw?.byYear) ? (raw.byYear as VisitStats["byYear"]) : [],
       });
     })();
-  }, [activeTab, profile]);
+  }, [activeTab, profile, trafficFrom, trafficTo]);
 
   async function sendAdminMessage(e: React.FormEvent) {
     e.preventDefault();
@@ -655,12 +662,59 @@ export default function AdminPage() {
           <p className="text-caption text-[var(--muted-foreground)]">
             Visitor sessions (one per browser session). Logged in-app; no external analytics.
           </p>
+          <div className="flex flex-wrap items-center gap-3">
+            <label className="flex items-center gap-2 text-[11px]">
+              <span className="font-medium text-[var(--muted-foreground)]">From</span>
+              <input
+                type="date"
+                value={trafficFrom}
+                onChange={(e) => setTrafficFrom(e.target.value)}
+                className="rounded border border-[var(--border)] bg-[var(--background)] px-2 py-1.5 text-[11px]"
+              />
+            </label>
+            <label className="flex items-center gap-2 text-[11px]">
+              <span className="font-medium text-[var(--muted-foreground)]">To</span>
+              <input
+                type="date"
+                value={trafficTo}
+                onChange={(e) => setTrafficTo(e.target.value)}
+                className="rounded border border-[var(--border)] bg-[var(--background)] px-2 py-1.5 text-[11px]"
+              />
+            </label>
+            <button
+              type="button"
+              onClick={() => { setTrafficFrom(""); setTrafficTo(""); }}
+              className="rounded border border-[var(--border)] px-2 py-1.5 text-[10px] font-medium hover:bg-[var(--border)]"
+            >
+              Clear
+            </button>
+            {visitStats && (() => {
+              const rows = (visitStats.byDay ?? []).map((r) => ({ date: r.date, sessions: r.count }));
+              const csv = "Date,Sessions\n" + rows.map((r) => `${r.date},${r.sessions}`).join("\n");
+              const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+              const url = URL.createObjectURL(blob);
+              return (
+                <a
+                  href={url}
+                  download={`traffic-${trafficFrom || "all"}-${trafficTo || "all"}.csv`}
+                  className="rounded border border-[var(--border)] px-3 py-1.5 text-[10px] font-medium hover:bg-[var(--border)]"
+                  onClick={() => setTimeout(() => URL.revokeObjectURL(url), 100)}
+                >
+                  Export CSV
+                </a>
+              );
+            })()}
+          </div>
           {visitStats?.error ? (
             <p className="text-[11px] text-amber-600 dark:text-amber-400">{visitStats.error}</p>
           ) : visitStats ? (
             <>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <StatCard label="Total sessions" value={visitStats.total ?? 0} sub="All time" />
+                <StatCard
+                  label="Total sessions"
+                  value={visitStats.total ?? 0}
+                  sub={trafficFrom || trafficTo ? `${trafficFrom || "…"} to ${trafficTo || "…"}` : "All time"}
+                />
               </div>
               <div className="grid gap-6 lg:grid-cols-2">
                 <div className="card-premium overflow-hidden p-4">
