@@ -38,57 +38,57 @@ BEGIN
     'byDay', (
       SELECT coalesce(jsonb_agg(d ORDER BY d->>'date' DESC), '[]'::jsonb)
       FROM (
-        SELECT jsonb_build_object(
-          'date', to_char(created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD'),
-          'count', count(*)
-        ) AS d
-        FROM page_views
-        WHERE created_at >= v_from AND created_at < v_to
-        GROUP BY (created_at AT TIME ZONE 'UTC')::date
-        ORDER BY (created_at AT TIME ZONE 'UTC')::date DESC
-        LIMIT 366
+        SELECT jsonb_build_object('date', to_char(day_bucket, 'YYYY-MM-DD'), 'count', cnt) AS d
+        FROM (
+          SELECT (created_at AT TIME ZONE 'UTC')::date AS day_bucket, count(*) AS cnt
+          FROM page_views
+          WHERE created_at >= v_from AND created_at < v_to
+          GROUP BY (created_at AT TIME ZONE 'UTC')::date
+          ORDER BY day_bucket DESC
+          LIMIT 366
+        ) sub
       ) t
     ),
     'byWeek', (
       SELECT coalesce(jsonb_agg(w ORDER BY w->>'week' DESC), '[]'::jsonb)
       FROM (
-        SELECT jsonb_build_object(
-          'week', date_trunc('week', created_at AT TIME ZONE 'UTC')::date::text,
-          'count', count(*)
-        ) AS w
-        FROM page_views
-        WHERE created_at >= v_from AND created_at < v_to
-        GROUP BY date_trunc('week', created_at AT TIME ZONE 'UTC')
-        ORDER BY date_trunc('week', created_at AT TIME ZONE 'UTC') DESC
-        LIMIT 104
+        SELECT jsonb_build_object('week', week_bucket::date::text, 'count', cnt) AS w
+        FROM (
+          SELECT date_trunc('week', created_at AT TIME ZONE 'UTC') AS week_bucket, count(*) AS cnt
+          FROM page_views
+          WHERE created_at >= v_from AND created_at < v_to
+          GROUP BY date_trunc('week', created_at AT TIME ZONE 'UTC')
+          ORDER BY week_bucket DESC
+          LIMIT 104
+        ) sub
       ) t
     ),
     'byMonth', (
       SELECT coalesce(jsonb_agg(m ORDER BY m->>'month' DESC), '[]'::jsonb)
       FROM (
-        SELECT jsonb_build_object(
-          'month', to_char(created_at AT TIME ZONE 'UTC', 'YYYY-MM'),
-          'count', count(*)
-        ) AS m
-        FROM page_views
-        WHERE created_at >= v_from AND created_at < v_to
-        GROUP BY to_char(created_at AT TIME ZONE 'UTC', 'YYYY-MM')
-        ORDER BY to_char(created_at AT TIME ZONE 'UTC', 'YYYY-MM') DESC
-        LIMIT 24
+        SELECT jsonb_build_object('month', month_bucket, 'count', cnt) AS m
+        FROM (
+          SELECT to_char(created_at AT TIME ZONE 'UTC', 'YYYY-MM') AS month_bucket, count(*) AS cnt
+          FROM page_views
+          WHERE created_at >= v_from AND created_at < v_to
+          GROUP BY to_char(created_at AT TIME ZONE 'UTC', 'YYYY-MM')
+          ORDER BY month_bucket DESC
+          LIMIT 24
+        ) sub
       ) t
     ),
     'byYear', (
       SELECT coalesce(jsonb_agg(y ORDER BY y->>'year' DESC), '[]'::jsonb)
       FROM (
-        SELECT jsonb_build_object(
-          'year', to_char(created_at AT TIME ZONE 'UTC', 'YYYY'),
-          'count', count(*)
-        ) AS y
-        FROM page_views
-        WHERE created_at >= v_from AND created_at < v_to
-        GROUP BY to_char(created_at AT TIME ZONE 'UTC', 'YYYY')
-        ORDER BY to_char(created_at AT TIME ZONE 'UTC', 'YYYY') DESC
-        LIMIT 10
+        SELECT jsonb_build_object('year', year_bucket, 'count', cnt) AS y
+        FROM (
+          SELECT to_char(created_at AT TIME ZONE 'UTC', 'YYYY') AS year_bucket, count(*) AS cnt
+          FROM page_views
+          WHERE created_at >= v_from AND created_at < v_to
+          GROUP BY to_char(created_at AT TIME ZONE 'UTC', 'YYYY')
+          ORDER BY year_bucket DESC
+          LIMIT 10
+        ) sub
       ) t
     )
   ) INTO result;
