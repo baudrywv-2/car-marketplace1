@@ -6,6 +6,7 @@ export default function JsonLd() {
     "@type": "Organization",
     name: "DRCCARS",
     url: SITE_URL,
+    logo: `${SITE_URL}/icon.svg`,
     description: "Your trusted car marketplace in the Democratic Republic of Congo. Browse and list new and used vehicles—no platform fees.",
   };
 

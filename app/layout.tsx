@@ -36,7 +36,7 @@ const fontDisplay = Orbitron({
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   icons: {
-    icon: "/icon.svg",
+    icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
     apple: "/icon.svg",
   },
   title: {
@@ -64,12 +64,14 @@ export const metadata: Metadata = {
       "Marketplace auto en RDC. Voitures d’occasion à vendre à Kinshasa, Goma, Lubumbashi. Parcourez les annonces et contactez les vendeurs.",
     type: "website",
     url: SITE_URL,
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "DRCCARS – Voitures d'occasion en RDC" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "DRCCARS",
     description:
       "Voitures d’occasion à vendre en RDC (Kinshasa, Goma, Lubumbashi). Parcourez les annonces sur DRCCARS.",
+    images: ["/og-image.png"],
   },
 };
 

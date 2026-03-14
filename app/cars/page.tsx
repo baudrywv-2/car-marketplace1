@@ -84,6 +84,7 @@ function CarsPageContent() {
   const [loading, setLoading] = useState(true);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [keyword, setKeyword] = useState(() => searchParams.get("q") ?? "");
+  const [debouncedKeyword, setDebouncedKeyword] = useState(() => searchParams.get("q") ?? "");
   const [make, setMake] = useState(() => searchParams.get("make") ?? "");
   const [province, setProvince] = useState(() => searchParams.get("province") ?? "");
   const [type, setType] = useState("");
@@ -190,7 +191,7 @@ function CarsPageContent() {
 
   useEffect(() => {
     setVisibleCount(pageSize);
-  }, [keyword, make, province, type, priceRange, discountRange, transmission, fuelType, minPrice, maxPrice, pageSize, listingType]);
+  }, [debouncedKeyword, make, province, type, priceRange, discountRange, transmission, fuelType, minPrice, maxPrice, pageSize, listingType]);
 
   useEffect(() => {
     const saved = localStorage.getItem("cars-view-density");
@@ -212,11 +213,17 @@ function CarsPageContent() {
     const minParam = searchParams.get("minPrice");
     const maxParam = searchParams.get("maxPrice");
     setKeyword(q ?? "");
+    setDebouncedKeyword(q ?? "");
     setMake(makeParam ?? "");
     setProvince(provinceParam ?? "");
     setMinPrice(minParam ?? "");
     setMaxPrice(maxParam ?? "");
   }, [searchParams]);
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedKeyword(keyword), 400);
+    return () => clearTimeout(t);
+  }, [keyword]);
 
   function setDensityAndSave(value: "compact" | "spacious") {
     setDensity(value);
@@ -228,15 +235,15 @@ function CarsPageContent() {
       setLoading(true);
       let query = supabase
         .from("cars")
-        .select("id, title, description, price, make, model, year, type, province, city, images, currency, condition, discount_percent, transmission, fuel_type, owner_id, created_at, listing_type, rental_price_per_hour, rental_price_per_day, rental_price_per_week, rental_price_per_month, rental_currency, rental_event_type, is_sold")
+        .select("id, title, price, make, model, year, type, province, city, images, currency, condition, discount_percent, transmission, fuel_type, owner_id, created_at, listing_type, rental_price_per_hour, rental_price_per_day, rental_price_per_week, rental_price_per_month, rental_currency, rental_event_type, is_sold")
         .eq("is_approved", true)
         .eq("is_draft", false);
 
       if (listingType === "sale") query = query.or("listing_type.eq.sale,listing_type.eq.both");
       if (listingType === "rent") query = query.or("listing_type.eq.rent,listing_type.eq.both");
 
-      if (keyword.trim()) {
-        const k = keyword.trim().replace(/\*/g, "\\*").replace(/_/g, "\\_");
+      if (debouncedKeyword.trim()) {
+        const k = debouncedKeyword.trim().replace(/\*/g, "\\*").replace(/_/g, "\\_");
         const raw = `*${k}*`;
         const pat = raw.includes(",") ? `"${raw.replace(/"/g, '\\"')}"` : raw;
         query = query.or(`title.ilike.${pat},make.ilike.${pat},model.ilike.${pat},description.ilike.${pat}`);
@@ -284,7 +291,7 @@ function CarsPageContent() {
         (profilesData ?? []).forEach((p) => { map[p.id] = p; });
         setProfiles(map);
       }
-      const hasFilters = !!(keyword.trim() || make || province || type || priceRange || discountRange || transmission || fuelType || minPrice || maxPrice || listingType);
+      const hasFilters = !!(debouncedKeyword.trim() || make || province || type || priceRange || discountRange || transmission || fuelType || minPrice || maxPrice || listingType);
       if (hasFilters) {
         const minVal = minPrice ? parseFloat(String(minPrice).replace(/,/g, "")) : NaN;
         const maxVal = maxPrice ? parseFloat(String(maxPrice).replace(/,/g, "")) : NaN;
@@ -292,7 +299,7 @@ function CarsPageContent() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            keyword: keyword.trim() || null,
+            keyword: debouncedKeyword.trim() || null,
             make: make || null,
             province: province || null,
             minPrice: !isNaN(minVal) && minVal > 0 ? minVal : null,
@@ -304,7 +311,7 @@ function CarsPageContent() {
       setLoading(false);
     }
     load();
-  }, [keyword, make, province, type, priceRange, discountRange, transmission, fuelType, minPrice, maxPrice, listingType]);
+  }, [debouncedKeyword, make, province, type, priceRange, discountRange, transmission, fuelType, minPrice, maxPrice, listingType]);
 
   const cars = allCars;
   const newArrivals = [...cars].sort((a, b) => {

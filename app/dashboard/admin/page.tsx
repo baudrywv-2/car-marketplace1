@@ -104,6 +104,7 @@ export default function AdminPage() {
   const [visitStats, setVisitStats] = useState<VisitStats | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [adminListingsError, setAdminListingsError] = useState<string | null>(null);
+  const [rdvFetchError, setRdvFetchError] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -147,40 +148,20 @@ export default function AdminPage() {
         setProfiles(profMap);
       }
 
-      // Use admin_get_rdv RPC (bypasses RLS) so admin always sees all RDV
-      const { data: rdvRpc, error: rdvRpcError } = await supabase.rpc("admin_get_rdv");
+      // API route uses service role (bypasses RLS) — single source of truth for admin RDV
       let rdvList: RdvRequest[] = [];
-      if (!rdvRpcError && Array.isArray(rdvRpc)) {
-        rdvList = (rdvRpc as Array<{
-          id: string; car_id: string; message: string | null; preferred_date: string | null;
-          suggested_price: number | null; status: string; created_at: string;
-          buyer_email: string | null; buyer_name: string | null; buyer_phone: string | null;
-          car_title: string | null; car_owner_id: string | null;
-          car_owner_phone: string | null; car_owner_whatsapp: string | null; car_owner_address: string | null;
-        }>).map((r) => ({
-          id: r.id,
-          car_id: r.car_id,
-          message: r.message,
-          preferred_date: r.preferred_date,
-          suggested_price: r.suggested_price,
-          status: r.status,
-          created_at: r.created_at,
-          buyer_email: r.buyer_email,
-          buyer_name: r.buyer_name,
-          buyer_phone: r.buyer_phone,
-          cars: r.car_title ? [{ title: r.car_title, owner_id: r.car_owner_id ?? "", owner_phone: r.car_owner_phone, owner_whatsapp: r.car_owner_whatsapp, owner_address: r.car_owner_address }] : null,
-        }));
-      } else {
-        // Fallback: direct select (RLS applies)
-        const { data: rdvData } = await supabase
-          .from("rendezvous_requests")
-          .select(`
-            id, car_id, message, preferred_date, suggested_price, status, created_at,
-            buyer_email, buyer_name, buyer_phone,
-            cars(title, owner_id, owner_phone, owner_whatsapp, owner_address)
-          `)
-          .order("created_at", { ascending: false });
-        rdvList = (rdvData ?? []) as RdvRequest[];
+      setRdvFetchError(null);
+      try {
+        const res = await fetch("/api/admin/rdv", { credentials: "include" });
+        const json = await res.json().catch(() => ({}));
+        if (res.ok && Array.isArray(json)) {
+          rdvList = json as RdvRequest[];
+        } else {
+          const errMsg = (json as { error?: string }).error || `HTTP ${res.status}`;
+          setRdvFetchError(errMsg);
+        }
+      } catch (e) {
+        setRdvFetchError(e instanceof Error ? e.message : "Network error");
       }
       setRdvRequests(rdvList);
 
@@ -912,9 +893,21 @@ export default function AdminPage() {
           <p className="mb-4 text-caption text-[var(--muted-foreground)]">
             Manage meeting requests. Approve to notify the seller. All buyer and seller contacts visible here only.
           </p>
+          {rdvFetchError && (
+            <div className="mb-4 rounded border border-amber-500 bg-amber-50 p-4 text-[11px] dark:border-amber-600 dark:bg-amber-900/20">
+              <p className="font-semibold text-amber-800 dark:text-amber-400">Could not load RDV</p>
+              <p className="mt-1 text-amber-700 dark:text-amber-300">{rdvFetchError}</p>
+              <p className="mt-2 text-amber-600 dark:text-amber-400">
+                Add <code className="rounded bg-amber-200 px-1 dark:bg-amber-900">SUPABASE_SERVICE_ROLE_KEY</code> to .env.local (Supabase → Settings → API → service_role). Restart dev server.
+              </p>
+            </div>
+          )}
           {rdvRequests.length === 0 ? (
-            <div className="card-premium flex flex-col items-center justify-center gap-2 p-12 text-center">
+            <div className="card-premium flex flex-col items-center justify-center gap-3 p-12 text-center">
               <p className="text-body text-[var(--muted-foreground)]">No rendez-vous requests yet.</p>
+              <p className="max-w-sm text-[11px] text-[var(--muted-foreground)]">
+                Buyers must be logged in, have a phone number in Settings, and use &quot;Request meeting&quot; on a car page. You can test by creating a buyer account and submitting a request.
+              </p>
             </div>
           ) : (
             <ul className="space-y-4">

@@ -64,7 +64,7 @@ export default function CarImageGallery({ images, title }: Props) {
                 i === active ? "border-[var(--accent)]" : "border-transparent opacity-70 hover:opacity-100"
               }`}
             >
-              <img src={src} alt="" className="h-full w-full object-cover" />
+              <img src={src} alt="" className="h-full w-full object-cover" loading="lazy" decoding="async" />
             </button>
           ))}
         </div>
