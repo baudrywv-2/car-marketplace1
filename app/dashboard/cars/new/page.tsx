@@ -551,7 +551,7 @@ export default function NewCarPage() {
                       : "border-[var(--border)] bg-[var(--card)] text-[var(--muted-foreground)] hover:border-[var(--border-strong)] hover:text-[var(--foreground)]"
                   }`}
                 >
-                  {f.labelEn}
+                  {f.labelKey ? t(f.labelKey as Parameters<typeof t>[0]) : f.labelEn}
                 </button>
               );
             })}

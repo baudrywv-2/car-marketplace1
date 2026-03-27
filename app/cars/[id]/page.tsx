@@ -401,7 +401,7 @@ export default function CarDetailPage() {
                         key={fId}
                         className="rounded-md border border-[var(--accent)]/30 bg-[var(--accent)]/10 px-2 py-1 text-[10px] font-medium text-[var(--foreground)]"
                       >
-                        {f ? f.labelEn : fId}
+                        {f ? (f.labelKey ? t(f.labelKey as Parameters<typeof t>[0]) : f.labelEn) : fId}
                       </span>
                     );
                   })}
