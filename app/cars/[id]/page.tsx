@@ -14,7 +14,7 @@ import CarImageGallery from "@/app/components/CarImageGallery";
 import VerifiedSellerBadge from "@/app/components/VerifiedSellerBadge";
 import CarProductJsonLd from "@/app/components/CarProductJsonLd";
 import { formatListedDate } from "@/lib/date-utils";
-import { RENTAL_EVENT_TRANSLATION_KEYS, LISTING_TYPE_TRANSLATION_KEYS, CAR_FEATURES } from "@/lib/constants";
+import { RENTAL_EVENT_TRANSLATION_KEYS, LISTING_TYPE_TRANSLATION_KEYS, CAR_FEATURE_BY_ID } from "@/lib/constants";
 
 type Car = {
   id: string;
@@ -395,13 +395,15 @@ export default function CarDetailPage() {
                 <span className="mb-1.5 block text-[10px] uppercase tracking-wide text-[var(--muted-foreground)]">Features</span>
                 <div className="flex flex-wrap gap-1.5">
                   {car.features.map((fId) => {
-                    const f = CAR_FEATURES.find((x) => x.id === fId);
+                    const raw = (CAR_FEATURE_BY_ID as Record<string, unknown>)[fId];
+                    const f = raw && typeof raw === "object" ? (raw as { labelEn?: string; labelKey?: string }) : null;
+                    const label = f ? (f.labelKey ? t(f.labelKey as Parameters<typeof t>[0]) : (f.labelEn ?? fId)) : fId;
                     return (
                       <span
                         key={fId}
                         className="rounded-md border border-[var(--accent)]/30 bg-[var(--accent)]/10 px-2 py-1 text-[10px] font-medium text-[var(--foreground)]"
                       >
-                        {f ? (f.labelKey ? t(f.labelKey as Parameters<typeof t>[0]) : f.labelEn) : fId}
+                        {label}
                       </span>
                     );
                   })}

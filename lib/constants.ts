@@ -98,8 +98,10 @@ export const LISTING_TYPE_TRANSLATION_KEYS: Record<ListingType, string> = {
   both: "saleAndRent",
 };
 
+export type CarFeature = { id: string; labelEn: string; labelKey?: string };
+
 /** Car features (amenities/equipment) – select multiple per listing */
-export const CAR_FEATURES = [
+export const CAR_FEATURES: readonly CarFeature[] = [
   { id: "dgda_documents", labelEn: "DGDA documents", labelKey: "featureDgdaDocuments" },
   { id: "carte_rose", labelEn: "Carte rose", labelKey: "featureCarteRose" },
   { id: "has_some_issues", labelEn: "A quelques pannes", labelKey: "featureHasSomeIssues" },
@@ -140,5 +142,9 @@ export const CAR_FEATURES = [
   { id: "navigation", labelEn: "Navigation", labelKey: "featureNavigation" },
   { id: "turbo", labelEn: "Turbo", labelKey: "featureTurbo" },
   { id: "power_slide_door", labelEn: "Power Slide Door", labelKey: "featurePowerSlideDoor" },
-] as const;
-export type CarFeatureId = (typeof CAR_FEATURES)[number]["id"];
+];
+export type CarFeatureId = CarFeature["id"];
+
+export const CAR_FEATURE_BY_ID = Object.fromEntries(
+  CAR_FEATURES.map((f) => [f.id, f] as const)
+) as Record<string, CarFeature>;
