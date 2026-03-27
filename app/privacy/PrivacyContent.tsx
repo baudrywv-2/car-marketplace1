@@ -111,12 +111,116 @@ const content = {
       },
     ] as Section[],
   },
+  ln: {
+    title: "Politiki ya kobatela makambo ya moto",
+    updated: "Ebandeli ya nsuka: Mars 2025",
+    home: "← Accueil",
+    sections: [
+      {
+        title: "1. Na mokuse",
+        body:
+          'DRCCARS ("biso") esalaka na drccars.com mpe ebatelaka makambo ya moto. Politiki oyo elobaka makambo nini tozali kosangisa tango ozali kosalela marketplace ya motuka na RDC mpe ndenge nini tosalelaka yango.',
+      },
+      {
+        title: "2. Makambo oyo tozali kosangisa",
+        bullets: [
+          { label: "Makambo ya compte", text: "Email, mot de passe, mpe (soki olingi) numero ya telefone tango okomisa compte." },
+          { label: "Makambo ya profil", text: "Kombo, telefone, mpe WhatsApp (mpo na bavendeur) — ebombami na profil mpe esalelami na ba annonces." },
+          { label: "Makambo ya annonce", text: "Ba détails ya motuka, bilili, prix, mpe ba contacts ya vendeur tango okotisi motuka." },
+          { label: "Kosenga rendez-vous", text: "Message na yo mpe mokolo oyo osengi tango osengi kokutana na vendeur." },
+          { label: "Makambo ya bosaleli", text: "Favoris, recherches ebombami, motuka oyo otalaki, mpe comparaison (na appareil to na compte)." },
+        ],
+      },
+      {
+        title: "3. Ndenge tosalelaka makambo",
+        body:
+          "Tosalelaka makambo na yo mpo na kosalisa plateforme: kolakisa ba annonces, kokangisa acheteur na vendeur, kobatela ba comptes, kosala frais ya débloquer contact, mpe kobongisa service. Totesaka te makambo na yo epai ya bato mosusu mpo na marketing.",
+      },
+      {
+        title: "4. Esika ebombami",
+        body:
+          "Makambo ebombami na Supabase (database, authentification, stockage ya bilili). Paiement mpo na débloquer contact esalelaka Stripe. Makambo ekoki kosalema na ba serveurs ya bisika ndenge na ndenge. Tozwaka matambe mpo na kobatela makambo na yo.",
+      },
+      {
+        title: "5. Kopesa/partager",
+        body:
+          "Tango osengi rendez-vous to obongoli contact, topesaka makambo ya ntina (ndakisa message, contact) epai ya vendeur to équipe admin mpo na kobongisa rendez-vous. Makambo ya annonce (telefone, WhatsApp, adresse soki epesami) ekoki komonana na acheteur oyo abongoli contact.",
+      },
+      {
+        title: "6. Cookies mpe stockage local",
+        body:
+          "Tosalelaka cookies mpe stockage local mpo na authentification, lokota, devise (USD/CDF), favoris (invités), recherches ebombami, histoire ya motuka, mpe comparaison. Ezali mpo site esala malamu.",
+      },
+      {
+        title: "7. Makoki na yo",
+        body:
+          `Okoki kobongola to kolongola makambo ya compte na yo na dashboard. Okoki mpe kosenga access, correction to suppression ya makambo na yo na email: ${SUPPORT_EMAIL}.`,
+      },
+      {
+        title: "8. Mbongwana",
+        body:
+          `Tokoki kobongola politiki oyo. Mokolo ya "Ebandeli ya nsuka" ekobongwana. Kosalela platforme na ${SITE_URL} sima ya mbongwana elakisi o ndimi.`,
+      },
+    ] as Section[],
+  },
+  sw: {
+    title: "Sera ya Faragha",
+    updated: "Imesasishwa mwisho: Machi 2025",
+    home: "← Nyumbani",
+    sections: [
+      {
+        title: "1. Muhtasari",
+        body:
+          'DRCCARS ("sisi") inaendesha drccars.com na kuheshimu faragha yako. Sera hii inaeleza data tunazokusanya unapotumia soko letu la magari nchini DRC na jinsi tunavyotumia data hiyo.',
+      },
+      {
+        title: "2. Data tunazokusanya",
+        bullets: [
+          { label: "Data ya akaunti", text: "Barua pepe, nenosiri, na (hiari) nambari ya simu unapojisajili." },
+          { label: "Data ya profaili", text: "Jina, simu, na WhatsApp kwa wauzaji; huhifadhiwa kwenye profaili na hutumika kwa matangazo." },
+          { label: "Data ya tangazo", text: "Maelezo ya gari, picha, bei, na mawasiliano ya muuzaji unapo-orodhesha gari." },
+          { label: "Maombi ya mkutano", text: "Ujumbe wako na tarehe unayopendekeza unapoomba mkutano na muuzaji." },
+          { label: "Data ya matumizi", text: "Vipendwa, utafutaji uliohifadhiwa, magari uliyotazama, na ulinganisho (kwenye kifaa au akaunti)." },
+        ],
+      },
+      {
+        title: "3. Jinsi tunavyotumia data",
+        body:
+          "Tunatumia data yako kuendesha jukwaa: kuonyesha matangazo, kuunganisha wanunuzi na wauzaji, kusimamia akaunti, kuchakata ada ya kufungua mawasiliano, na kuboresha huduma. Hatuuzi data yako binafsi kwa uuzaji wa matangazo.",
+      },
+      {
+        title: "4. Uhifadhi wa data",
+        body:
+          "Data huhifadhiwa kupitia Supabase (hifadhidata, uthibitishaji, na hifadhi ya picha). Malipo ya kufungua mawasiliano hutumia Stripe. Data inaweza kuchakatwa kwenye seva zilizo maeneo tofauti. Tunachukua hatua za msingi kulinda data yako.",
+      },
+      {
+        title: "5. Kushiriki",
+        body:
+          "Unapoomba mkutano au kufungua mawasiliano, tunashiriki taarifa muhimu (mf. ujumbe, mawasiliano) na muuzaji au timu ya admin ili kupanga mkutano. Taarifa za tangazo (ikiwemo simu, WhatsApp, anwani ikiwa imetolewa) zinaweza kuonekana kwa wanunuzi wanaofungua mawasiliano.",
+      },
+      {
+        title: "6. Cookies na hifadhi ya ndani",
+        body:
+          "Tunatumia cookies na hifadhi ya ndani kwa uthibitishaji, lugha, sarafu (USD/CDF), vipendwa (wageni), utafutaji uliohifadhiwa, magari uliyotazama, na ulinganisho. Hizi husaidia tovuti kufanya kazi vizuri.",
+      },
+      {
+        title: "7. Haki zako",
+        body:
+          `Unaweza kusasisha au kufuta data ya akaunti yako kwenye dashibodi. Unaweza pia kuomba ufikiaji, marekebisho, au ufutaji wa data yako binafsi kwa kuwasiliana nasi kupitia ${SUPPORT_EMAIL}.`,
+      },
+      {
+        title: "8. Mabadiliko",
+        body:
+          `Tunaweza kusasisha sera hii. Tarehe ya "imesasishwa mwisho" itawekwa upya. Kuendelea kutumia jukwaa kwenye ${SITE_URL} baada ya mabadiliko kunamaanisha umekubali.`,
+      },
+    ] as Section[],
+  },
 } as const;
 
 export default function PrivacyContent() {
   const { locale, t } = useLocale();
-  const lang = locale === "fr" ? "fr" : "en";
-  const c = content[lang];
+  const lang = (locale === "fr" || locale === "ln" || locale === "sw") ? locale : "en";
+  const c = content[lang as "en" | "fr" | "ln" | "sw"];
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">

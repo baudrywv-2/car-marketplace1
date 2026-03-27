@@ -99,12 +99,104 @@ const content = {
       },
     ] as Section[],
   },
+  ln: {
+    title: "Mibeko ya kosalela",
+    updated: "Ebandeli ya nsuka: Mars 2025",
+    home: "← Accueil",
+    sections: [
+      {
+        title: "1. Kondima",
+        body:
+          'Tango ozali kosalela DRCCARS ("plateforme") na drccars.com, o ndimi mibeko oyo. Plateforme ekangisaka acheteur na vendeur ya mituka na RDC. Tobendaka te motuka; tobombaka ba annonces mpe tosalaka facilitation ya ba rendez-vous.',
+      },
+      {
+        title: "2. Bosaleli ya plateforme",
+        body:
+          "Okoki kotala ba annonces, kobakisa favoris, kofanisa mituka, mpe kosenga rendez-vous na bavendeur. Bavendeur bakoki kotiya mituka mpo na koteka to kokotisa na location sima ya inscription. Ba annonces nyonso esengeli approbation. Esengeli opesa makambo ya solo mpe kosala te makambo ya mabe (spam, ba annonces ya lokuta, to contenu ya bokosi).",
+      },
+      {
+        title: "3. Débloquer contact (na kofuta)",
+        body:
+          "Ba contacts mosusu ya vendeur ekoki kofungwama na kofuta frais na plateforme. Frais oyo ezali ya DRCCARS mpe ekeseni na prix ya motuka. Ba transactions nyonso esalemaka direct entre acheteur na vendeur, libanda ya plateforme.",
+      },
+      {
+        title: "4. Paiement ya motuka te na plateforme",
+        body:
+          "DRCCARS esalaka te paiements ya motuka. Ba transactions nyonso esalemaka direct, libanda ya plateforme. Tozali responsable te mpo na litige ya paiement, fraude, to livraison ya motuka.",
+      },
+      {
+        title: "5. Kosenga rendez-vous",
+        body:
+          "Tango osengi rendez-vous, tokangisaka yo na vendeur to représentant na ye. Visite, inspection, négociation, mpe vente ezali na responsabilité na yo. Soki ekoki, kokutana na bisika ya sécurité mpe public.",
+      },
+      {
+        title: "6. Mibeko ya ba annonces",
+        body:
+          "Vendeur asengeli kotiya kaka motuka oyo azali na droit ya koteka to kopesa na location. Description mpe bilili esengeli kozala ya solo. Tokoki kolongola annonce oyo eviolaka mibeko oyo to mibeko ya mboka.",
+      },
+      {
+        title: "7. Compte",
+        body:
+          "Ozali na responsabilité ya kobatela compte na yo. Kopesa te identifiants na yo. Tokoki kosuspende to kosila compte soki o violi mibeko.",
+      },
+      {
+        title: "8. Contact",
+        body: `Soki ozali na mituna, benga biso na ${SUPPORT_EMAIL} to tala ${SITE_URL}.`,
+      },
+    ] as Section[],
+  },
+  sw: {
+    title: "Masharti na Masharti",
+    updated: "Imesasishwa mwisho: Machi 2025",
+    home: "← Nyumbani",
+    sections: [
+      {
+        title: "1. Kukubali",
+        body:
+          'Kwa kutumia DRCCARS ("jukwaa") kwenye drccars.com, unakubali masharti haya. Jukwaa linaunganisha wanunuzi na wauzaji wa magari nchini DRC. Hatuuzi magari; tunaonyesha matangazo na kusaidia maombi ya mikutano.',
+      },
+      {
+        title: "2. Matumizi ya jukwaa",
+        body:
+          "Unaweza kutazama matangazo, kuhifadhi vipendwa, kulinganisha magari, na kuomba mikutano na wauzaji. Wauzaji wanaweza kuorodhesha magari ya kuuza au kukodisha baada ya kujisajili. Matangazo yote yanahitaji idhini. Lazima utoe taarifa sahihi na usitumie vibaya jukwaa (mf. spam, matangazo bandia, au taarifa za kupotosha).",
+      },
+      {
+        title: "3. Kulipia kufungua mawasiliano",
+        body:
+          "Baadhi ya mawasiliano ya muuzaji yanaweza kufunguliwa kwa kulipa ada kupitia jukwaa. Ada hii inatozwa na DRCCARS na ni tofauti na ununuzi wa gari. Manunuzi yote ya magari hufanyika moja kwa moja kati ya mnunuzi na muuzaji, nje ya jukwaa.",
+      },
+      {
+        title: "4. Hakuna malipo ya gari ndani ya jukwaa",
+        body:
+          "DRCCARS haisindikizi malipo ya magari. Manunuzi yote hufanyika moja kwa moja kati ya mnunuzi na muuzaji, nje ya jukwaa. Hatuwajibiki kwa migogoro ya malipo, udanganyifu, au uwasilishaji wa gari.",
+      },
+      {
+        title: "5. Maombi ya mkutano",
+        body:
+          "Unapoomba mkutano, tunakuunganisha na muuzaji au mwakilishi wake. Ziara, ukaguzi, mazungumzo, na mauzo ni jukumu lako. Pendelea maeneo salama na ya umma inapowezekana.",
+      },
+      {
+        title: "6. Sheria za matangazo",
+        body:
+          "Wauzaji lazima waorodheshe magari ambayo wana haki ya kuuza au kukodisha. Maelezo na picha lazima ziwe sahihi. Tunaweza kuondoa matangazo yanayokiuka sheria hizi au sheria husika.",
+      },
+      {
+        title: "7. Akaunti",
+        body:
+          "Unawajibika kulinda akaunti yako. Usishiriki taarifa zako za kuingia. Tunaweza kusimamisha au kufunga akaunti zinazokiuka masharti haya.",
+      },
+      {
+        title: "8. Mawasiliano",
+        body: `Kwa maswali kuhusu masharti haya, wasiliana nasi kupitia ${SUPPORT_EMAIL} au tembelea ${SITE_URL}.`,
+      },
+    ] as Section[],
+  },
 } as const;
 
 export default function TermsContent() {
   const { locale, t } = useLocale();
-  const lang = locale === "fr" ? "fr" : "en";
-  const c = content[lang];
+  const lang = (locale === "fr" || locale === "ln" || locale === "sw") ? locale : "en";
+  const c = content[lang as "en" | "fr" | "ln" | "sw"];
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
