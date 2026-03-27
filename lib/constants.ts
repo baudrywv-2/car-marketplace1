@@ -100,6 +100,11 @@ export const LISTING_TYPE_TRANSLATION_KEYS: Record<ListingType, string> = {
 
 /** Car features (amenities/equipment) – select multiple per listing */
 export const CAR_FEATURES = [
+  { id: "dgda_documents", labelEn: "DGDA documents" },
+  { id: "carte_rose", labelEn: "Carte rose" },
+  { id: "has_some_issues", labelEn: "A quelques pannes" },
+  { id: "recent_technical_inspection", labelEn: "Recent controle technique" },
+  { id: "insurance_available", labelEn: "Assurance" },
   { id: "cd_player", labelEn: "CD Player" },
   { id: "sun_roof", labelEn: "Sun Roof" },
   { id: "leather_seat", labelEn: "Leather Seat" },
