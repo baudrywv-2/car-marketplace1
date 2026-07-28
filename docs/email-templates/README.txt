@@ -1,28 +1,28 @@
-SUPABASE EMAIL TEMPLATES – COPY-PASTE
-=====================================
+SUPABASE EMAIL TEMPLATES – DRCCARS (premium)
+============================================
 
-Where to paste: Supabase Dashboard → Authentication → Email Templates.
+Emails are sent by Supabase Auth. Update templates in:
+  Supabase Dashboard → Authentication → Email Templates
 
-For each template in Supabase, do this:
+LOGO (hosted on the site after deploy):
+  https://www.drccars.com/email-logo.png
+  (file in repo: public/email-logo.png — wheel monogram)
 
-1. CONFIRM SIGNUP
-   - Open the "Confirm signup" template.
-   - Subject: copy from 1-confirm-signup-subject.txt → paste into Subject.
-   - Body: open 1-confirm-signup-body.html, Select All (Ctrl+A / Cmd+A), Copy, paste into Body.
-   - Save. Do NOT change {{ .ConfirmationURL }} in the body.
+1) CONFIRM SIGNUP
+   Subject: 1-confirm-signup-subject.txt
+   Body:    1-confirm-signup-body.html   (keep {{ .ConfirmationURL }})
 
-2. RESET PASSWORD
-   - Open the "Reset password" template.
-   - Subject: copy from 2-reset-password-subject.txt → paste into Subject.
-   - Body: open 2-reset-password-body.html, Select All, Copy, paste into Body.
-   - Save. Do NOT change {{ .ConfirmationURL }}.
+2) RESET PASSWORD
+   Subject: 2-reset-password-subject.txt
+   Body:    2-reset-password-body.html   (keep {{ .ConfirmationURL }})
 
-3. MAGIC LINK
-   - Open the "Magic link" template.
-   - Subject: copy from 3-magic-link-subject.txt → paste into Subject.
-   - Body: open 3-magic-link-body.html, Select All, Copy, paste into Body.
-   - Save. Do NOT change {{ .ConfirmationURL }}.
+3) MAGIC LINK
+   Subject: 3-magic-link-subject.txt
+   Body:    3-magic-link-body.html       (keep {{ .ConfirmationURL }})
 
-Done.
+Steps:
+  1. Deploy / push so email-logo.png is live on drccars.com
+  2. Open each template in Supabase → paste Subject + Body → Save
+  3. Send a test signup to verify logo + French copy
 
-LOGO: Templates use https://drccars.com/logo.png. If your logo is elsewhere, replace that URL in all three *-body.html files (and in Supabase if you already pasted). No logo? Replace the <img> line with: <h2 style="color: #fafafa; margin: 0;">DRC Cars</h2>
+Optional: Authentication → Email → also set Sender name to "DRCCARS"

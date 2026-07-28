@@ -1,11 +1,59 @@
-<div style="font-family: system-ui, sans-serif; background: #09090b; color: #fafafa; padding: 32px 24px; max-width: 480px; margin: 0 auto;">
-  <div style="text-align: center; margin-bottom: 24px;">
-    <img src="https://drccars.com/logo.png" alt="DRC Cars" width="120" height="40" style="height: 40px; width: auto;" />
-  </div>
-  <h1 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 16px;">Sign in to DRC Cars</h1>
-  <p style="color: #a1a1aa; margin-bottom: 24px; line-height: 1.5;">Click the button below to log in. This link will expire soon.</p>
-  <p style="text-align: center; margin: 24px 0;">
-    <a href="{{ .ConfirmationURL }}" style="display: inline-block; background: #eab308; color: #09090b; padding: 12px 24px; text-decoration: none; font-weight: 600; border-radius: 6px;">Log in</a>
-  </p>
-  <p style="font-size: 12px; color: #71717a;">If you didn't request this, you can ignore this email.</p>
-</div>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Lien de connexion — DRCCARS</title>
+</head>
+<body style="margin:0;padding:0;background:#0a0a0b;-webkit-text-size-adjust:100%;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#0a0a0b;padding:32px 12px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:520px;background:#121214;border:1px solid #27272a;border-radius:12px;overflow:hidden;">
+          <tr>
+            <td style="height:4px;background:#eab308;font-size:0;line-height:0;">&nbsp;</td>
+          </tr>
+          <tr>
+            <td align="center" style="padding:28px 28px 8px 28px;">
+              <img src="https://www.drccars.com/email-logo.png" alt="DRCCARS" width="72" height="72" style="display:block;width:72px;height:72px;border:0;outline:none;" />
+              <p style="margin:14px 0 0 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;letter-spacing:0.18em;font-weight:700;color:#fafafa;">DRCCARS</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:20px 28px 8px 28px;font-family:Arial,Helvetica,sans-serif;color:#fafafa;">
+              <h1 style="margin:0 0 12px 0;font-size:22px;line-height:1.25;font-weight:700;color:#fafafa;">Connexion à DRCCARS</h1>
+              <p style="margin:0 0 10px 0;font-size:14px;line-height:1.55;color:#d4d4d8;">
+                Cliquez sur le bouton ci-dessous pour vous connecter. Ce lien expire rapidement.
+              </p>
+              <p style="margin:0 0 22px 0;font-size:12px;line-height:1.5;color:#71717a;">
+                Click below to sign in. This link will expire soon.
+              </p>
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="margin:0 auto 22px auto;">
+                <tr>
+                  <td align="center" bgcolor="#eab308" style="border-radius:6px;">
+                    <a href="{{ .ConfirmationURL }}" style="display:inline-block;padding:14px 28px;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:700;color:#09090b;text-decoration:none;border-radius:6px;">
+                      Se connecter
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin:0 0 8px 0;font-size:12px;line-height:1.5;color:#71717a;">Lien alternatif&nbsp;:</p>
+              <p style="margin:0 0 20px 0;font-size:11px;line-height:1.45;word-break:break-all;">
+                <a href="{{ .ConfirmationURL }}" style="color:#eab308;text-decoration:underline;">{{ .ConfirmationURL }}</a>
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:16px 28px 24px 28px;border-top:1px solid #27272a;font-family:Arial,Helvetica,sans-serif;">
+              <p style="margin:0 0 6px 0;font-size:11px;line-height:1.45;color:#71717a;">
+                Si vous n’avez pas demandé ce lien, ignorez cet email.
+              </p>
+              <p style="margin:0;font-size:11px;color:#52525b;">© DRCCARS · <a href="https://www.drccars.com" style="color:#52525b;text-decoration:none;">drccars.com</a></p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
