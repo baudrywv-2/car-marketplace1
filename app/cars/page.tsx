@@ -64,7 +64,9 @@ const DISCOUNT_RANGES = [
   { key: "discount30" as const, min: 30 },
 ];
 
-const PAGE_SIZE_OPTIONS = [24, 48, 100, 200, 300, 400, 500] as const;
+const PAGE_SIZE_OPTIONS = [24, 48, 96] as const;
+/** Cap catalog payload so browse stays fast as inventory grows */
+const CARS_FETCH_LIMIT = 120;
 
 function FilterBlock({
   title,
@@ -293,7 +295,8 @@ function CarsPageContent() {
 
       const { data: carsData, error } = await query
         .order("boost_score", { ascending: false, nullsFirst: false })
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .limit(CARS_FETCH_LIMIT);
       if (error) {
         console.error("[cars] Supabase filter error:", error);
       }
@@ -309,6 +312,8 @@ function CarsPageContent() {
         const map: Record<string, Profile> = {};
         (profilesData ?? []).forEach((p) => { map[p.id] = p; });
         setProfiles(map);
+      } else {
+        setProfiles({});
       }
       const hasFilters = !!(debouncedKeyword.trim() || make || province || type || priceRange || discountRange || transmission || fuelType || minPrice || maxPrice || listingType);
       if (hasFilters) {

@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { Bebas_Neue, JetBrains_Mono, Inter, Orbitron } from "next/font/google";
 import "./globals.css";
 import ClientLayout from "./components/ClientLayout";
 import JsonLd from "./components/JsonLd";
 import { SITE_URL } from "@/lib/constants";
+import { translations, type Locale } from "@/lib/translations";
+import type { Currency } from "@/lib/constants";
 
 const fontSans = Inter({
   variable: "--font-sans",
@@ -15,7 +18,7 @@ const fontSans = Inter({
 const fontMono = JetBrains_Mono({
   variable: "--font-mono",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["400", "500", "700"],
   display: "swap",
 });
 
@@ -29,7 +32,7 @@ const fontLogo = Bebas_Neue({
 const fontDisplay = Orbitron({
   variable: "--font-display",
   subsets: ["latin"],
-  weight: ["500", "600", "700", "800"],
+  weight: ["600", "700"],
   display: "swap",
 });
 
@@ -77,16 +80,34 @@ export const metadata: Metadata = {
 
 export const viewport = { width: "device-width", initialScale: 1, viewportFit: "cover" as const };
 
-export default function RootLayout({
+function resolveLocale(raw: string | undefined): Locale {
+  return raw && raw in translations ? (raw as Locale) : "fr";
+}
+
+function resolveCurrency(raw: string | undefined): Currency {
+  return raw === "CDF" ? "CDF" : "USD";
+}
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cookieStore = await cookies();
+  const initialLocale = resolveLocale(cookieStore.get("car-mkt-locale")?.value);
+  const initialCurrency = resolveCurrency(cookieStore.get("car-mkt-currency")?.value);
+  const htmlLang =
+    initialLocale === "ln" ? "ln" : initialLocale === "sw" ? "sw" : initialLocale;
+
   return (
-    <html lang="fr">
-      <body className={`${fontSans.variable} ${fontMono.variable} ${fontLogo.variable} ${fontDisplay.variable} font-sans antialiased`}>
+    <html lang={htmlLang}>
+      <body
+        className={`${fontSans.variable} ${fontMono.variable} ${fontLogo.variable} ${fontDisplay.variable} font-sans antialiased`}
+      >
         <JsonLd />
-        <ClientLayout>{children}</ClientLayout>
+        <ClientLayout initialLocale={initialLocale} initialCurrency={initialCurrency}>
+          {children}
+        </ClientLayout>
       </body>
     </html>
   );

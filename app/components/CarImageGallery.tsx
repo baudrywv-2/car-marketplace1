@@ -3,6 +3,7 @@
 import { useState } from "react";
 import OptimizedCarImage from "./OptimizedCarImage";
 import CarImagePlaceholder from "./CarImagePlaceholder";
+import { useLocale } from "@/app/contexts/LocaleContext";
 
 type Props = {
   images: string[];
@@ -10,6 +11,7 @@ type Props = {
 };
 
 export default function CarImageGallery({ images, title }: Props) {
+  const { t } = useLocale();
   const [active, setActive] = useState(0);
   const list = images?.filter(Boolean) ?? [];
 
@@ -31,7 +33,7 @@ export default function CarImageGallery({ images, title }: Props) {
               type="button"
               onClick={() => setActive((a) => (a === 0 ? list.length - 1 : a - 1))}
               className="absolute left-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/50 text-white transition hover:bg-black/70"
-              aria-label="Previous image"
+              aria-label={t("galleryPrev")}
             >
               <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -41,7 +43,7 @@ export default function CarImageGallery({ images, title }: Props) {
               type="button"
               onClick={() => setActive((a) => (a === list.length - 1 ? 0 : a + 1))}
               className="absolute right-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/50 text-white transition hover:bg-black/70"
-              aria-label="Next image"
+              aria-label={t("galleryNext")}
             >
               <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />

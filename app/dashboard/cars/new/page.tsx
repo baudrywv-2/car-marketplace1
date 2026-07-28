@@ -165,7 +165,7 @@ export default function NewCarPage() {
 
     const { data: { user: u } } = await supabase.auth.getUser();
     if (!u || !isVerified(u)) {
-      setError("You must verify your email to list a car.");
+      setError(t("verifyEmailToAdd"));
       setSubmitting(false);
       return;
     }
@@ -216,7 +216,7 @@ export default function NewCarPage() {
 
     const { data: { user: u } } = await supabase.auth.getUser();
     if (!u || !isVerified(u)) {
-      setError("You must verify your email to list a car.");
+      setError(t("verifyEmailToAdd"));
       setSubmitting(false);
       return;
     }

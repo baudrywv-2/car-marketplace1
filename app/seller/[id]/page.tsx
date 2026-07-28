@@ -70,20 +70,22 @@ export default function SellerListingsPage() {
     }
     async function load() {
       setLoading(true);
-      const { data: profileData } = await supabase
-        .from("profiles")
-        .select("id, full_name, company_name")
-        .eq("id", id)
-        .single();
+      const [{ data: profileData }, { data: carsData }] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select("id, full_name, company_name")
+          .eq("id", id)
+          .single(),
+        supabase
+          .from("cars")
+          .select("id, title, price, make, model, year, condition, currency, images, listing_type, rental_price_per_hour, rental_price_per_day, rental_price_per_week, rental_price_per_month, rental_currency")
+          .eq("owner_id", id)
+          .eq("is_approved", true)
+          .eq("is_draft", false)
+          .order("created_at", { ascending: false })
+          .limit(96),
+      ]);
       setProfile((profileData as Profile) ?? null);
-
-      const { data: carsData } = await supabase
-        .from("cars")
-        .select("id, title, price, make, model, year, condition, currency, images, listing_type, rental_price_per_hour, rental_price_per_day, rental_price_per_week, rental_price_per_month, rental_currency")
-        .eq("owner_id", id)
-        .eq("is_approved", true)
-        .eq("is_draft", false)
-        .order("created_at", { ascending: false });
       setCars((carsData as Car[]) ?? []);
       setLoading(false);
     }

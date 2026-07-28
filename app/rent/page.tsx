@@ -106,7 +106,7 @@ function RentPageContent() {
         query = query.or(`title.ilike.${pat},make.ilike.${pat},model.ilike.${pat}`);
       }
 
-      const { data } = await query.order("created_at", { ascending: false });
+      const { data } = await query.order("created_at", { ascending: false }).limit(96);
       setCars((data as RentalCar[]) ?? []);
       const hasFilters = !!(eventType || province || keyword.trim());
       if (hasFilters) {

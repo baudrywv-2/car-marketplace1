@@ -47,10 +47,17 @@ function ConfirmEmailForm() {
       router.refresh();
     });
 
-    const interval = window.setInterval(redirectIfSession, 4000);
+    // Light polling as backup (auth listener is primary); backoff via longer interval
+    const interval = window.setInterval(redirectIfSession, 12000);
+    const onFocus = () => { void redirectIfSession(); };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") void redirectIfSession();
+    });
     return () => {
       cancelled = true;
       window.clearInterval(interval);
+      window.removeEventListener("focus", onFocus);
       sub.subscription.unsubscribe();
     };
   }, [router, role]);

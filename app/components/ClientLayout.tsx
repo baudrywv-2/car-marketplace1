@@ -6,6 +6,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LocaleProvider, useLocale } from "@/app/contexts/LocaleContext";
 import { ToastProvider } from "@/app/contexts/ToastContext";
+import type { Locale } from "@/lib/translations";
+import type { Currency } from "@/lib/constants";
 import AuthNav from "./AuthNav";
 import CookieNotice from "./CookieNotice";
 import LogVisit from "./LogVisit";
@@ -15,8 +17,10 @@ import Logo from "./Logo";
 function AnimatedMain({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   return (
-    <main key={pathname} className="animate-page-enter flex min-w-0 flex-1 flex-col overflow-x-hidden">
-      {children}
+    <main className="flex min-w-0 flex-1 flex-col overflow-x-hidden">
+      <div key={pathname} className="animate-page-enter flex min-w-0 flex-1 flex-col">
+        {children}
+      </div>
     </main>
   );
 }
@@ -246,9 +250,17 @@ function Footer() {
   );
 }
 
-export default function ClientLayout({ children }: { children: React.ReactNode }) {
+export default function ClientLayout({
+  children,
+  initialLocale = "fr",
+  initialCurrency = "USD",
+}: {
+  children: React.ReactNode;
+  initialLocale?: Locale;
+  initialCurrency?: Currency;
+}) {
   return (
-    <LocaleProvider>
+    <LocaleProvider initialLocale={initialLocale} initialCurrency={initialCurrency}>
       <ToastProvider>
         <div className="flex min-h-dvh flex-col">
           <Header />

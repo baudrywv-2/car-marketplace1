@@ -29,7 +29,7 @@ export default function ImageUpload({ value, onChange, disabled }: Props) {
 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-      setUploadError("Log in to upload images.");
+      setUploadError(t("loginToUploadImages"));
       setUploading(false);
       return;
     }
@@ -42,7 +42,7 @@ export default function ImageUpload({ value, onChange, disabled }: Props) {
       const file = files[i];
       if (!file?.type.startsWith("image/")) continue;
       if (file.size > MAX_SIZE_MB * 1024 * 1024) {
-        setUploadError(`Image too large (max ${MAX_SIZE_MB} MB each).`);
+        setUploadError(t("imageTooLarge").replace("{n}", String(MAX_SIZE_MB)));
         continue;
       }
 
@@ -80,7 +80,7 @@ export default function ImageUpload({ value, onChange, disabled }: Props) {
     const url = pasteUrl.trim();
     if (!url || value.length >= MAX_IMAGES) return;
     if (!url.startsWith("http://") && !url.startsWith("https://")) {
-      setUploadError("Enter a valid URL starting with http:// or https://");
+      setUploadError(t("enterValidImageUrl"));
       return;
     }
     onChange([...value, url].slice(0, MAX_IMAGES));

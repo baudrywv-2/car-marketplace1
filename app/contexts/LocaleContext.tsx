@@ -1,11 +1,24 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { createContext, useContext, useState, useCallback, useEffect } from "react";
 import { translations, type Locale } from "@/lib/translations";
 import type { Currency } from "@/lib/constants";
 
 const LOCALE_KEY = "car-mkt-locale";
 const CURRENCY_KEY = "car-mkt-currency";
+const COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
+
+function isLocale(v: string | undefined | null): v is Locale {
+  return !!v && v in translations;
+}
+
+function writeCookie(name: string, value: string) {
+  document.cookie = `${name}=${encodeURIComponent(value)};path=/;max-age=${COOKIE_MAX_AGE};SameSite=Lax`;
+}
+
+function setDocumentLang(l: Locale) {
+  document.documentElement.lang = l === "ln" ? "ln" : l === "sw" ? "sw" : l;
+}
 
 type LocaleContextType = {
   locale: Locale;
@@ -17,54 +30,66 @@ type LocaleContextType = {
 
 const LocaleContext = createContext<LocaleContextType | null>(null);
 
-export function LocaleProvider({ children }: { children: React.ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>("fr");
-  const [currency, setCurrencyState] = useState<Currency>("USD");
-  const [mounted, setMounted] = useState(false);
+type ProviderProps = {
+  children: React.ReactNode;
+  initialLocale?: Locale;
+  initialCurrency?: Currency;
+};
 
+export function LocaleProvider({
+  children,
+  initialLocale = "fr",
+  initialCurrency = "USD",
+}: ProviderProps) {
+  const [locale, setLocaleState] = useState<Locale>(
+    isLocale(initialLocale) ? initialLocale : "fr"
+  );
+  const [currency, setCurrencyState] = useState<Currency>(
+    initialCurrency === "CDF" ? "CDF" : "USD"
+  );
+
+  // Sync from localStorage once if cookie wasn't set yet (older clients)
   useEffect(() => {
-    const l = (localStorage.getItem(LOCALE_KEY) as Locale) || "fr";
-    const c = (localStorage.getItem(CURRENCY_KEY) as Currency) || "USD";
-    const locale = l in translations ? l : "fr";
-    setLocaleState(locale);
-    setCurrencyState(c === "CDF" ? "CDF" : "USD");
-    document.documentElement.lang = locale === "ln" ? "ln" : locale === "sw" ? "sw" : locale;
-    setMounted(true);
+    const storedLocale = localStorage.getItem(LOCALE_KEY);
+    const storedCurrency = localStorage.getItem(CURRENCY_KEY);
+    if (isLocale(storedLocale) && storedLocale !== locale) {
+      setLocaleState(storedLocale);
+      writeCookie(LOCALE_KEY, storedLocale);
+      setDocumentLang(storedLocale);
+    } else {
+      writeCookie(LOCALE_KEY, locale);
+      setDocumentLang(locale);
+    }
+    if (storedCurrency === "CDF" || storedCurrency === "USD") {
+      if (storedCurrency !== currency) setCurrencyState(storedCurrency);
+      writeCookie(CURRENCY_KEY, storedCurrency);
+    } else {
+      writeCookie(CURRENCY_KEY, currency);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one-time hydrate sync
   }, []);
 
   const setLocale = useCallback((l: Locale) => {
     setLocaleState(l);
-    if (typeof window !== "undefined") {
-      localStorage.setItem(LOCALE_KEY, l);
-      document.documentElement.lang = l === "ln" ? "ln" : l === "sw" ? "sw" : l;
-    }
+    localStorage.setItem(LOCALE_KEY, l);
+    writeCookie(LOCALE_KEY, l);
+    setDocumentLang(l);
   }, []);
 
   const setCurrency = useCallback((c: Currency) => {
     setCurrencyState(c);
-    if (typeof window !== "undefined") localStorage.setItem(CURRENCY_KEY, c);
+    localStorage.setItem(CURRENCY_KEY, c);
+    writeCookie(CURRENCY_KEY, c);
   }, []);
 
   const t = useCallback(
-    (key: keyof typeof translations.en) => translations[locale][key] ?? translations.en[key],
+    (key: keyof typeof translations.en) => {
+      const local = translations[locale][key];
+      const en = translations.en[key];
+      return (local && String(local).trim()) || en || String(key);
+    },
     [locale]
   );
-
-  if (!mounted) {
-    return (
-      <LocaleContext.Provider
-        value={{
-          locale: "fr",
-          setLocale,
-          currency: "USD",
-          setCurrency,
-          t: (key) => translations.fr[key] ?? translations.en[key],
-        }}
-      >
-        {children}
-      </LocaleContext.Provider>
-    );
-  }
 
   return (
     <LocaleContext.Provider value={{ locale, setLocale, currency, setCurrency, t }}>

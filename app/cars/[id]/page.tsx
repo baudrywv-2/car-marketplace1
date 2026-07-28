@@ -152,41 +152,46 @@ export default function CarDetailPage() {
       const { data } = await query.single();
       const carData = data as Car | null;
       setCar(carData);
-      if (carData?.make) {
-        const { data: similarData } = await supabase
-          .from("cars")
-          .select("id, title, price, currency, images, year, condition, is_sold")
-          .eq("make", carData.make)
-          .eq("is_approved", true)
-          .eq("is_draft", false)
-          .neq("id", carData.id)
-          .order("created_at", { ascending: false })
-          .limit(4);
-        setSimilarCars((similarData as SimilarCar[] | null) ?? []);
-      } else {
-        setSimilarCars([]);
-      }
-      if (carData?.owner_id) {
-        const { data: prof } = await supabase
-          .from("profiles")
-          .select("company_name, city, avatar_url")
-          .eq("id", carData.owner_id)
-          .maybeSingle();
-        setSellerProfile(prof ?? null);
-      }
-      const { data: verData } = await supabase.rpc("get_seller_verification", { p_car_id: id });
-      const ver = Array.isArray(verData) && verData[0] ? verData[0] : null;
-      setSellerVerification(ver);
       setLoading(false);
 
+      if (!carData) return;
+
+      const similarPromise = carData.make
+        ? supabase
+            .from("cars")
+            .select("id, title, price, currency, images, year, condition, is_sold")
+            .eq("make", carData.make)
+            .eq("is_approved", true)
+            .eq("is_draft", false)
+            .neq("id", carData.id)
+            .order("created_at", { ascending: false })
+            .limit(4)
+        : Promise.resolve({ data: null });
+
+      const profilePromise = carData.owner_id
+        ? supabase
+            .from("profiles")
+            .select("company_name, city, avatar_url")
+            .eq("id", carData.owner_id)
+            .maybeSingle()
+        : Promise.resolve({ data: null });
+
+      const verificationPromise = supabase.rpc("get_seller_verification", { p_car_id: id });
+
+      const [similarRes, profileRes, verRes] = await Promise.all([
+        similarPromise,
+        profilePromise,
+        verificationPromise,
+      ]);
+
+      setSimilarCars((similarRes.data as SimilarCar[] | null) ?? []);
+      setSellerProfile(profileRes.data ?? null);
+      const verData = verRes.data;
+      const ver = Array.isArray(verData) && verData[0] ? verData[0] : null;
+      setSellerVerification(ver);
+
       if (!isPreview) {
-        try {
-          await supabase.from("car_views").insert({
-            car_id: id,
-          });
-        } catch {
-          // ignore
-        }
+        void supabase.from("car_views").insert({ car_id: id }).then(() => undefined, () => undefined);
       }
     }
     load();
@@ -485,7 +490,7 @@ export default function CarDetailPage() {
                   <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--accent)]">{t("sellerContact")}</p>
                   {contact.owner_whatsapp && (
                     <a
-                      href={`https://wa.me/${contact.owner_whatsapp.replace(/\D/g, "")}?text=${encodeURIComponent(`Hi, I'm interested in your car: ${car.title}`)}`}
+                      href={`https://wa.me/${contact.owner_whatsapp.replace(/\D/g, "")}?text=${encodeURIComponent(t("whatsappCarInterest").replace("{title}", car.title))}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="btn-accent inline-flex items-center gap-2"

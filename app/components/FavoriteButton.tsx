@@ -45,7 +45,7 @@ export default function FavoriteButton({ carId, isFav, onToggle, loggedIn, class
           toast.success(t("removedFromFavorites"));
         } else {
           const msg = (data as { error?: string }).error;
-          toast.error(msg === "Unauthorized" ? (t("pleaseLogInAgain") ?? "Please log in again to manage favorites.") : (msg || "Could not remove from favorites"));
+          toast.error(msg === "Unauthorized" ? t("pleaseLogInAgain") : (msg || t("pleaseLogInAgain")));
         }
       } else {
         const res = await fetch("/api/favorites", {
@@ -60,7 +60,7 @@ export default function FavoriteButton({ carId, isFav, onToggle, loggedIn, class
           toast.success(t("addedToFavorites"));
         } else {
           const msg = (data as { error?: string }).error;
-          toast.error(msg === "Unauthorized" ? (t("pleaseLogInAgain") ?? "Please log in again to save favorites.") : (msg || "Could not add to favorites"));
+          toast.error(msg === "Unauthorized" ? t("pleaseLogInAgain") : (msg || t("pleaseLogInAgain")));
         }
       }
     } finally {

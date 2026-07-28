@@ -70,7 +70,7 @@ export default function FAQPage() {
 
       <p className="mt-10">
         <Link href="/" className="link-accent text-small font-medium">
-          ← Back to home
+          {t("backToHome")}
         </Link>
       </p>
     </div>

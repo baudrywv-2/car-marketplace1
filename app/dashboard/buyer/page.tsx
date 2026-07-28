@@ -107,6 +107,8 @@ export default function BuyerDashboardPage() {
         { count: favCount },
         { count: unlockCount },
         { data: rdvData },
+        { data: msgData },
+        { data: notifData },
       ] = await Promise.all([
         supabase.from("favorites").select("id", { count: "exact", head: true }).eq("user_id", user.id),
         supabase.from("contact_unlocks").select("id", { count: "exact", head: true }).eq("buyer_id", user.id),
@@ -115,25 +117,23 @@ export default function BuyerDashboardPage() {
           .select("id, car_id, intent, status, created_at, suggested_price, cars(title, listing_type)")
           .eq("buyer_id", user.id)
           .order("created_at", { ascending: false }),
+        supabase
+          .from("admin_messages")
+          .select("id, subject, body, created_at")
+          .eq("target_audience", "buyers")
+          .order("created_at", { ascending: false })
+          .limit(5),
+        supabase
+          .from("user_notifications")
+          .select("id, type, car_id, title, body, read_at, created_at")
+          .order("created_at", { ascending: false })
+          .limit(10),
       ]);
 
       setFavoritesCount(favCount ?? 0);
       setUnlocksCount(unlockCount ?? 0);
       setRdvRequests((rdvData as unknown as RdvRequest[]) ?? []);
-
-      const { data: msgData } = await supabase
-        .from("admin_messages")
-        .select("id, subject, body, created_at")
-        .eq("target_audience", "buyers")
-        .order("created_at", { ascending: false })
-        .limit(5);
       setAdminMessages((msgData ?? []) as { id: string; subject: string; body: string; created_at: string }[]);
-
-      const { data: notifData } = await supabase
-        .from("user_notifications")
-        .select("id, type, car_id, title, body, read_at, created_at")
-        .order("created_at", { ascending: false })
-        .limit(10);
       setNotifications((notifData ?? []) as { id: string; type: string; car_id: string; title: string; body: string | null; read_at: string | null; created_at: string }[]);
 
       setLoading(false);
