@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
@@ -8,6 +8,8 @@ import { useLocale } from "@/app/contexts/LocaleContext";
 import { isValidDRCPhone } from "@/lib/phone-validation";
 import { syncSellerProfileFromAuth } from "@/lib/seller-profile";
 import { DRC_LOCATIONS } from "@/lib/constants";
+
+const AVATAR_MAX_MB = 3;
 
 type Profile = {
   id: string;
@@ -30,6 +32,7 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [successKey, setSuccessKey] = useState<"contactSaved" | "avatarSaved">("contactSaved");
   const [error, setError] = useState("");
   const [profile, setProfile] = useState<Profile | null>(null);
   const [fullName, setFullName] = useState("");
@@ -42,6 +45,7 @@ export default function SettingsPage() {
   const [bio, setBio] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     async function load() {
@@ -123,6 +127,7 @@ export default function SettingsPage() {
       return;
     }
     setSuccess(true);
+    setSuccessKey("contactSaved");
     setProfile((prev) =>
       prev
         ? {
@@ -140,23 +145,69 @@ export default function SettingsPage() {
     );
   }
 
+  async function persistAvatarUrl(nextUrl: string | null) {
+    if (!profile) return;
+    const { error: err } = await supabase
+      .from("profiles")
+      .update({ avatar_url: nextUrl })
+      .eq("id", profile.id);
+    if (err) throw new Error(err.message);
+    setAvatarUrl(nextUrl);
+    setProfile((prev) => (prev ? { ...prev, avatar_url: nextUrl } : prev));
+  }
+
   async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
+    e.target.value = "";
     if (!file || !profile) return;
+
+    setError("");
+    setSuccess(false);
+
+    if (!file.type.startsWith("image/")) {
+      setError(t("avatarUploadFailed"));
+      return;
+    }
+    if (file.size > AVATAR_MAX_MB * 1024 * 1024) {
+      setError(t("imageTooLarge").replace("{n}", String(AVATAR_MAX_MB)));
+      return;
+    }
+
     try {
       setAvatarUploading(true);
-      const ext = file.name.split(".").pop();
-      const path = `${profile.id}/${Date.now()}.${ext ?? "png"}`;
-      const { error: uploadError } = await supabase.storage.from("avatars").upload(path, file, {
+      const ext = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
+      // Use existing car-images bucket + user folder RLS (avatars bucket does not exist)
+      const path = `users/${profile.id}/avatar/${Date.now()}.${ext}`;
+      const { error: uploadError } = await supabase.storage.from("car-images").upload(path, file, {
         upsert: true,
+        contentType: file.type || "image/jpeg",
       });
       if (uploadError) {
-        setError(uploadError.message);
+        setError(uploadError.message || t("avatarUploadFailed"));
         return;
       }
-      const { data } = supabase.storage.from("avatars").getPublicUrl(path);
-      setAvatarUrl(data.publicUrl);
-      setSuccess(false);
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("car-images").getPublicUrl(path);
+      await persistAvatarUrl(publicUrl);
+      setSuccessKey("avatarSaved");
+      setSuccess(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t("avatarUploadFailed"));
+    } finally {
+      setAvatarUploading(false);
+    }
+  }
+
+  async function handleRemoveAvatar() {
+    if (!profile || !avatarUrl) return;
+    setError("");
+    setSuccess(false);
+    try {
+      setAvatarUploading(true);
+      await persistAvatarUrl(null);
+      setSuccessKey("avatarSaved");
+      setSuccess(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : t("avatarUploadFailed"));
     } finally {
@@ -183,21 +234,57 @@ export default function SettingsPage() {
       <p className="mt-2 text-body text-[var(--muted-foreground)]">{t("contactSettingsDesc")}</p>
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-5">
-        <div className="flex items-center gap-4">
-          <div className="h-16 w-16 overflow-hidden rounded-full border border-[var(--border)] bg-[var(--border)]">
-            {avatarUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={avatarUrl} alt={fullName || "Avatar"} className="h-full w-full object-cover" />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center text-[12px] text-[var(--muted-foreground)]">
-                {fullName?.[0]?.toUpperCase() ?? "?"}
+        <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4">
+          <p className="mb-3 text-caption font-medium text-[var(--foreground)]">{t("profilePhoto")}</p>
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="relative h-20 w-20 overflow-hidden rounded-full border border-[var(--border)] bg-[var(--border)]">
+              {avatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={avatarUrl} alt={fullName || t("profilePhoto")} className="h-full w-full object-cover" />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-lg font-semibold text-[var(--muted-foreground)]">
+                  {fullName?.[0]?.toUpperCase() ?? "?"}
+                </div>
+              )}
+              {avatarUploading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/55 text-[10px] text-white">
+                  {t("uploading")}
+                </div>
+              )}
+            </div>
+            <div className="flex min-w-0 flex-1 flex-col gap-2">
+              <input
+                ref={avatarInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                onChange={handleAvatarChange}
+                className="sr-only"
+                disabled={avatarUploading}
+              />
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  disabled={avatarUploading}
+                  onClick={() => avatarInputRef.current?.click()}
+                  className="btn-secondary min-h-10 px-3 text-[11px] disabled:opacity-50"
+                >
+                  {avatarUrl ? t("changePhoto") : t("choosePhoto")}
+                </button>
+                {avatarUrl && (
+                  <button
+                    type="button"
+                    disabled={avatarUploading}
+                    onClick={handleRemoveAvatar}
+                    className="min-h-10 rounded-[var(--radius)] border border-[var(--border)] px-3 text-[11px] text-[var(--muted-foreground)] transition-colors hover:border-[var(--border-strong)] hover:text-[var(--foreground)] disabled:opacity-50"
+                  >
+                    {t("removePhoto")}
+                  </button>
+                )}
               </div>
-            )}
-          </div>
-          <div className="space-y-1">
-            <label className="text-caption font-medium text-[var(--foreground)]">{t("profilePhoto")}</label>
-            <input type="file" accept="image/*" onChange={handleAvatarChange} className="text-[11px] text-[var(--muted-foreground)]" />
-            {avatarUploading && <p className="text-[10px] text-[var(--muted-foreground)]">{t("uploading")}</p>}
+              <p className="text-[10px] text-[var(--muted-foreground)]">
+                JPG, PNG, WebP · {t("imageTooLarge").replace("{n}", String(AVATAR_MAX_MB))}
+              </p>
+            </div>
           </div>
         </div>
 
@@ -266,7 +353,7 @@ export default function SettingsPage() {
               type="text"
               value={companyName}
               onChange={(e) => setCompanyName(e.target.value)}
-              placeholder={accountType === "company" ? "e.g. Auto Kinshasa" : "e.g. Jean Motors"}
+              placeholder={accountType === "company" ? t("companyBrandPlaceholder") : t("tradingAsPlaceholder")}
               className="input-premium w-full"
               required={accountType === "company"}
             />
@@ -306,7 +393,7 @@ export default function SettingsPage() {
             rows={3}
             maxLength={300}
             className="input-premium w-full"
-            placeholder="e.g. Dealer based in Goma, 10+ years importing vehicles."
+            placeholder={t("bioPlaceholder")}
           />
         </div>
 
@@ -337,7 +424,7 @@ export default function SettingsPage() {
         </div>
 
         {error && <p className="text-caption text-red-500">{error}</p>}
-        {success && <p className="text-caption text-emerald-400">{t("contactSaved")}</p>}
+        {success && <p className="text-caption text-emerald-400">{t(successKey)}</p>}
 
         <div className="flex gap-3">
           <button type="submit" disabled={saving} className="btn-primary min-h-[44px] disabled:opacity-50">
