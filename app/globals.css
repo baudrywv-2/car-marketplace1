@@ -410,15 +410,63 @@ body {
   to { opacity: 1; }
 }
 @keyframes menu-panel {
-  from { opacity: 0; transform: translateY(-8px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateX(12px); }
+  to { opacity: 1; transform: translateX(0); }
 }
 .animate-menu-backdrop {
-  animation: menu-fade 0.2s ease-out both;
+  animation: menu-fade 0.22s ease-out both;
 }
 .animate-menu-panel {
-  animation: menu-panel 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: menu-panel 0.32s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
+
+.mobile-menu-panel {
+  background:
+    radial-gradient(ellipse 90% 55% at 100% 0%, rgba(234, 179, 8, 0.12), transparent 55%),
+    radial-gradient(ellipse 70% 40% at 0% 100%, rgba(234, 179, 8, 0.06), transparent 50%),
+    var(--background);
+}
+
+.mobile-nav-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-height: 3rem;
+  padding: 0.75rem 0.25rem;
+  font-size: 1rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--foreground);
+  transition: color 0.2s ease, opacity 0.2s ease;
+  touch-action: manipulation;
+}
+.mobile-nav-link:active {
+  opacity: 0.75;
+}
+.mobile-nav-link[data-active="true"] {
+  color: var(--accent);
+}
+.mobile-nav-link-muted {
+  color: var(--muted-foreground);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  min-height: 2.75rem;
+}
+
+.mobile-menu-stagger > * {
+  opacity: 0;
+  transform: translateY(10px);
+  animation: menu-fade 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.mobile-menu-stagger > *:nth-child(1) { animation-delay: 40ms; }
+.mobile-menu-stagger > *:nth-child(2) { animation-delay: 80ms; }
+.mobile-menu-stagger > *:nth-child(3) { animation-delay: 120ms; }
+.mobile-menu-stagger > *:nth-child(4) { animation-delay: 160ms; }
+.mobile-menu-stagger > *:nth-child(5) { animation-delay: 200ms; }
+.mobile-menu-stagger > *:nth-child(6) { animation-delay: 240ms; }
+.mobile-menu-stagger > *:nth-child(7) { animation-delay: 280ms; }
+.mobile-menu-stagger > *:nth-child(n+8) { animation-delay: 320ms; }
 
 /* Stagger children when parent gains .is-visible */
 .stagger-children > * {
@@ -451,7 +499,8 @@ body {
   .animate-slide-up-in,
   .animate-soft-pulse,
   .animate-menu-backdrop,
-  .animate-menu-panel {
+  .animate-menu-panel,
+  .mobile-menu-stagger > * {
     animation: none !important;
     opacity: 1 !important;
     transform: none !important;

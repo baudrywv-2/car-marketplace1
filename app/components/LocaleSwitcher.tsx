@@ -78,7 +78,11 @@ function LangDropdown({ mobile, inOverlay }: { mobile?: boolean; inOverlay?: boo
         ref={btnRef}
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex min-h-[44px] min-w-[44px] items-center gap-1.5 rounded-[var(--radius)] border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-[10px] font-medium text-[var(--foreground)] hover:bg-[var(--border)] md:min-h-[2.25rem] md:min-w-0 md:py-1.5"
+        className={
+          mobile
+            ? "flex w-full min-h-[48px] items-center justify-between gap-1.5 rounded-[var(--radius)] border border-[var(--border)] bg-[var(--card)] px-3.5 py-2.5 text-[13px] font-medium text-[var(--foreground)] transition-colors hover:border-[var(--border-strong)] hover:bg-[var(--border)]"
+            : "flex min-h-[2.25rem] items-center gap-1.5 rounded-[var(--radius)] border border-[var(--border)] bg-[var(--background)] px-3 py-1.5 text-[10px] font-medium text-[var(--foreground)] hover:bg-[var(--border)]"
+        }
         aria-expanded={open}
         aria-haspopup="listbox"
         aria-label={t("language")}
@@ -156,7 +160,11 @@ function CurrencyDropdown({ mobile, inOverlay }: { mobile?: boolean; inOverlay?:
         ref={btnRef}
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex min-h-[44px] min-w-[44px] items-center gap-1.5 rounded-[var(--radius)] border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-[10px] font-medium text-[var(--foreground)] hover:bg-[var(--border)] md:min-h-[2.25rem] md:min-w-0 md:py-1.5"
+        className={
+          mobile
+            ? "flex w-full min-h-[48px] items-center justify-between gap-1.5 rounded-[var(--radius)] border border-[var(--border)] bg-[var(--card)] px-3.5 py-2.5 text-[13px] font-medium text-[var(--foreground)] transition-colors hover:border-[var(--border-strong)] hover:bg-[var(--border)]"
+            : "flex min-h-[2.25rem] items-center gap-1.5 rounded-[var(--radius)] border border-[var(--border)] bg-[var(--background)] px-3 py-1.5 text-[10px] font-medium text-[var(--foreground)] hover:bg-[var(--border)]"
+        }
         aria-expanded={open}
         aria-haspopup="listbox"
         aria-label={t("currencyLabel")}
@@ -191,12 +199,19 @@ function CurrencyDropdown({ mobile, inOverlay }: { mobile?: boolean; inOverlay?:
 }
 
 export default function LocaleSwitcher({ mobile, inOverlay }: Props) {
-  const container = mobile ? "flex flex-col gap-4" : "flex items-center gap-2";
+  if (mobile) {
+    return (
+      <div className="grid grid-cols-2 gap-3">
+        <LangDropdown mobile inOverlay={inOverlay} />
+        <CurrencyDropdown mobile inOverlay={inOverlay} />
+      </div>
+    );
+  }
 
   return (
-    <div className={container}>
-      <LangDropdown mobile={mobile} inOverlay={inOverlay} />
-      <CurrencyDropdown mobile={mobile} inOverlay={inOverlay} />
+    <div className="flex items-center gap-2">
+      <LangDropdown />
+      <CurrencyDropdown />
     </div>
   );
 }

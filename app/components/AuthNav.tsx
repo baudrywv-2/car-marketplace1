@@ -116,13 +116,13 @@ export default function AuthNav({ mobile, onNavigate }: Props) {
     router.refresh();
   }
 
-  const linkClass = `text-[11px] font-medium text-[var(--foreground)] hover:text-[var(--accent)] transition-colors ${mobile ? "block py-2.5" : ""}`;
+  const linkClass = `text-[11px] font-medium text-[var(--foreground)] hover:text-[var(--accent)] transition-colors ${mobile ? "mobile-nav-link mobile-nav-link-muted px-0" : ""}`;
 
   const favoritesLink = (
-    <Link href="/favorites" onClick={onNavigate} className={`${linkClass} inline-flex items-center gap-1.5`}>
-      {t("myFavorites")}
+    <Link href="/favorites" onClick={onNavigate} className={`${linkClass} inline-flex items-center gap-2`}>
+      <span>{t("myFavorites")}</span>
       {favCount > 0 && (
-        <span className="rounded-full bg-[var(--accent)] px-1.5 py-0.5 text-[9px] font-bold leading-none text-[var(--accent-foreground)]">
+        <span className="rounded-[var(--radius)] bg-[var(--accent)] px-1.5 py-0.5 text-[10px] font-bold leading-none text-[var(--accent-foreground)]">
           {favCount > 99 ? "99+" : favCount}
         </span>
       )}
@@ -139,7 +139,11 @@ export default function AuthNav({ mobile, onNavigate }: Props) {
         <Link
           href="/signup"
           onClick={onNavigate}
-          className="btn-accent inline-flex py-2 px-4 text-[11px] font-semibold"
+          className={
+            mobile
+              ? "mt-3 inline-flex min-h-12 w-full items-center justify-center rounded-[var(--radius)] bg-[var(--accent)] px-4 py-3 text-sm font-semibold text-[var(--accent-foreground)] shadow-[0_8px_28px_var(--accent-glow)] transition-transform active:scale-[0.98]"
+              : "btn-accent inline-flex py-2 px-4 text-[11px] font-semibold"
+          }
         >
           {t("signUp")}
         </Link>
@@ -150,6 +154,28 @@ export default function AuthNav({ mobile, onNavigate }: Props) {
   if (mobile) {
     return (
       <nav className="flex flex-col gap-1">
+        <div className="mb-3 flex items-center gap-3 rounded-[var(--radius)] border border-[var(--border)] bg-[var(--card)] px-3 py-3">
+          {avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={avatarUrl}
+              alt={userName ?? user.email ?? "Profile"}
+              className="h-10 w-10 rounded-full object-cover"
+            />
+          ) : (
+            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--accent)] text-sm font-bold text-[var(--accent-foreground)]">
+              {(user.email?.[0] ?? "?").toUpperCase()}
+            </span>
+          )}
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-semibold text-[var(--foreground)]">
+              {userName ? t("helloUser").replace("{name}", userName) : user.email}
+            </p>
+            {userName && (
+              <p className="truncate text-xs text-[var(--muted-foreground)]">{user.email}</p>
+            )}
+          </div>
+        </div>
         <Link href="/dashboard" onClick={onNavigate} className={linkClass}>
           {t("myDashboard")}
         </Link>
@@ -157,15 +183,10 @@ export default function AuthNav({ mobile, onNavigate }: Props) {
         <Link href="/dashboard/settings" onClick={onNavigate} className={linkClass}>
           {t("contactSettings")}
         </Link>
-        <div className="my-2 border-t border-[var(--border)]" />
-        <p className="py-1 text-[11px] font-medium text-[var(--foreground)]">
-          {userName ? t("helloUser").replace("{name}", userName) : user.email}
-        </p>
-        <p className="text-[10px] truncate text-[var(--muted-foreground)]">{user.email}</p>
         <button
           type="button"
           onClick={() => { handleLogout(); onNavigate?.(); }}
-          className={`${linkClass} text-left`}
+          className={`${linkClass} mt-2 w-full text-left text-[var(--muted-foreground)]`}
         >
           {t("logOut")}
         </button>

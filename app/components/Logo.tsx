@@ -8,9 +8,10 @@ type Props = {
   showTagline?: boolean;
   size?: "sm" | "md" | "lg";
   className?: string;
+  onNavigate?: () => void;
 };
 
-export default function Logo({ showTagline = false, size = "md", className = "" }: Props) {
+export default function Logo({ showTagline = false, size = "md", className = "", onNavigate }: Props) {
   const { t } = useLocale();
   const sizes = {
     sm: { icon: 24, text: "text-[13px]" },
@@ -21,11 +22,12 @@ export default function Logo({ showTagline = false, size = "md", className = "" 
   return (
     <Link
       href="/"
+      onClick={onNavigate}
       className={`group inline-flex items-center gap-3 transition-opacity hover:opacity-90 ${className}`}
     >
       <LogoMark size={sizes.icon} className="shrink-0" />
       <span className="flex flex-col">
-        <span className={`${sizes.text} font-display text-[var(--foreground)]`}>
+        <span className={`${sizes.text} font-sans font-semibold tracking-[-0.02em] text-[var(--foreground)]`}>
           {t("siteName")}
         </span>
         {showTagline && (

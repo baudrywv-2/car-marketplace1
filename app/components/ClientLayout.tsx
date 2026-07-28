@@ -23,7 +23,9 @@ function AnimatedMain({ children }: { children: React.ReactNode }) {
 
 function Header() {
   const { t } = useLocale();
+  const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const closeMenu = () => setMobileOpen(false);
 
   useEffect(() => {
     if (mobileOpen) {
@@ -37,6 +39,10 @@ function Header() {
   }, [mobileOpen]);
 
   useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
     if (!mobileOpen) return;
     function handleEscape(e: KeyboardEvent) {
       if (e.key === "Escape") setMobileOpen(false);
@@ -45,58 +51,85 @@ function Header() {
     return () => document.removeEventListener("keydown", handleEscape);
   }, [mobileOpen]);
 
+  const isActive = (href: string) =>
+    pathname === href || (href !== "/" && pathname.startsWith(`${href}/`));
+
   const mobileMenu = mobileOpen && typeof document !== "undefined" ? (
     <>
       <div
-        className="animate-menu-backdrop fixed inset-0 bg-black/70"
+        className="animate-menu-backdrop fixed inset-0 bg-black/75 backdrop-blur-[2px]"
         style={{ zIndex: 99998 }}
         aria-hidden
-        onClick={() => setMobileOpen(false)}
+        onClick={closeMenu}
       />
       <div
-        className="animate-menu-panel fixed inset-0 flex flex-col bg-[var(--card)] text-[var(--foreground)]"
+        className="animate-menu-panel mobile-menu-panel fixed inset-0 flex flex-col text-[var(--foreground)]"
         style={{ zIndex: 99999 }}
+        role="dialog"
+        aria-modal="true"
+        aria-label={t("openMenu")}
       >
-        <div className="flex h-12 min-h-[44px] shrink-0 items-center justify-between border-b border-[var(--border)] px-4 pt-[env(safe-area-inset-top)]">
-          <Logo showTagline={false} size="sm" />
+        <div className="flex h-14 shrink-0 items-center justify-between border-b border-[var(--border)] px-4 pt-[env(safe-area-inset-top)]">
+          <Logo showTagline={false} size="md" onNavigate={closeMenu} />
           <button
             type="button"
-            onClick={() => setMobileOpen(false)}
-            className="flex h-9 w-9 items-center justify-center rounded text-[var(--foreground)] hover:bg-[var(--border)]"
+            onClick={closeMenu}
+            className="flex h-11 w-11 items-center justify-center rounded-[var(--radius)] text-[var(--muted-foreground)] transition-colors hover:bg-[var(--border)] hover:text-[var(--foreground)]"
             aria-label={t("closeMenu")}
           >
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
-        <nav className="flex min-h-0 flex-1 flex-col gap-2 overflow-auto p-4 pt-3">
-          <Link
-            href="/cars"
-            onClick={() => setMobileOpen(false)}
-            className="py-2.5 text-[11px] font-medium text-[var(--foreground)] hover:text-[var(--accent)]"
-          >
-            {t("browseCars")}
-          </Link>
-          <Link
-            href="/compare"
-            onClick={() => setMobileOpen(false)}
-            className="py-2.5 text-[11px] font-medium text-[var(--foreground)] hover:text-[var(--accent)]"
-          >
-            {t("compare")}
-          </Link>
-          <Link
-            href="/rent"
-            onClick={() => setMobileOpen(false)}
-            className="btn-rent inline-flex px-3 py-2 text-[11px] font-medium"
-          >
-            {t("rentCars")}
-          </Link>
-          <div className="my-1 border-t border-[var(--border)]" />
-          <LocaleSwitcher mobile inOverlay onNavigate={() => setMobileOpen(false)} />
-          <div className="my-1 border-t border-[var(--border)]" />
-          <AuthNav mobile onNavigate={() => setMobileOpen(false)} />
-        </nav>
+
+        <div className="flex min-h-0 flex-1 flex-col overflow-auto">
+          <nav className="mobile-menu-stagger flex flex-col gap-1 px-5 pt-5">
+            <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--muted-foreground)]">
+              {t("marketplace")}
+            </p>
+            <Link
+              href="/cars"
+              onClick={closeMenu}
+              className="mobile-nav-link"
+              data-active={isActive("/cars")}
+            >
+              {t("browseCars")}
+              <span className="text-[var(--muted-foreground)]" aria-hidden>→</span>
+            </Link>
+            <Link
+              href="/compare"
+              onClick={closeMenu}
+              className="mobile-nav-link"
+              data-active={isActive("/compare")}
+            >
+              {t("compare")}
+              <span className="text-[var(--muted-foreground)]" aria-hidden>→</span>
+            </Link>
+            <Link
+              href="/rent"
+              onClick={closeMenu}
+              className="mt-2 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-[var(--radius)] bg-[var(--accent-red)] px-4 py-3 font-mono text-sm font-semibold tracking-wide text-white shadow-[0_8px_28px_var(--accent-red-glow)] transition-transform active:scale-[0.98]"
+              data-active={isActive("/rent")}
+            >
+              {t("rentCars")}
+            </Link>
+          </nav>
+
+          <div className="mt-6 px-5">
+            <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--muted-foreground)]">
+              {t("language")} · {t("currencyLabel")}
+            </p>
+            <LocaleSwitcher mobile inOverlay onNavigate={closeMenu} />
+          </div>
+
+          <div className="mt-auto border-t border-[var(--border)] bg-[var(--background)]/80 px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-5 backdrop-blur-sm">
+            <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--muted-foreground)]">
+              {t("account")}
+            </p>
+            <AuthNav mobile onNavigate={closeMenu} />
+          </div>
+        </div>
       </div>
     </>
   ) : null;
@@ -138,6 +171,7 @@ function Header() {
           onClick={() => setMobileOpen(true)}
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius)] text-[var(--foreground)] hover:bg-[var(--border)] md:hidden transition-colors"
           aria-label={t("openMenu")}
+          aria-expanded={mobileOpen}
         >
           <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
