@@ -1,33 +1,52 @@
 "use client";
 
-/** DRCCARS branded logo mark – DC monogram with car wheel accent */
+import { useId } from "react";
+
+/** DRCCARS wheel monogram – gold tire with DRC hub */
 export default function LogoMark({ className = "", size = 24 }: { className?: string; size?: number }) {
+  const uid = useId().replace(/:/g, "");
+  const goldId = `wheel-gold-${uid}`;
+
   return (
     <svg
       viewBox="0 0 48 48"
       width={size}
       height={size}
       className={`logo-mark ${className}`}
-      style={{ color: "var(--accent)" }}
-      fill="none"
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden
     >
-      <rect width="48" height="48" rx="10" fill="currentColor" />
-      <rect width="48" height="48" rx="10" stroke="rgba(255,255,255,0.22)" strokeWidth="1.25" />
-      {/* D */}
-      <path d="M11 11h5v26h-5z" fill="white" />
-      <path d="M16 11c7.5 0 11 4.5 11 12s-3.5 12-11 12V11z" fill="white" />
-      {/* C – arc opening right */}
-      <path
-        d="M34 14 A10 10 0 0 0 34 34"
-        stroke="white"
-        strokeWidth="4"
-        strokeLinecap="round"
-        fill="none"
-      />
-      {/* Wheel dot – car accent */}
-      <circle cx="38" cy="30" r="2.5" fill="white" />
+      <defs>
+        <linearGradient id={goldId} x1="8" y1="4" x2="40" y2="44" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#facc15" />
+          <stop offset="0.55" stopColor="#eab308" />
+          <stop offset="1" stopColor="#ca8a04" />
+        </linearGradient>
+      </defs>
+
+      <circle cx="24" cy="24" r="21.5" fill={`url(#${goldId})`} />
+      <circle cx="24" cy="24" r="18.5" fill="none" stroke="#09090b" strokeWidth="2.1" opacity="0.38" />
+      <circle cx="24" cy="24" r="15.5" fill="#09090b" />
+      <circle cx="24" cy="24" r="15.5" fill="none" stroke={`url(#${goldId})`} strokeWidth="1.35" />
+
+      <g stroke={`url(#${goldId})`} strokeWidth="1.7" strokeLinecap="round" opacity="0.95">
+        <line x1="24" y1="11" x2="24" y2="17.4" />
+        <line x1="24" y1="30.6" x2="24" y2="37" />
+        <line x1="13" y1="17.5" x2="18.5" y2="20.8" />
+        <line x1="29.5" y1="27.2" x2="35" y2="30.5" />
+        <line x1="35" y1="17.5" x2="29.5" y2="20.8" />
+        <line x1="18.5" y1="27.2" x2="13" y2="30.5" />
+      </g>
+
+      <circle cx="24" cy="24" r="8.4" fill={`url(#${goldId})`} />
+      <circle cx="24" cy="24" r="7" fill="#09090b" />
+
+      <g fill="#eab308" transform="translate(24 24)">
+        <path d="M-8.2 -3.2h1.45v6.4h-1.45V-3.2zm1.45 0c1.95 0 3.15 1.15 3.15 3.2s-1.2 3.2-3.15 3.2V-3.2z" />
+        <path d="M-5.7 -1.85v3.7c.85-.15 1.35-.85 1.35-1.85s-.5-1.7-1.35-1.85z" fill="#09090b" />
+        <path d="M-2.55 -3.2H.2c1.35 0 2.25.8 2.25 1.95 0 .9-.5 1.55-1.35 1.8l1.55 2.65H.9l-1.4-2.5h-.5V2.2h-1.55V-3.2zm1.55 1.2v1.7h1.05c.5 0 .9-.28.9-.85s-.4-.85-.9-.85h-1.05z" />
+        <path d="M7.55 -1.95c-.4-.55-1.1-.95-2-.95-1.55 0-2.6 1.2-2.6 2.9s1.05 2.9 2.6 2.9c.9 0 1.6-.4 2-.95l1.15.9c-.65.8-1.7 1.4-3.15 1.4-2.5 0-4.2-1.8-4.2-4.25s1.7-4.25 4.2-4.25c1.45 0 2.5.55 3.15 1.4l-1.15.9z" />
+      </g>
     </svg>
   );
 }
