@@ -164,7 +164,7 @@ export default function AdminPage() {
           setRdvFetchError(errMsg);
         }
       } catch (e) {
-        setRdvFetchError(e instanceof Error ? e.message : "Network error");
+        setRdvFetchError(e instanceof Error ? e.message : t("adminNetworkError"));
       }
       setRdvRequests(rdvList);
 
@@ -270,7 +270,7 @@ export default function AdminPage() {
       created_by: user?.id ?? null,
     });
     if (error) {
-      setMessageError(error.message || "Failed to send message.");
+      setMessageError(error.message || t("adminFailedSendMessage"));
       setMessageSending(false);
       return;
     }
@@ -314,7 +314,7 @@ export default function AdminPage() {
   }
 
   async function deleteCar(carId: string) {
-    if (!confirm("Permanently remove this listing? This cannot be undone.")) return;
+    if (!confirm(t("adminRemoveListingConfirm"))) return;
     await supabase.from("cars").delete().eq("id", carId);
     setCars((prev) => prev.filter((c) => c.id !== carId));
   }
@@ -331,13 +331,13 @@ export default function AdminPage() {
   }
 
   async function deleteRdv(rdvId: string) {
-    if (!confirm("Remove this meeting request from the list? This cannot be undone.")) return;
+    if (!confirm(t("adminRemoveRdvConfirm"))) return;
     await supabase.from("rendezvous_requests").delete().eq("id", rdvId);
     setRdvRequests((prev) => prev.filter((r) => r.id !== rdvId));
   }
 
   async function deleteAdminMessage(msgId: string) {
-    if (!confirm("Delete this message? It will be removed for everyone.")) return;
+    if (!confirm(t("adminDeleteMessageConfirm"))) return;
     await supabase.from("admin_messages").delete().eq("id", msgId);
     setAdminMessages((prev) => prev.filter((m) => m.id !== msgId));
   }
@@ -373,14 +373,14 @@ export default function AdminPage() {
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-        <h1 className="text-heading text-[var(--foreground)]">Admin Dashboard</h1>
+        <h1 className="text-heading text-[var(--foreground)]">{t("adminDashboard")}</h1>
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => { setLoading(true); setRefreshTrigger((t) => t + 1); }}
             className="rounded border border-[var(--border)] px-3 py-1.5 text-[10px] font-medium text-[var(--foreground)] hover:bg-[var(--border)]"
           >
-            Refresh
+            {t("adminRefresh")}
           </button>
           <Link href="/dashboard" className="text-caption text-[var(--muted-foreground)] hover:text-[var(--foreground)]">
             ← {t("backToDashboard")}
@@ -389,12 +389,12 @@ export default function AdminPage() {
       </div>
 
       <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-6">
-        <StatCard label="Total listings" value={totalListings} />
-        <StatCard label="Approved" value={approvedListings} sub="Live on site" />
-        <StatCard label="Pending" value={pendingListings} sub="Awaiting review" />
-        <StatCard label="Drafts" value={draftListings} />
-        <StatCard label="Seller brands" value={uniqueBrands} />
-        <StatCard label="RDV pending" value={pendingRdv} sub={`${approvedRdv} approved`} />
+        <StatCard label={t("adminTotalListings")} value={totalListings} />
+        <StatCard label={t("approved")} value={approvedListings} sub={t("adminLiveOnSite")} />
+        <StatCard label={t("pending")} value={pendingListings} sub={t("adminAwaitingReview")} />
+        <StatCard label={t("draftListings")} value={draftListings} />
+        <StatCard label={t("adminSellerBrands")} value={uniqueBrands} />
+        <StatCard label={t("adminRdvPending")} value={pendingRdv} sub={t("adminApprovedCount").replace("{n}", String(approvedRdv))} />
       </div>
 
       <div className="mb-6 flex gap-2 border-b border-[var(--border)]">
@@ -407,7 +407,7 @@ export default function AdminPage() {
               : "border-transparent text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
           }`}
         >
-          Listings
+          {t("adminTabListings")}
         </button>
         <button
           type="button"
@@ -418,7 +418,7 @@ export default function AdminPage() {
               : "border-transparent text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
           }`}
         >
-          Rendez-vous ({rdvRequests.length})
+          {t("adminTabRdv")} ({rdvRequests.length})
           {pendingRdv > 0 && (
             <span className="ml-1 rounded-full bg-amber-500 px-1.5 py-0.5 text-[9px] text-black">
               {pendingRdv}
@@ -434,7 +434,7 @@ export default function AdminPage() {
               : "border-transparent text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
           }`}
         >
-          Sellers
+          {t("adminTabSellers")}
         </button>
         <button
           type="button"
@@ -445,7 +445,7 @@ export default function AdminPage() {
               : "border-transparent text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
           }`}
         >
-          Search analytics
+          {t("adminTabAnalytics")}
         </button>
         <button
           type="button"
@@ -456,7 +456,7 @@ export default function AdminPage() {
               : "border-transparent text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
           }`}
         >
-          Users
+          {t("adminTabUsers")}
         </button>
         <button
           type="button"
@@ -467,7 +467,7 @@ export default function AdminPage() {
               : "border-transparent text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
           }`}
         >
-          Traffic
+          {t("adminTabTraffic")}
         </button>
         <button
           type="button"
@@ -478,33 +478,33 @@ export default function AdminPage() {
               : "border-transparent text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
           }`}
         >
-          Messages
+          {t("adminTabMessages")}
         </button>
       </div>
 
       {activeTab === "analytics" ? (
         <div className="space-y-6">
           <p className="text-caption text-[var(--muted-foreground)]">
-            What buyers are searching for (last 30 days). Use this to understand demand.
+            {t("adminAnalyticsHelp")}
           </p>
           <div className="grid gap-6 sm:grid-cols-3">
             <div className="card-premium p-4">
-              <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">Top keywords</h3>
+              <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">{t("adminTopKeywords")}</h3>
               {searchStats?.topKeywords.length ? (
                 <ul className="space-y-2">
                   {searchStats.topKeywords.map(({ term, count }) => (
                     <li key={term} className="flex justify-between gap-2 text-[11px]">
-                      <span className="truncate text-[var(--foreground)]">{term || "(empty)"}</span>
+                      <span className="truncate text-[var(--foreground)]">{term || t("adminEmptyValue")}</span>
                       <span className="shrink-0 font-medium text-[var(--accent)]">{count}</span>
                     </li>
                   ))}
                 </ul>
               ) : (
-                <p className="text-[11px] text-[var(--muted-foreground)]">No search data yet.</p>
+                <p className="text-[11px] text-[var(--muted-foreground)]">{t("adminNoSearchData")}</p>
               )}
             </div>
             <div className="card-premium p-4">
-              <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">Top makes</h3>
+              <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">{t("adminTopMakes")}</h3>
               {searchStats?.topMakes.length ? (
                 <ul className="space-y-2">
                   {searchStats.topMakes.map(({ make, count }) => (
@@ -515,11 +515,11 @@ export default function AdminPage() {
                   ))}
                 </ul>
               ) : (
-                <p className="text-[11px] text-[var(--muted-foreground)]">No search data yet.</p>
+                <p className="text-[11px] text-[var(--muted-foreground)]">{t("adminNoSearchData")}</p>
               )}
             </div>
             <div className="card-premium p-4">
-              <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">Top locations</h3>
+              <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">{t("adminTopLocations")}</h3>
               {searchStats?.topProvinces.length ? (
                 <ul className="space-y-2">
                   {searchStats.topProvinces.map(({ province, count }) => (
@@ -530,7 +530,7 @@ export default function AdminPage() {
                   ))}
                 </ul>
               ) : (
-                <p className="text-[11px] text-[var(--muted-foreground)]">No search data yet.</p>
+                <p className="text-[11px] text-[var(--muted-foreground)]">{t("adminNoSearchData")}</p>
               )}
             </div>
           </div>
@@ -538,29 +538,29 @@ export default function AdminPage() {
       ) : activeTab === "users" ? (
         <div className="space-y-6">
           <p className="text-caption text-[var(--muted-foreground)]">
-            Registered users over time. Sellers and buyers from signup; no external analytics.
+            {t("adminUsersHelp")}
           </p>
           {userStats?.error ? (
             <p className="text-[11px] text-amber-600 dark:text-amber-400">{userStats.error}</p>
           ) : userStats ? (
             <>
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-                <StatCard label="Total users" value={userStats.total ?? 0} />
-                <StatCard label="Sellers" value={userStats.sellers ?? 0} />
-                <StatCard label="Buyers" value={userStats.buyers ?? 0} />
-                <StatCard label="Admins" value={userStats.admins ?? 0} />
+                <StatCard label={t("adminTotalUsers")} value={userStats.total ?? 0} />
+                <StatCard label={t("seller")} value={userStats.sellers ?? 0} />
+                <StatCard label={t("buyer")} value={userStats.buyers ?? 0} />
+                <StatCard label={t("adminRole")} value={userStats.admins ?? 0} />
               </div>
               <div className="grid gap-6 lg:grid-cols-2">
                 <div className="card-premium overflow-hidden p-4">
-                  <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">By day (last 366 days)</h3>
+                  <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">{t("adminByDay")}</h3>
                   <div className="max-h-[280px] overflow-auto">
                     <table className="w-full text-[10px]">
                       <thead className="sticky top-0 bg-[var(--card)]">
                         <tr className="border-b border-[var(--border)]">
-                          <th className="py-2 text-left font-semibold">Date</th>
-                          <th className="py-2 text-right">Total</th>
-                          <th className="py-2 text-right">Sellers</th>
-                          <th className="py-2 text-right">Buyers</th>
+                          <th className="py-2 text-left font-semibold">{t("adminColDate")}</th>
+                          <th className="py-2 text-right">{t("adminColTotal")}</th>
+                          <th className="py-2 text-right">{t("seller")}</th>
+                          <th className="py-2 text-right">{t("buyer")}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -577,15 +577,15 @@ export default function AdminPage() {
                   </div>
                 </div>
                 <div className="card-premium overflow-hidden p-4">
-                  <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">By week (last ~2 years)</h3>
+                  <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">{t("adminByWeek")}</h3>
                   <div className="max-h-[280px] overflow-auto">
                     <table className="w-full text-[10px]">
                       <thead className="sticky top-0 bg-[var(--card)]">
                         <tr className="border-b border-[var(--border)]">
-                          <th className="py-2 text-left font-semibold">Week</th>
-                          <th className="py-2 text-right">Total</th>
-                          <th className="py-2 text-right">Sellers</th>
-                          <th className="py-2 text-right">Buyers</th>
+                          <th className="py-2 text-left font-semibold">{t("adminColWeek")}</th>
+                          <th className="py-2 text-right">{t("adminColTotal")}</th>
+                          <th className="py-2 text-right">{t("seller")}</th>
+                          <th className="py-2 text-right">{t("buyer")}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -602,15 +602,15 @@ export default function AdminPage() {
                   </div>
                 </div>
                 <div className="card-premium overflow-hidden p-4">
-                  <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">By month (last 24 months)</h3>
+                  <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">{t("adminByMonth")}</h3>
                   <div className="max-h-[280px] overflow-auto">
                     <table className="w-full text-[10px]">
                       <thead className="sticky top-0 bg-[var(--card)]">
                         <tr className="border-b border-[var(--border)]">
-                          <th className="py-2 text-left font-semibold">Month</th>
-                          <th className="py-2 text-right">Total</th>
-                          <th className="py-2 text-right">Sellers</th>
-                          <th className="py-2 text-right">Buyers</th>
+                          <th className="py-2 text-left font-semibold">{t("adminColMonth")}</th>
+                          <th className="py-2 text-right">{t("adminColTotal")}</th>
+                          <th className="py-2 text-right">{t("seller")}</th>
+                          <th className="py-2 text-right">{t("buyer")}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -627,15 +627,15 @@ export default function AdminPage() {
                   </div>
                 </div>
                 <div className="card-premium overflow-hidden p-4">
-                  <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">By year</h3>
+                  <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">{t("adminByYear")}</h3>
                   <div className="max-h-[280px] overflow-auto">
                     <table className="w-full text-[10px]">
                       <thead className="sticky top-0 bg-[var(--card)]">
                         <tr className="border-b border-[var(--border)]">
-                          <th className="py-2 text-left font-semibold">Year</th>
-                          <th className="py-2 text-right">Total</th>
-                          <th className="py-2 text-right">Sellers</th>
-                          <th className="py-2 text-right">Buyers</th>
+                          <th className="py-2 text-left font-semibold">{t("adminColYear")}</th>
+                          <th className="py-2 text-right">{t("adminColTotal")}</th>
+                          <th className="py-2 text-right">{t("seller")}</th>
+                          <th className="py-2 text-right">{t("buyer")}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -654,17 +654,17 @@ export default function AdminPage() {
               </div>
             </>
           ) : (
-            <p className="text-caption text-[var(--muted-foreground)]">Loading…</p>
+            <p className="text-caption text-[var(--muted-foreground)]">{t("loading")}</p>
           )}
         </div>
       ) : activeTab === "traffic" ? (
         <div className="space-y-6">
           <p className="text-caption text-[var(--muted-foreground)]">
-            Visitor sessions (one per browser session). Logged in-app; no external analytics.
+            {t("adminTrafficHelp")}
           </p>
           <div className="flex flex-wrap items-center gap-3">
             <label className="flex items-center gap-2 text-[11px]">
-              <span className="font-medium text-[var(--muted-foreground)]">From</span>
+              <span className="font-medium text-[var(--muted-foreground)]">{t("adminFrom")}</span>
               <input
                 type="date"
                 value={trafficFrom}
@@ -673,7 +673,7 @@ export default function AdminPage() {
               />
             </label>
             <label className="flex items-center gap-2 text-[11px]">
-              <span className="font-medium text-[var(--muted-foreground)]">To</span>
+              <span className="font-medium text-[var(--muted-foreground)]">{t("adminTo")}</span>
               <input
                 type="date"
                 value={trafficTo}
@@ -686,7 +686,7 @@ export default function AdminPage() {
               onClick={() => { setTrafficFrom(""); setTrafficTo(""); }}
               className="rounded border border-[var(--border)] px-2 py-1.5 text-[10px] font-medium hover:bg-[var(--border)]"
             >
-              Clear
+              {t("adminClear")}
             </button>
             {visitStats && (() => {
               const rows = (visitStats.byDay ?? []).map((r) => ({ date: r.date, sessions: r.count }));
@@ -700,7 +700,7 @@ export default function AdminPage() {
                   className="rounded border border-[var(--border)] px-3 py-1.5 text-[10px] font-medium hover:bg-[var(--border)]"
                   onClick={() => setTimeout(() => URL.revokeObjectURL(url), 100)}
                 >
-                  Export CSV
+                  {t("adminExportCsv")}
                 </a>
               );
             })()}
@@ -711,20 +711,22 @@ export default function AdminPage() {
             <>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <StatCard
-                  label="Total sessions"
+                  label={t("adminTotalSessions")}
                   value={visitStats.total ?? 0}
-                  sub={trafficFrom || trafficTo ? `${trafficFrom || "…"} to ${trafficTo || "…"}` : "All time"}
+                  sub={trafficFrom || trafficTo
+                    ? t("adminDateRangeTo").replace("{from}", trafficFrom || "…").replace("{to}", trafficTo || "…")
+                    : t("adminAllTime")}
                 />
               </div>
               <div className="grid gap-6 lg:grid-cols-2">
                 <div className="card-premium overflow-hidden p-4">
-                  <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">By day</h3>
+                  <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">{t("adminByDayShort")}</h3>
                   <div className="max-h-[280px] overflow-auto">
                     <table className="w-full text-[10px]">
                       <thead className="sticky top-0 bg-[var(--card)]">
                         <tr className="border-b border-[var(--border)]">
-                          <th className="py-2 text-left font-semibold">Date</th>
-                          <th className="py-2 text-right">Sessions</th>
+                          <th className="py-2 text-left font-semibold">{t("adminColDate")}</th>
+                          <th className="py-2 text-right">{t("adminColSessions")}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -739,13 +741,13 @@ export default function AdminPage() {
                   </div>
                 </div>
                 <div className="card-premium overflow-hidden p-4">
-                  <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">By week</h3>
+                  <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">{t("adminByWeekShort")}</h3>
                   <div className="max-h-[280px] overflow-auto">
                     <table className="w-full text-[10px]">
                       <thead className="sticky top-0 bg-[var(--card)]">
                         <tr className="border-b border-[var(--border)]">
-                          <th className="py-2 text-left font-semibold">Week</th>
-                          <th className="py-2 text-right">Sessions</th>
+                          <th className="py-2 text-left font-semibold">{t("adminColWeek")}</th>
+                          <th className="py-2 text-right">{t("adminColSessions")}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -760,13 +762,13 @@ export default function AdminPage() {
                   </div>
                 </div>
                 <div className="card-premium overflow-hidden p-4">
-                  <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">By month</h3>
+                  <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">{t("adminByMonthShort")}</h3>
                   <div className="max-h-[280px] overflow-auto">
                     <table className="w-full text-[10px]">
                       <thead className="sticky top-0 bg-[var(--card)]">
                         <tr className="border-b border-[var(--border)]">
-                          <th className="py-2 text-left font-semibold">Month</th>
-                          <th className="py-2 text-right">Sessions</th>
+                          <th className="py-2 text-left font-semibold">{t("adminColMonth")}</th>
+                          <th className="py-2 text-right">{t("adminColSessions")}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -781,13 +783,13 @@ export default function AdminPage() {
                   </div>
                 </div>
                 <div className="card-premium overflow-hidden p-4">
-                  <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">By year</h3>
+                  <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">{t("adminByYear")}</h3>
                   <div className="max-h-[280px] overflow-auto">
                     <table className="w-full text-[10px]">
                       <thead className="sticky top-0 bg-[var(--card)]">
                         <tr className="border-b border-[var(--border)]">
-                          <th className="py-2 text-left font-semibold">Year</th>
-                          <th className="py-2 text-right">Sessions</th>
+                          <th className="py-2 text-left font-semibold">{t("adminColYear")}</th>
+                          <th className="py-2 text-right">{t("adminColSessions")}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -804,43 +806,43 @@ export default function AdminPage() {
               </div>
             </>
           ) : (
-            <p className="text-caption text-[var(--muted-foreground)]">Loading…</p>
+            <p className="text-caption text-[var(--muted-foreground)]">{t("loading")}</p>
           )}
         </div>
       ) : activeTab === "messages" ? (
         <>
           <p className="mb-4 text-caption text-[var(--muted-foreground)]">
-            Send internal messages to all sellers or all buyers. Messages are visible in their dashboard.
+            {t("adminMessagesHelp")}
           </p>
           <form onSubmit={sendAdminMessage} className="card-premium mb-6 p-4">
             <div className="mb-4">
-              <label className="mb-2 block text-[11px] font-semibold text-[var(--foreground)]">To</label>
+              <label className="mb-2 block text-[11px] font-semibold text-[var(--foreground)]">{t("adminMessageTo")}</label>
               <select
                 value={messageTarget}
                 onChange={(e) => setMessageTarget(e.target.value as "sellers" | "buyers")}
                 className="input-premium w-full max-w-xs"
               >
-                <option value="sellers">All sellers</option>
-                <option value="buyers">All buyers</option>
+                <option value="sellers">{t("adminAllSellers")}</option>
+                <option value="buyers">{t("adminAllBuyers")}</option>
               </select>
             </div>
             <div className="mb-4">
-              <label className="mb-2 block text-[11px] font-semibold text-[var(--foreground)]">Subject</label>
+              <label className="mb-2 block text-[11px] font-semibold text-[var(--foreground)]">{t("adminSubject")}</label>
               <input
                 type="text"
                 value={messageSubject}
                 onChange={(e) => setMessageSubject(e.target.value)}
-                placeholder="e.g. Important update for sellers"
+                placeholder={t("adminSubjectPlaceholder")}
                 className="input-premium w-full"
                 required
               />
             </div>
             <div className="mb-4">
-              <label className="mb-2 block text-[11px] font-semibold text-[var(--foreground)]">Message</label>
+              <label className="mb-2 block text-[11px] font-semibold text-[var(--foreground)]">{t("adminMessageBody")}</label>
               <textarea
                 value={messageBody}
                 onChange={(e) => setMessageBody(e.target.value)}
-                placeholder="Write your message..."
+                placeholder={t("adminMessagePlaceholder")}
                 className="input-premium w-full min-h-[120px]"
                 rows={5}
                 required
@@ -850,19 +852,19 @@ export default function AdminPage() {
               <p className="mb-4 text-[11px] text-red-600 dark:text-red-400">{messageError}</p>
             )}
             <button type="submit" disabled={messageSending} className="btn-primary py-2 text-[11px]">
-              {messageSending ? "Sending…" : "Send message"}
+              {messageSending ? t("sending") : t("adminSendMessage")}
             </button>
           </form>
           {adminMessages.length > 0 && (
             <div>
-              <h3 className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">Sent messages</h3>
+              <h3 className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">{t("adminSentMessages")}</h3>
               <ul className="space-y-3">
                 {adminMessages.map((m) => (
                   <li key={m.id} className="card-compact flex flex-wrap items-start justify-between gap-2 p-4">
                     <div className="min-w-0 flex-1">
                       <div className="mb-1 flex items-center gap-2">
                         <span className="rounded bg-[var(--border)] px-2 py-0.5 text-[10px] text-[var(--foreground)]">
-                          {m.target_audience}
+                          {m.target_audience === "sellers" ? t("adminAllSellers") : t("adminAllBuyers")}
                         </span>
                         <span className="text-[10px] text-[var(--muted-foreground)]">
                           {new Date(m.created_at).toLocaleString()}
@@ -876,7 +878,7 @@ export default function AdminPage() {
                       onClick={() => deleteAdminMessage(m.id)}
                       className="shrink-0 rounded border border-red-300 px-2 py-1 text-[10px] font-medium text-red-600 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20"
                     >
-                      Delete
+                      {t("adminRemove")}
                     </button>
                   </li>
                 ))}
@@ -884,17 +886,17 @@ export default function AdminPage() {
             </div>
           )}
           {adminMessages.length === 0 && (
-            <p className="text-caption text-[var(--muted-foreground)]">No messages sent yet.</p>
+            <p className="text-caption text-[var(--muted-foreground)]">{t("adminNoMessages")}</p>
           )}
         </>
       ) : activeTab === "sellers" ? (
         <>
           <p className="mb-4 text-caption text-[var(--muted-foreground)]">
-            Set verification badges for sellers. At least one checked = &quot;Verified Seller&quot; badge.
+            {t("adminSellersHelp")}
           </p>
           {Object.keys(profiles).length === 0 ? (
             <div className="card-premium flex flex-col items-center justify-center gap-2 p-12 text-center">
-              <p className="text-body text-[var(--muted-foreground)]">No sellers yet.</p>
+              <p className="text-body text-[var(--muted-foreground)]">{t("adminNoSellers")}</p>
             </div>
           ) : (
             <ul className="space-y-4">
@@ -906,7 +908,7 @@ export default function AdminPage() {
                       <p className="text-[11px] text-[var(--muted-foreground)]">{p.company_name}</p>
                     )}
                     <p className="text-[10px] text-[var(--muted-foreground)]">
-                      {cars.filter((c) => c.owner_id === id).length} listing(s)
+                      {t("adminListingsCount").replace("{n}", String(cars.filter((c) => c.owner_id === id).length))}
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-4">
@@ -917,7 +919,7 @@ export default function AdminPage() {
                         onChange={(e) => updateSellerVerification(id, "phone_verified", e.target.checked)}
                         className="rounded border-[var(--border)]"
                       />
-                      Phone
+                      {t("phone")}
                     </label>
                     <label className="flex items-center gap-2 text-[11px]">
                       <input
@@ -926,7 +928,7 @@ export default function AdminPage() {
                         onChange={(e) => updateSellerVerification(id, "id_verified", e.target.checked)}
                         className="rounded border-[var(--border)]"
                       />
-                      ID checked
+                      {t("adminIdChecked")}
                     </label>
                     <label className="flex items-center gap-2 text-[11px]">
                       <input
@@ -935,7 +937,7 @@ export default function AdminPage() {
                         onChange={(e) => updateSellerVerification(id, "dealer_verified", e.target.checked)}
                         className="rounded border-[var(--border)]"
                       />
-                      Dealer
+                      {t("adminDealer")}
                     </label>
                   </div>
                 </li>
@@ -946,22 +948,22 @@ export default function AdminPage() {
       ) : activeTab === "rdv" ? (
         <>
           <p className="mb-4 text-caption text-[var(--muted-foreground)]">
-            Manage meeting requests. Approve to notify the seller. All buyer and seller contacts visible here only.
+            {t("adminRdvHelp")}
           </p>
           {rdvFetchError && (
             <div className="mb-4 rounded border border-amber-500 bg-amber-50 p-4 text-[11px] dark:border-amber-600 dark:bg-amber-900/20">
-              <p className="font-semibold text-amber-800 dark:text-amber-400">Could not load RDV</p>
+              <p className="font-semibold text-amber-800 dark:text-amber-400">{t("adminRdvLoadError")}</p>
               <p className="mt-1 text-amber-700 dark:text-amber-300">{rdvFetchError}</p>
               <p className="mt-2 text-amber-600 dark:text-amber-400">
-                Add <code className="rounded bg-amber-200 px-1 dark:bg-amber-900">SUPABASE_SERVICE_ROLE_KEY</code> to .env.local (Supabase → Settings → API → service_role). Restart dev server.
+                {t("adminRdvEnvHint")}
               </p>
             </div>
           )}
           {rdvRequests.length === 0 ? (
             <div className="card-premium flex flex-col items-center justify-center gap-3 p-12 text-center">
-              <p className="text-body text-[var(--muted-foreground)]">No rendez-vous requests yet.</p>
+              <p className="text-body text-[var(--muted-foreground)]">{t("adminNoRdv")}</p>
               <p className="max-w-sm text-[11px] text-[var(--muted-foreground)]">
-                Buyers must be logged in, have a phone number in Settings, and use &quot;Request meeting&quot; on a car page. You can test by creating a buyer account and submitting a request.
+                {t("adminNoRdvHint")}
               </p>
             </div>
           ) : (
@@ -969,8 +971,8 @@ export default function AdminPage() {
               {rdvRequests.map((rdv) => {
                 const carRel = rdv.cars;
                 const carData = Array.isArray(carRel) ? carRel[0] : carRel;
-                const title = (carData && typeof carData === "object" && carData?.title) ? carData.title : "Car";
-                const intentLabel = rdv.intent === "rent" ? "Rent" : rdv.intent === "sale" ? "Buy" : ((carData && "listing_type" in carData) ? (carData.listing_type === "rent" ? "Rent" : "Buy") : null);
+                const title = (carData && typeof carData === "object" && carData?.title) ? carData.title : t("adminViewListing");
+                const intentLabel = rdv.intent === "rent" ? t("adminIntentRent") : rdv.intent === "sale" ? t("adminIntentBuy") : ((carData && "listing_type" in carData) ? (carData.listing_type === "rent" ? t("adminIntentRent") : t("adminIntentBuy")) : null);
                 const ownerId = (carData && typeof carData === "object" && "owner_id" in carData) ? (carData as { owner_id?: string }).owner_id : null;
                 const sellerProfile = ownerId ? profiles[ownerId] : null;
                 const brand = sellerProfile?.company_name ?? sellerProfile?.full_name ?? "—";
@@ -1001,37 +1003,37 @@ export default function AdminPage() {
                             </span>
                           )}
                           <Link href={`/cars/${rdv.car_id}`} className="text-[10px] font-medium text-[var(--accent)] hover:underline">
-                            View listing
+                            {t("adminViewListing")}
                           </Link>
                         </div>
                         <div className="mt-3 grid gap-2 text-[11px] sm:grid-cols-2">
                           <div className="rounded bg-[var(--background)] p-2">
-                            <p className="font-semibold text-[var(--muted-foreground)]">Buyer</p>
+                            <p className="font-semibold text-[var(--muted-foreground)]">{t("buyer")}</p>
                             <p>{(rdv.buyer_name || rdv.buyer_email) ?? "—"}</p>
                             <p>{rdv.buyer_email ?? "—"}</p>
                             <p>{rdv.buyer_phone ?? "—"}</p>
                           </div>
                           <div className="rounded bg-[var(--background)] p-2">
-                            <p className="font-semibold text-[var(--muted-foreground)]">Seller / Brand</p>
+                            <p className="font-semibold text-[var(--muted-foreground)]">{t("adminSellerBrand")}</p>
                             <p>{brand}</p>
-                            <p>Phone: {ownerPhone ?? "—"}</p>
-                            <p>WhatsApp: {ownerWhatsapp ?? "—"}</p>
-                            <p>Address: {ownerAddress ?? "—"}</p>
+                            <p>{t("phone")}: {ownerPhone ?? "—"}</p>
+                            <p>{t("whatsapp")}: {ownerWhatsapp ?? "—"}</p>
+                            <p>{t("address")}: {ownerAddress ?? "—"}</p>
                           </div>
                         </div>
                         {rdv.message && (
                           <p className="mt-2 text-[11px] text-[var(--muted-foreground)]">
-                            Message: {rdv.message}
+                            {t("adminMessageBody")}: {rdv.message}
                           </p>
                         )}
                         {rdv.preferred_date && (
                           <p className="text-[11px] text-[var(--muted-foreground)]">
-                            Preferred: {rdv.preferred_date}
+                            {t("adminPreferredDate")}: {rdv.preferred_date}
                           </p>
                         )}
                         {rdv.suggested_price != null && rdv.suggested_price > 0 && (
                           <p className="text-[11px] font-medium text-[var(--foreground)]">
-                            Price willing to pay (if good): {Number(rdv.suggested_price).toLocaleString()}
+                            {t("adminPriceWilling")}: {Number(rdv.suggested_price).toLocaleString()}
                           </p>
                         )}
                         <span
@@ -1041,7 +1043,7 @@ export default function AdminPage() {
                               : "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
                           }`}
                         >
-                          {rdv.status}
+                          {rdv.status === "pending" ? t("pending") : rdv.status === "approved" ? t("approved") : rdv.status}
                         </span>
                       </div>
                       <div className="flex shrink-0 flex-wrap gap-2">
@@ -1051,7 +1053,7 @@ export default function AdminPage() {
                             onClick={() => approveRdv(rdv.id)}
                             className="btn-primary py-2 text-[11px]"
                           >
-                            Approve
+                            {t("adminApprove")}
                           </button>
                         )}
                         <button
@@ -1059,7 +1061,7 @@ export default function AdminPage() {
                           onClick={() => deleteRdv(rdv.id)}
                           className="rounded border border-red-300 px-3 py-1.5 text-[10px] font-medium text-red-600 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20"
                         >
-                          Remove
+                          {t("adminRemove")}
                         </button>
                       </div>
                     </div>
@@ -1073,22 +1075,21 @@ export default function AdminPage() {
         <>
           {adminListingsError && cars.length === 0 && (
             <div className="mb-4 rounded border border-amber-500 bg-amber-50 p-4 text-[11px] dark:bg-amber-900/20 dark:border-amber-600">
-              <p className="font-semibold text-amber-800 dark:text-amber-400">Admin setup required</p>
+              <p className="font-semibold text-amber-800 dark:text-amber-400">{t("adminSetupRequired")}</p>
               <p className="mt-1 text-amber-700 dark:text-amber-300">
-                Run the SQL in <code className="rounded bg-amber-100 px-1 dark:bg-amber-900/40">supabase/RUN_THIS_FOR_ADMIN_LISTINGS.sql</code> in Supabase → SQL Editor.
-                Replace YOUR_ADMIN_EMAIL with your admin email, then click Refresh.
+                {t("adminSetupSqlHint")}
               </p>
             </div>
           )}
           <p className="mb-6 text-caption text-[var(--muted-foreground)]">
-            Approve listings so they appear on the site. Seller contact info only visible here.
+            {t("adminListingsHelp")}
           </p>
           {cars.length === 0 ? (
             <div className="card-premium flex flex-col items-center justify-center gap-2 p-12 text-center">
-              <p className="text-body text-[var(--muted-foreground)]">No listings yet.</p>
+              <p className="text-body text-[var(--muted-foreground)]">{t("adminNoListings")}</p>
               {adminListingsError && (
                 <p className="mt-2 max-w-md text-[10px] text-amber-600 dark:text-amber-400">
-                  If sellers have submitted listings, run the admin setup SQL in Supabase (see above).
+                  {t("adminSetupSqlFallback")}
                 </p>
               )}
             </div>
@@ -1106,21 +1107,21 @@ export default function AdminPage() {
                           {car.make} {car.model}
                           {car.year != null ? ` · ${car.year}` : ""} · {formatPrice(car.price, "USD", "USD")}
                           {car.is_draft && (
-                            <span className="ml-1 rounded bg-slate-200 px-1 dark:bg-slate-600">Draft</span>
+                            <span className="ml-1 rounded bg-slate-200 px-1 dark:bg-slate-600">{t("draft")}</span>
                           )}
                           {(car.boost_score ?? 0) > 0 && (
                             <span className="ml-1 rounded bg-[var(--accent)]/20 px-1.5 py-0.5 text-[10px] font-medium text-[var(--accent)]">
-                              Boost {car.boost_score}
+                              {t("adminBoostN").replace("{n}", String(car.boost_score))}
                             </span>
                           )}
                         </p>
                         <p className="mt-1 text-[10px] text-[var(--muted-foreground)]">
-                          Brand: {brand}
+                          {t("adminBrandLabel")}: {brand}
                         </p>
                         <div className="mt-2 rounded bg-[var(--background)] p-2 text-[10px]">
-                          <p>Phone: {car.owner_phone ?? "—"}</p>
-                          <p>WhatsApp: {car.owner_whatsapp ?? "—"}</p>
-                          <p>Address: {car.owner_address ?? "—"}</p>
+                          <p>{t("phone")}: {car.owner_phone ?? "—"}</p>
+                          <p>{t("whatsapp")}: {car.owner_whatsapp ?? "—"}</p>
+                          <p>{t("address")}: {car.owner_address ?? "—"}</p>
                         </div>
                       </div>
                       <div className="flex flex-wrap gap-2">
@@ -1132,10 +1133,10 @@ export default function AdminPage() {
                             setCars((prev) => prev.map((c) => (c.id === car.id ? { ...c, boost_score: v } : c)));
                           }}
                           className="rounded border border-[var(--border)] bg-[var(--background)] px-2 py-1.5 text-[10px] text-[var(--foreground)]"
-                          title="Rank higher: higher score = appears first in browse"
+                          title={t("adminBoostTitle")}
                         >
                           {[0, 1, 2, 3, 4, 5].map((n) => (
-                            <option key={n} value={n}>{n === 0 ? "No boost" : `Boost ${n}`}</option>
+                            <option key={n} value={n}>{n === 0 ? t("adminNoBoost") : t("adminBoostN").replace("{n}", String(n))}</option>
                           ))}
                         </select>
                         <Link
@@ -1144,7 +1145,7 @@ export default function AdminPage() {
                           rel="noopener noreferrer"
                           className="rounded border border-[var(--border)] px-3 py-1.5 text-[10px] font-medium text-[var(--foreground)] hover:bg-[var(--background)] dark:hover:bg-[var(--border)]"
                         >
-                          Preview
+                          {t("adminPreview")}
                         </Link>
                         {car.is_approved ? (
                           <button
@@ -1152,7 +1153,7 @@ export default function AdminPage() {
                             onClick={() => openRejectModal(car)}
                             className="rounded border border-amber-500 px-3 py-1.5 text-[10px] font-medium text-amber-600 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-900/20"
                           >
-                            Reject
+                            {t("adminReject")}
                           </button>
                         ) : (
                           <button
@@ -1160,7 +1161,7 @@ export default function AdminPage() {
                             onClick={() => approveCar(car.id)}
                             className="btn-primary py-1.5 text-[10px]"
                           >
-                            Approve
+                            {t("adminApprove")}
                           </button>
                         )}
                         <button
@@ -1183,27 +1184,27 @@ export default function AdminPage() {
       {rejectModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="card-premium w-full max-w-md p-6">
-            <h3 className="mb-2 font-semibold text-[var(--foreground)]">Reject: {rejectModal.title}</h3>
+            <h3 className="mb-2 font-semibold text-[var(--foreground)]">{t("adminRejectTitle").replace("{title}", rejectModal.title)}</h3>
             <p className="mb-2 text-caption text-[var(--muted-foreground)]">
-              Give a reason (optional). The seller will see this.
+              {t("adminRejectHelp")}
             </p>
             <textarea
               value={rejectReason}
               onChange={(e) => setRejectReason(e.target.value)}
-              placeholder="e.g. Photos unclear, price missing..."
+              placeholder={t("adminRejectPlaceholder")}
               className="input-premium mb-4 w-full"
               rows={3}
             />
             <div className="flex gap-2">
               <button type="button" onClick={submitReject} className="btn-primary py-2 text-[11px]">
-                Reject
+                {t("adminReject")}
               </button>
               <button
                 type="button"
                 onClick={() => { setRejectModal(null); setRejectReason(""); }}
                 className="btn-secondary py-2 text-[11px]"
               >
-                Cancel
+                {t("cancel")}
               </button>
             </div>
           </div>

@@ -28,11 +28,11 @@ export default function ResetPasswordPage() {
     setError(null);
     setMessage(null);
     if (!password || password.length < 6) {
-      setError("Password must be at least 6 characters.");
+      setError(t("signupPasswordRequired"));
       return;
     }
     if (password !== confirmPassword) {
-      setError("Passwords do not match.");
+      setError(t("passwordsDoNotMatch"));
       return;
     }
     setLoading(true);
@@ -42,7 +42,7 @@ export default function ResetPasswordPage() {
       setError(error.message);
       return;
     }
-    setMessage("Password updated. You can now log in with your new password.");
+    setMessage(t("passwordUpdated"));
     setTimeout(() => {
       router.push("/login");
     }, 2000);
@@ -51,20 +51,19 @@ export default function ResetPasswordPage() {
   return (
     <div className="flex min-h-[calc(100vh-3.5rem)] items-center justify-center px-4 py-10">
       <div className="card-premium w-full max-w-sm p-6 sm:p-8">
-        <h1 className="text-heading mb-4 text-[var(--foreground)]">Reset password</h1>
+        <h1 className="text-heading mb-4 text-[var(--foreground)]">{t("resetPassword")}</h1>
         {!hasSession ? (
           <p className="text-body text-[var(--muted-foreground)]">
-            The reset link is invalid or has expired. Please request a new password reset from the{" "}
+            {t("resetLinkInvalid")}{" "}
             <Link href="/login" className="underline hover:no-underline">
-              login page
+              {t("logIn")}
             </Link>
-            .
           </p>
         ) : (
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <div>
               <label htmlFor="password" className="text-caption mb-1.5 block">
-                New password
+                {t("newPassword")}
               </label>
               <input
                 id="password"
@@ -78,7 +77,7 @@ export default function ResetPasswordPage() {
             </div>
             <div>
               <label htmlFor="confirmPassword" className="text-caption mb-1.5 block">
-                Confirm password
+                {t("confirmPassword")}
               </label>
               <input
                 id="confirmPassword"
@@ -96,13 +95,13 @@ export default function ResetPasswordPage() {
                   onChange={(e) => setShowPassword(e.target.checked)}
                   className="h-3 w-3"
                 />
-                <span>Show password</span>
+                <span>{t("showPassword")}</span>
               </label>
             </div>
             {error && <p className="text-small text-red-600">{error}</p>}
             {message && <p className="text-small text-emerald-600">{message}</p>}
             <button type="submit" disabled={loading} className="btn-primary w-full disabled:opacity-50">
-              {loading ? t("saving") : "Update password"}
+              {loading ? t("loading") : t("updatePassword")}
             </button>
           </form>
         )}
@@ -110,4 +109,3 @@ export default function ResetPasswordPage() {
     </div>
   );
 }
-

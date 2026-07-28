@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { LocaleProvider, useLocale } from "@/app/contexts/LocaleContext";
 import { ToastProvider } from "@/app/contexts/ToastContext";
 import AuthNav from "./AuthNav";
@@ -10,6 +11,15 @@ import CookieNotice from "./CookieNotice";
 import LogVisit from "./LogVisit";
 import LocaleSwitcher from "./LocaleSwitcher";
 import Logo from "./Logo";
+
+function AnimatedMain({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  return (
+    <main key={pathname} className="animate-page-enter flex min-w-0 flex-1 flex-col overflow-x-hidden">
+      {children}
+    </main>
+  );
+}
 
 function Header() {
   const { t } = useLocale();
@@ -38,22 +48,22 @@ function Header() {
   const mobileMenu = mobileOpen && typeof document !== "undefined" ? (
     <>
       <div
-        className="fixed inset-0 bg-black/70"
+        className="animate-menu-backdrop fixed inset-0 bg-black/70"
         style={{ zIndex: 99998 }}
         aria-hidden
         onClick={() => setMobileOpen(false)}
       />
       <div
-        className="fixed inset-0 flex flex-col bg-[#18181b] text-[#fafafa]"
+        className="animate-menu-panel fixed inset-0 flex flex-col bg-[var(--card)] text-[var(--foreground)]"
         style={{ zIndex: 99999 }}
       >
-        <div className="flex h-12 min-h-[44px] shrink-0 items-center justify-between border-b border-[#27272a] px-4 pt-[env(safe-area-inset-top)]">
+        <div className="flex h-12 min-h-[44px] shrink-0 items-center justify-between border-b border-[var(--border)] px-4 pt-[env(safe-area-inset-top)]">
           <Logo showTagline={false} size="sm" />
           <button
             type="button"
             onClick={() => setMobileOpen(false)}
-            className="flex h-9 w-9 items-center justify-center rounded text-[#fafafa] hover:bg-[#27272a]"
-            aria-label="Close menu"
+            className="flex h-9 w-9 items-center justify-center rounded text-[var(--foreground)] hover:bg-[var(--border)]"
+            aria-label={t("closeMenu")}
           >
             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -64,20 +74,27 @@ function Header() {
           <Link
             href="/cars"
             onClick={() => setMobileOpen(false)}
-            className="py-2.5 text-[11px] font-medium text-[#fafafa] hover:text-[#eab308]"
+            className="py-2.5 text-[11px] font-medium text-[var(--foreground)] hover:text-[var(--accent)]"
           >
             {t("browseCars")}
           </Link>
           <Link
+            href="/compare"
+            onClick={() => setMobileOpen(false)}
+            className="py-2.5 text-[11px] font-medium text-[var(--foreground)] hover:text-[var(--accent)]"
+          >
+            {t("compare")}
+          </Link>
+          <Link
             href="/rent"
             onClick={() => setMobileOpen(false)}
-            className="inline-flex px-3 py-2 text-[11px] font-medium text-white bg-[#ef4444] hover:bg-[#f87171] rounded"
+            className="btn-rent inline-flex px-3 py-2 text-[11px] font-medium"
           >
             {t("rentCars")}
           </Link>
-          <div className="my-1 border-t border-[#27272a]" />
+          <div className="my-1 border-t border-[var(--border)]" />
           <LocaleSwitcher mobile inOverlay onNavigate={() => setMobileOpen(false)} />
-          <div className="my-1 border-t border-[#27272a]" />
+          <div className="my-1 border-t border-[var(--border)]" />
           <AuthNav mobile onNavigate={() => setMobileOpen(false)} />
         </nav>
       </div>
@@ -98,6 +115,12 @@ function Header() {
             {t("browseCars")}
           </Link>
           <Link
+            href="/compare"
+            className="text-[11px] font-medium text-[var(--foreground)] hover:text-[var(--accent)] transition-colors"
+          >
+            {t("compare")}
+          </Link>
+          <Link
             href="/rent"
             className="btn-rent px-3 py-1.5 text-[11px] font-medium"
           >
@@ -114,7 +137,7 @@ function Header() {
           type="button"
           onClick={() => setMobileOpen(true)}
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius)] text-[var(--foreground)] hover:bg-[var(--border)] md:hidden transition-colors"
-          aria-label="Open menu"
+          aria-label={t("openMenu")}
         >
           <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
@@ -181,7 +204,7 @@ function Footer() {
         </div>
         <div className="mt-5 border-t border-[var(--border)] pt-3">
           <p className="text-center text-[9px] text-[var(--muted-foreground)]">
-            © {new Date().getFullYear()} {t("siteName")}. All rights reserved.
+            © {new Date().getFullYear()} {t("siteName")}. {t("allRightsReserved")}
           </p>
         </div>
       </div>
@@ -193,9 +216,11 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   return (
     <LocaleProvider>
       <ToastProvider>
-        <Header />
-        <main className="min-w-0 overflow-x-hidden">{children}</main>
-        <Footer />
+        <div className="flex min-h-dvh flex-col">
+          <Header />
+          <AnimatedMain>{children}</AnimatedMain>
+          <Footer />
+        </div>
         <CookieNotice />
         <LogVisit />
       </ToastProvider>

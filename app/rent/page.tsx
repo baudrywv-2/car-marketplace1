@@ -261,7 +261,7 @@ function RentPageContent() {
                       <CarImagePlaceholder className="h-full min-h-[80px]" />
                     )}
                   </div>
-                  <span className="absolute left-2 top-2 rounded bg-[var(--accent)] px-2 py-0.5 text-[9px] font-semibold text-white">
+                  <span className="absolute left-2 top-2 rounded bg-[var(--accent)] px-2 py-0.5 text-[10px] font-semibold text-white">
                     {t("forRent")}
                   </span>
                   <FavoriteButton
@@ -273,23 +273,23 @@ function RentPageContent() {
                   />
                 </div>
                 <div className="p-2.5">
-                  <p className="truncate text-[9px] font-semibold text-[var(--foreground)]">{car.title}</p>
-                  <p className="mt-0.5 truncate text-[8px] text-[var(--muted-foreground)]">
+                  <p className="truncate text-[12px] font-semibold text-[var(--foreground)]">{car.title}</p>
+                  <p className="mt-0.5 truncate text-[11px] text-[var(--muted-foreground)]">
                     {car.year != null && `${car.year} · `}
                     {car.province || car.city || ""}
                   </p>
                   {car.rental_event_type && car.rental_event_type.length > 0 && (
-                    <p className="mt-0.5 flex flex-wrap gap-1 text-[8px] text-[var(--muted-foreground)]">
+                    <p className="mt-0.5 flex flex-wrap gap-1 text-[11px] text-[var(--muted-foreground)]">
                       {car.rental_event_type.slice(0, 2).map((ev) => (
                         <span key={ev} className="rounded bg-[var(--border)] px-1">{t(RENTAL_EVENT_TRANSLATION_KEYS[ev as keyof typeof RENTAL_EVENT_TRANSLATION_KEYS] as Parameters<typeof t>[0])}</span>
                       ))}
                     </p>
                   )}
-                  <p className="mt-0.5 text-[9px] font-semibold text-[var(--accent)]">
+                  <p className="mt-0.5 text-[12px] font-semibold text-[var(--accent)]">
                     {formatRentalPrice(car) || t("priceFrom")}
                   </p>
                   {car.created_at && (
-                    <p className="mt-0.5 text-[8px] text-[var(--muted-foreground)]">
+                    <p className="mt-0.5 text-[11px] text-[var(--muted-foreground)]">
                       {formatListedDate(car.created_at, (k) => t(k as "listedToday" | "listedYesterday" | "listedDaysAgo"))}
                     </p>
                   )}

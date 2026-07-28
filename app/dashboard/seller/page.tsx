@@ -1,15 +1,30 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useLocale } from "@/app/contexts/LocaleContext";
-import { SUPPORT_EMAIL, SITE_URL } from "@/lib/constants";
+import { SUPPORT_EMAIL, SITE_URL, LISTING_TYPE_TRANSLATION_KEYS } from "@/lib/constants";
 import { formatPrice } from "@/lib/format-utils";
-import { LISTING_TYPE_TRANSLATION_KEYS } from "@/lib/constants";
+import {
+  syncSellerProfileFromAuth,
+  sellerDisplayName,
+  isCompanySeller,
+} from "@/lib/seller-profile";
+import FirstVisitTips, { type TourStep } from "@/app/components/FirstVisitTips";
 
-type Profile = { id: string; full_name: string | null; role: string; company_name: string | null; phone?: string | null; whatsapp?: string | null };
+type Profile = {
+  id: string;
+  full_name: string | null;
+  role: string;
+  company_name: string | null;
+  phone?: string | null;
+  whatsapp?: string | null;
+  city?: string | null;
+  avatar_url?: string | null;
+};
+
 type Car = {
   id: string;
   title: string;
@@ -22,28 +37,64 @@ type Car = {
   is_sold?: boolean;
   rejection_reason?: string | null;
   created_at: string;
+  images?: string[] | null;
 };
 
-type ApprovedRdv = { id: string; car_id: string; intent?: string | null; created_at: string; suggested_price: number | null; cars: { title?: string; listing_type?: string } | null };
+type ApprovedRdv = {
+  id: string;
+  car_id: string;
+  intent?: string | null;
+  created_at: string;
+  suggested_price: number | null;
+  cars: { title?: string; listing_type?: string } | null;
+};
 
-function StatCard({ label, value }: { label: string; value: string | number }) {
-  return (
-    <div className="card-premium p-4">
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">{label}</p>
-      <p className="mt-1 text-xl font-bold text-[var(--foreground)]">{value}</p>
-    </div>
-  );
-}
+type ListingFilter = "all" | "live" | "pending" | "draft" | "sold";
 
 function isVerified(user: { email_confirmed_at?: string | null } | null): boolean {
   return !!user?.email_confirmed_at;
+}
+
+function formatPhoneDisplay(phone: string | null | undefined) {
+  const d = (phone ?? "").replace(/\D/g, "");
+  if (d.length < 9) return null;
+  if (d.startsWith("243") && d.length >= 12) return `+${d.slice(0, 3)} ${d.slice(3, 6)} ${d.slice(6, 9)} ${d.slice(9)}`;
+  return `+${d}`;
+}
+
+function StatTile({
+  label,
+  value,
+  hint,
+  accent,
+}: {
+  label: string;
+  value: string | number;
+  hint?: string;
+  accent?: boolean;
+}) {
+  return (
+    <div
+      className={`rounded-lg border p-4 transition ${
+        accent
+          ? "border-[var(--accent)]/40 bg-[var(--accent-muted)]"
+          : "border-[var(--border)] bg-[var(--card)]"
+      }`}
+    >
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">{label}</p>
+      <p className={`mt-1.5 font-mono text-2xl font-bold tabular-nums ${accent ? "text-[var(--accent)]" : "text-[var(--foreground)]"}`}>
+        {value}
+      </p>
+      {hint && <p className="mt-1 text-[10px] text-[var(--muted-foreground)]">{hint}</p>}
+    </div>
+  );
 }
 
 export default function SellerDashboardPage() {
   const router = useRouter();
   const { t } = useLocale();
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [user, setUser] = useState<{ email_confirmed_at?: string | null } | null>(null);
+  const [user, setUser] = useState<{ email_confirmed_at?: string | null; email?: string | null } | null>(null);
   const [cars, setCars] = useState<Car[]>([]);
   const [approvedRdv, setApprovedRdv] = useState<ApprovedRdv[]>([]);
   const [stats, setStats] = useState<Record<string, { views: number; favorites: number; unlocks: number; rdv: number }>>({});
@@ -54,7 +105,9 @@ export default function SellerDashboardPage() {
       const raw = localStorage.getItem("dismissed_admin_messages");
       const arr = raw ? JSON.parse(raw) : [];
       return new Set(Array.isArray(arr) ? arr : []);
-    } catch { return new Set(); }
+    } catch {
+      return new Set();
+    }
   });
   const [dismissedRdvIds, setDismissedRdvIds] = useState<Set<string>>(() => {
     if (typeof window === "undefined") return new Set();
@@ -62,10 +115,13 @@ export default function SellerDashboardPage() {
       const raw = localStorage.getItem("dismissed_seller_rdv");
       const arr = raw ? JSON.parse(raw) : [];
       return new Set(Array.isArray(arr) ? arr : []);
-    } catch { return new Set(); }
+    } catch {
+      return new Set();
+    }
   });
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"overview" | "listings" | "rdv">("overview");
+  const [listingFilter, setListingFilter] = useState<ListingFilter>("all");
 
   const visibleAdminMessages = adminMessages.filter((m) => !dismissedMsgIds.has(m.id));
   const visibleApprovedRdv = approvedRdv.filter((r) => !dismissedRdvIds.has(r.id));
@@ -74,7 +130,9 @@ export default function SellerDashboardPage() {
     setDismissedMsgIds((prev) => {
       const next = new Set(prev);
       next.add(msgId);
-      try { localStorage.setItem("dismissed_admin_messages", JSON.stringify([...next])); } catch {}
+      try {
+        localStorage.setItem("dismissed_admin_messages", JSON.stringify([...next]));
+      } catch {}
       return next;
     });
   }
@@ -82,7 +140,9 @@ export default function SellerDashboardPage() {
   function clearAllAdminMessages() {
     setDismissedMsgIds((prev) => {
       const next = new Set([...prev, ...adminMessages.map((m) => m.id)]);
-      try { localStorage.setItem("dismissed_admin_messages", JSON.stringify([...next])); } catch {}
+      try {
+        localStorage.setItem("dismissed_admin_messages", JSON.stringify([...next]));
+      } catch {}
       return next;
     });
   }
@@ -91,7 +151,9 @@ export default function SellerDashboardPage() {
     setDismissedRdvIds((prev) => {
       const next = new Set(prev);
       next.add(rdvId);
-      try { localStorage.setItem("dismissed_seller_rdv", JSON.stringify([...next])); } catch {}
+      try {
+        localStorage.setItem("dismissed_seller_rdv", JSON.stringify([...next]));
+      } catch {}
       return next;
     });
   }
@@ -99,58 +161,50 @@ export default function SellerDashboardPage() {
   function clearAllRdv() {
     setDismissedRdvIds((prev) => {
       const next = new Set([...prev, ...approvedRdv.map((r) => r.id)]);
-      try { localStorage.setItem("dismissed_seller_rdv", JSON.stringify([...next])); } catch {}
+      try {
+        localStorage.setItem("dismissed_seller_rdv", JSON.stringify([...next]));
+      } catch {}
       return next;
     });
   }
 
   useEffect(() => {
     async function load() {
-      const { data: { user: u } } = await supabase.auth.getUser();
+      const {
+        data: { user: u },
+      } = await supabase.auth.getUser();
       if (!u) {
         router.replace("/login?next=/dashboard/seller");
         return;
       }
       setUser(u);
 
-      let { data: profileData } = await supabase
-        .from("profiles")
-        .select("id, full_name, role, company_name, phone, whatsapp")
-        .eq("id", u.id)
-        .single();
-      if (!profileData) {
-        const { data: inserted } = await supabase
-          .from("profiles")
-          .upsert({ id: u.id, full_name: u.email ?? "User", role: "seller" }, { onConflict: "id" })
-          .select("id, full_name, role, company_name, phone, whatsapp")
-          .single();
-        profileData = inserted;
-      }
-      setProfile(profileData ?? { id: u.id, full_name: u.email ?? "User", role: "seller", company_name: null, phone: null, whatsapp: null });
+      const profileData = await syncSellerProfileFromAuth(supabase, u);
+      setProfile(profileData);
 
-      if (profileData?.role !== "seller" && profileData?.role !== "admin") {
+      if (profileData.role !== "seller" && profileData.role !== "admin") {
         router.replace("/dashboard");
         return;
       }
 
       const { data: carsData } = await supabase
         .from("cars")
-        .select("id, title, price, make, model, year, is_approved, is_draft, is_sold, rejection_reason, created_at")
+        .select("id, title, price, make, model, year, is_approved, is_draft, is_sold, rejection_reason, created_at, images")
         .eq("owner_id", u.id)
         .order("created_at", { ascending: false });
       const list = (carsData as Car[]) ?? [];
       setCars(list);
 
-      const { data: rdvData } = await supabase
-        .from("rendezvous_requests")
-        .select("id, car_id, intent, created_at, suggested_price, cars(title, listing_type)")
-        .eq("status", "approved")
-        .in("car_id", list.map((c) => c.id))
-        .order("created_at", { ascending: false });
-      setApprovedRdv((rdvData as unknown as ApprovedRdv[]) ?? []);
-
       if (list.length > 0) {
         const ids = list.map((c) => c.id);
+        const { data: rdvData } = await supabase
+          .from("rendezvous_requests")
+          .select("id, car_id, intent, created_at, suggested_price, cars(title, listing_type)")
+          .eq("status", "approved")
+          .in("car_id", ids)
+          .order("created_at", { ascending: false });
+        setApprovedRdv((rdvData as unknown as ApprovedRdv[]) ?? []);
+
         const [{ data: viewsData }, { data: favData }, { data: unlockData }, { data: rdvDataAll }] = await Promise.all([
           supabase.from("car_views").select("car_id").in("car_id", ids),
           supabase.from("favorites").select("car_id").in("car_id", ids),
@@ -158,11 +212,21 @@ export default function SellerDashboardPage() {
           supabase.from("rendezvous_requests").select("car_id").eq("status", "approved").in("car_id", ids),
         ]);
         const byCar: Record<string, { views: number; favorites: number; unlocks: number; rdv: number }> = {};
-        ids.forEach((id) => { byCar[id] = { views: 0, favorites: 0, unlocks: 0, rdv: 0 }; });
-        (viewsData ?? []).forEach((r: { car_id?: string }) => { if (r.car_id && byCar[r.car_id]) byCar[r.car_id].views++; });
-        (favData ?? []).forEach((r: { car_id?: string }) => { if (r.car_id && byCar[r.car_id]) byCar[r.car_id].favorites++; });
-        (unlockData ?? []).forEach((r: { car_id?: string }) => { if (r.car_id && byCar[r.car_id]) byCar[r.car_id].unlocks++; });
-        (rdvDataAll ?? []).forEach((r: { car_id?: string }) => { if (r.car_id && byCar[r.car_id]) byCar[r.car_id].rdv++; });
+        ids.forEach((id) => {
+          byCar[id] = { views: 0, favorites: 0, unlocks: 0, rdv: 0 };
+        });
+        (viewsData ?? []).forEach((r: { car_id?: string }) => {
+          if (r.car_id && byCar[r.car_id]) byCar[r.car_id].views++;
+        });
+        (favData ?? []).forEach((r: { car_id?: string }) => {
+          if (r.car_id && byCar[r.car_id]) byCar[r.car_id].favorites++;
+        });
+        (unlockData ?? []).forEach((r: { car_id?: string }) => {
+          if (r.car_id && byCar[r.car_id]) byCar[r.car_id].unlocks++;
+        });
+        (rdvDataAll ?? []).forEach((r: { car_id?: string }) => {
+          if (r.car_id && byCar[r.car_id]) byCar[r.car_id].rdv++;
+        });
         setStats(byCar);
       }
 
@@ -197,6 +261,47 @@ export default function SellerDashboardPage() {
     setCars((prev) => prev.map((c) => (c.id === carId ? { ...c, is_sold: false } : c)));
   }
 
+  const metrics = useMemo(() => {
+    const live = cars.filter((c) => c.is_approved && !c.is_draft && !c.is_sold).length;
+    const pending = cars.filter((c) => !c.is_approved && !c.is_draft && !c.is_sold).length;
+    const drafts = cars.filter((c) => c.is_draft).length;
+    const sold = cars.filter((c) => c.is_sold).length;
+    const views = Object.values(stats).reduce((a, s) => a + s.views, 0);
+    const favorites = Object.values(stats).reduce((a, s) => a + s.favorites, 0);
+    const unlocks = Object.values(stats).reduce((a, s) => a + s.unlocks, 0);
+    const rdv = Object.values(stats).reduce((a, s) => a + s.rdv, 0);
+    const interest = favorites + unlocks + rdv;
+    return { live, pending, drafts, sold, views, favorites, unlocks, rdv, interest };
+  }, [cars, stats]);
+
+  const topListings = useMemo(() => {
+    return [...cars]
+      .filter((c) => !c.is_draft)
+      .map((c) => ({
+        car: c,
+        score: (stats[c.id]?.views ?? 0) + (stats[c.id]?.favorites ?? 0) * 3 + (stats[c.id]?.unlocks ?? 0) * 5 + (stats[c.id]?.rdv ?? 0) * 5,
+        ...stats[c.id],
+      }))
+      .filter((x) => (x.views ?? 0) > 0 || (x.favorites ?? 0) > 0 || (x.unlocks ?? 0) > 0 || (x.rdv ?? 0) > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 4);
+  }, [cars, stats]);
+
+  const filteredCars = useMemo(() => {
+    switch (listingFilter) {
+      case "live":
+        return cars.filter((c) => c.is_approved && !c.is_draft && !c.is_sold);
+      case "pending":
+        return cars.filter((c) => !c.is_approved && !c.is_draft && !c.is_sold);
+      case "draft":
+        return cars.filter((c) => c.is_draft);
+      case "sold":
+        return cars.filter((c) => c.is_sold);
+      default:
+        return cars;
+    }
+  }, [cars, listingFilter]);
+
   if (loading) {
     return (
       <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
@@ -207,163 +312,340 @@ export default function SellerDashboardPage() {
 
   const hasContact = !!(profile?.phone && profile.phone.replace(/\D/g, "").length >= 9);
   const canListCars = isVerified(user);
+  const displayName = profile ? sellerDisplayName(profile) : "";
+  const company = profile ? isCompanySeller(profile) : false;
+  const phoneLabel = formatPhoneDisplay(profile?.phone);
+  const hasDisplayName = !!(profile?.company_name?.trim() || profile?.full_name?.trim());
+  const hasListing = cars.length > 0;
+  const setupItems = [
+    { done: canListCars, label: t("setupEmail"), href: "/dashboard/settings" },
+    { done: hasContact, label: t("setupPhone"), href: "/dashboard/settings" },
+    { done: hasDisplayName, label: t("setupBrand"), href: "/dashboard/settings" },
+    { done: hasListing, label: t("setupListing"), href: "/dashboard/cars/new" },
+  ];
+  const setupIncomplete = setupItems.some((i) => !i.done);
+  const storefrontUrl = profile ? `${SITE_URL}/seller/${profile.id}` : SITE_URL;
+  const shareText = encodeURIComponent(
+    `${displayName} — ${metrics.live} ${t("liveListings").toLowerCase()} · DRCCARS: ${storefrontUrl}`
+  );
+
+  const tourSteps: TourStep[] = [
+    { targetId: "seller-tip-add-car", messageKey: "tipSellerAddCar" },
+    ...(setupIncomplete
+      ? [{ targetId: "seller-tip-checklist", messageKey: "tipSellerChecklist" as const }]
+      : []),
+    { targetId: "seller-tip-tabs", messageKey: "tipSellerTabs" },
+    { targetId: "seller-tip-storefront", messageKey: "tipSellerStorefront" },
+  ];
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-heading text-[var(--foreground)]">Seller Dashboard</h1>
-          {profile?.company_name && (
-            <p className="mt-1 text-caption font-medium text-[var(--accent)]">
-              {profile.company_name}
-            </p>
-          )}
+    <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
+      <FirstVisitTips storageKey="seller-dashboard-tips-seen" steps={tourSteps} />
+      {/* Header */}
+      <section className="mb-6 overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--card)]">
+        <div className="relative border-b border-[var(--border)] bg-gradient-to-br from-[var(--accent-muted)] via-transparent to-transparent px-4 py-5 sm:px-6 sm:py-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-4">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[var(--border)] bg-[var(--background)] text-lg font-bold text-[var(--accent)]">
+                {profile?.avatar_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={profile.avatar_url} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  (displayName[0] || "?").toUpperCase()
+                )}
+              </div>
+              <div className="min-w-0">
+                <p className="text-[11px] font-mono text-[var(--muted-foreground)]">
+                  {t("sellerWelcome")}
+                  {user?.email ? ` · ${user.email}` : ""}
+                </p>
+                <h1 className="truncate font-mono text-xl font-bold text-[var(--foreground)] sm:text-2xl">{displayName}</h1>
+                <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                  <span className="rounded border border-[var(--border)] bg-[var(--background)] px-2 py-0.5 text-[10px] font-medium text-[var(--foreground)]">
+                    {company ? t("sellerCompany") : t("sellerIndividual")}
+                  </span>
+                  {profile?.city && (
+                    <span className="text-[10px] text-[var(--muted-foreground)]">{profile.city}</span>
+                  )}
+                  {phoneLabel ? (
+                    <span className="text-[10px] font-mono text-[var(--accent)]">
+                      {t("phoneOnFile")}: {phoneLabel}
+                    </span>
+                  ) : (
+                    <Link href="/dashboard/settings" className="text-[10px] text-amber-400 hover:underline">
+                      {t("addPhoneHint")}
+                    </Link>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {canListCars ? (
+                <Link id="seller-tip-add-car" href="/dashboard/cars/new" className="btn-primary px-4 py-2 text-sm">
+                  {t("addCar")}
+                </Link>
+              ) : (
+                <Link id="seller-tip-add-car" href="/dashboard/cars/new" className="btn-secondary px-4 py-2 text-sm">
+                  {t("addCarVerifyFirst")}
+                </Link>
+              )}
+              <Link href="/dashboard/settings" className="btn-secondary px-4 py-2 text-sm">
+                {t("editProfile")}
+              </Link>
+              <Link
+                href="/dashboard/seller/welcome"
+                className="rounded-lg border border-[var(--border)] px-4 py-2 text-sm text-[var(--muted-foreground)] transition hover:border-[var(--accent)]/40 hover:text-[var(--accent)]"
+              >
+                {t("howItWorks")}
+              </Link>
+            </div>
+          </div>
         </div>
-        <div className="flex flex-wrap items-center gap-3">
-          {cars.filter((c) => c.is_approved && !c.is_draft && !c.is_sold).length > 0 && profile && (
-            <a
-              href={`https://wa.me/?text=${encodeURIComponent(`${profile.company_name || profile.full_name || "My listings"} - ${cars.filter((c) => c.is_approved && !c.is_draft && !c.is_sold).length} cars on DRCCARS: ${SITE_URL}/seller/${profile.id}`)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn-accent inline-flex items-center gap-2"
-            >
-              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-              </svg>
-              {t("shareMyListings")}
-            </a>
-          )}
-          <Link href="/dashboard/settings" className="text-caption text-[var(--muted-foreground)] hover:text-[var(--foreground)]">
-            {t("contactSettings")}
-          </Link>
-          <Link href="/dashboard" className="text-caption text-[var(--muted-foreground)] hover:text-[var(--foreground)]">
-            ← {t("backToDashboard")}
-          </Link>
-        </div>
-      </div>
 
-      <div className="mb-6 border-b border-[var(--border)]">
-        <nav className="-mb-px flex gap-4" aria-label="Tabs">
+        <div className="grid gap-2 border-b border-[var(--border)] p-3 sm:grid-cols-2 lg:grid-cols-4 sm:p-4">
+          <Link
+            id="seller-tip-storefront"
+            href={profile ? `/seller/${profile.id}` : "#"}
+            className="rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-center text-xs font-medium text-[var(--foreground)] transition hover:border-[var(--accent)]/50 hover:text-[var(--accent)]"
+          >
+            {t("viewStorefront")}
+          </Link>
+          <a
+            href={`https://wa.me/?text=${shareText}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-center text-xs font-medium text-[var(--foreground)] transition hover:border-[var(--accent)]/50 hover:text-[var(--accent)]"
+          >
+            {t("shareStorefront")}
+          </a>
+          <button
+            type="button"
+            onClick={() => setActiveTab("rdv")}
+            className="rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-center text-xs font-medium text-[var(--foreground)] transition hover:border-[var(--accent)]/50 hover:text-[var(--accent)]"
+          >
+            {t("tabRendezVous")} ({visibleApprovedRdv.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setListingFilter("live");
+              setActiveTab("listings");
+            }}
+            className="rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-center text-xs font-medium text-[var(--foreground)] transition hover:border-[var(--accent)]/50 hover:text-[var(--accent)]"
+          >
+            {t("tabListings")} ({cars.length})
+          </button>
+        </div>
+      </section>
+
+      {/* Tabs */}
+      <div id="seller-tip-tabs" className="mb-6 border-b border-[var(--border)]">
+        <nav className="-mb-px flex gap-1 overflow-x-auto" aria-label="Tabs">
           {(["overview", "listings", "rdv"] as const).map((tab) => (
             <button
               key={tab}
               type="button"
               onClick={() => setActiveTab(tab)}
-              className={`border-b-2 px-1 py-3 text-caption font-medium transition-colors ${
+              className={`shrink-0 border-b-2 px-3 py-3 text-caption font-medium transition-colors sm:px-4 ${
                 activeTab === tab
                   ? "border-[var(--accent)] text-[var(--accent)]"
                   : "border-transparent text-[var(--muted-foreground)] hover:border-[var(--border)] hover:text-[var(--foreground)]"
               }`}
             >
               {tab === "overview" ? t("tabOverview") : tab === "listings" ? t("tabListings") : t("tabRendezVous")}
+              {tab === "rdv" && visibleApprovedRdv.length > 0 && (
+                <span className="ml-1.5 rounded-full bg-[var(--accent)] px-1.5 py-0.5 text-[9px] font-bold text-[var(--accent-foreground)]">
+                  {visibleApprovedRdv.length}
+                </span>
+              )}
             </button>
           ))}
         </nav>
       </div>
 
       {activeTab === "overview" && (
-        <>
-          {!hasContact && (
-            <div className="mb-6 rounded-[var(--radius-lg)] border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-900/20">
-              <p className="text-body text-amber-800 dark:text-amber-200">
-                {t("contactSettingsDesc")} {t("contactOptionalHint")}
-              </p>
-              <Link href="/dashboard/settings" className="mt-2 inline-block text-caption font-medium text-amber-700 underline dark:text-amber-300">
-                {t("contactSettings")} →
-              </Link>
-            </div>
+        <div className="space-y-6">
+          {setupIncomplete && (
+            <section id="seller-tip-checklist" className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 sm:p-5">
+              <h2 className="text-subheading text-amber-200">{t("setupChecklist")}</h2>
+              <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+                {setupItems.map((item) => (
+                  <li key={item.label}>
+                    <Link
+                      href={item.href}
+                      className={`flex items-center gap-2 rounded-lg border px-3 py-2.5 text-xs transition ${
+                        item.done
+                          ? "border-[var(--border)] bg-[var(--card)] text-[var(--muted-foreground)]"
+                          : "border-amber-500/40 bg-[var(--background)] text-[var(--foreground)] hover:border-amber-400"
+                      }`}
+                    >
+                      <span
+                        className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold ${
+                          item.done ? "bg-emerald-500/20 text-emerald-400" : "bg-amber-500/20 text-amber-300"
+                        }`}
+                      >
+                        {item.done ? "✓" : "!"}
+                      </span>
+                      {item.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
           )}
+
           {visibleAdminMessages.length > 0 && (
-            <div className="mb-6 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--card)] p-4">
+            <section className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4">
               <div className="mb-3 flex items-center justify-between">
-                <h2 className="text-[11px] font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">Messages from admin</h2>
-                <button type="button" onClick={clearAllAdminMessages} className="text-[10px] font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)]">Clear all</button>
+                <h2 className="text-[11px] font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">
+                  {t("messagesFromAdmin")}
+                </h2>
+                <button type="button" onClick={clearAllAdminMessages} className="text-[10px] font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)]">
+                  {t("clearAll")}
+                </button>
               </div>
               <ul className="space-y-3">
                 {visibleAdminMessages.map((m) => (
-                  <li key={m.id} className="flex items-start justify-between gap-2 rounded-[var(--radius)] border border-[var(--border)] bg-[var(--background)] p-3">
+                  <li key={m.id} className="flex items-start justify-between gap-2 rounded-lg border border-[var(--border)] bg-[var(--background)] p-3">
                     <div className="min-w-0 flex-1">
                       <p className="font-semibold text-[var(--foreground)]">{m.subject}</p>
                       <p className="mt-1 whitespace-pre-wrap text-[11px] text-[var(--muted-foreground)]">{m.body}</p>
                       <p className="mt-1 text-[10px] text-[var(--muted-foreground)]">{new Date(m.created_at).toLocaleString()}</p>
                     </div>
-                    <button type="button" onClick={() => dismissAdminMessage(m.id)} className="shrink-0 text-[10px] font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)]">Dismiss</button>
+                    <button type="button" onClick={() => dismissAdminMessage(m.id)} className="shrink-0 text-[10px] font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)]">
+                      {t("dismiss")}
+                    </button>
                   </li>
                 ))}
               </ul>
-            </div>
+            </section>
           )}
-          <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <StatCard label="My listings" value={cars.length} />
-            <StatCard label="Approved RDV" value={approvedRdv.length} />
-            <StatCard label="Total views" value={Object.values(stats).reduce((a, s) => a + s.views, 0)} />
-            <StatCard label="Favorites" value={Object.values(stats).reduce((a, s) => a + s.favorites, 0)} />
-          </div>
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <p className="text-body text-[var(--muted-foreground)]">
-              {canListCars ? t("yourListingsNote") : t("verifyEmailToAdd")}
+
+          <section>
+            <h2 className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">
+              {t("inventoryOverview")}
+            </h2>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <StatTile label={t("liveListings")} value={metrics.live} accent />
+              <StatTile label={t("pendingListings")} value={metrics.pending} />
+              <StatTile label={t("draftListings")} value={metrics.drafts} />
+              <StatTile label={t("soldListings")} value={metrics.sold} />
+            </div>
+          </section>
+
+          <section>
+            <h2 className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">
+              {t("performanceOverview")}
+            </h2>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <StatTile label={t("totalViews")} value={metrics.views} />
+              <StatTile label={t("favoritesStat")} value={metrics.favorites} />
+              <StatTile label={t("contactUnlocksStat")} value={metrics.unlocks} />
+              <StatTile label={t("approvedRdv")} value={metrics.rdv} />
+            </div>
+            <p className="mt-2 text-[10px] text-[var(--muted-foreground)]">
+              {t("interestScore")}: <span className="font-mono font-semibold text-[var(--foreground)]">{metrics.interest}</span>
+              {" · "}
+              {t("favoritesStat")} + {t("contactUnlocksStat")} + {t("approvedRdv")}
             </p>
-            {canListCars ? (
-              <Link href="/dashboard/cars/new" className="btn-primary">{t("addCar")}</Link>
+          </section>
+
+          <section>
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-[11px] font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">{t("topListings")}</h2>
+              <button type="button" onClick={() => setActiveTab("listings")} className="text-[10px] font-medium text-[var(--accent)] hover:underline">
+                {t("tabListings")} →
+              </button>
+            </div>
+            {topListings.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-[var(--border)] px-4 py-8 text-center text-sm text-[var(--muted-foreground)]">
+                {t("noTopListingsYet")}
+              </div>
             ) : (
-              <Link href="/dashboard/cars/new" className="btn-secondary">{t("addCarVerifyFirst")}</Link>
+              <ul className="grid gap-3 sm:grid-cols-2">
+                {topListings.map(({ car, views = 0, favorites = 0, unlocks = 0, rdv = 0 }) => (
+                  <li key={car.id} className="flex gap-3 rounded-xl border border-[var(--border)] bg-[var(--card)] p-3">
+                    <div className="h-16 w-20 shrink-0 overflow-hidden rounded-md bg-[var(--border)]">
+                      {car.images?.[0] ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={car.images[0]} alt="" className="h-full w-full object-cover" />
+                      ) : null}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <Link href={`/cars/${car.id}`} className="line-clamp-1 text-sm font-medium text-[var(--foreground)] hover:text-[var(--accent)]">
+                        {car.title}
+                      </Link>
+                      <p className="mt-0.5 text-[10px] text-[var(--muted-foreground)]">{formatPrice(car.price, "USD", "USD")}</p>
+                      <div className="mt-1.5 flex flex-wrap gap-2 text-[10px] text-[var(--muted-foreground)]">
+                        <span>{t("viewsLabel")} {views}</span>
+                        <span>{t("favoritesLabel")} {favorites}</span>
+                        <span>{t("unlocksLabel")} {unlocks}</span>
+                        <span>{t("rdvLabel")} {rdv}</span>
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
             )}
-          </div>
-        </>
+          </section>
+        </div>
       )}
 
       {activeTab === "rdv" && (
         <div>
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-body font-semibold text-[var(--foreground)]">Approved rendez-vous</h2>
+            <h2 className="text-body font-semibold text-[var(--foreground)]">{t("approvedRendezvous")}</h2>
             {visibleApprovedRdv.length > 0 && (
-              <button type="button" onClick={clearAllRdv} className="text-[10px] font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)]">Clear all</button>
+              <button type="button" onClick={clearAllRdv} className="text-[10px] font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)]">
+                {t("clearAll")}
+              </button>
             )}
           </div>
-          <p className="text-caption mb-4 text-[var(--muted-foreground)]">
-            Meeting requests approved by admin. The admin has shared your contact with the buyer.
-          </p>
+          <p className="mb-4 text-caption text-[var(--muted-foreground)]">{t("rdvHelpSeller")}</p>
           {visibleApprovedRdv.length === 0 ? (
-            <div className="card-premium p-8 text-center">
-              <p className="text-body text-[var(--muted-foreground)]">No approved rendez-vous yet.</p>
+            <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-8 text-center">
+              <p className="text-body text-[var(--muted-foreground)]">{t("noApprovedRdv")}</p>
             </div>
           ) : (
             <ul className="space-y-2">
               {visibleApprovedRdv.map((rdv) => {
                 const carObj = rdv.cars && typeof rdv.cars === "object" ? rdv.cars : null;
                 const title = carObj?.title ?? "Car";
-                const intentLabel = rdv.intent === "rent" ? t(LISTING_TYPE_TRANSLATION_KEYS.rent as Parameters<typeof t>[0]) : rdv.intent === "sale" ? t(LISTING_TYPE_TRANSLATION_KEYS.sale as Parameters<typeof t>[0]) : null;
+                const intentLabel =
+                  rdv.intent === "rent"
+                    ? t(LISTING_TYPE_TRANSLATION_KEYS.rent as Parameters<typeof t>[0])
+                    : rdv.intent === "sale"
+                      ? t(LISTING_TYPE_TRANSLATION_KEYS.sale as Parameters<typeof t>[0])
+                      : null;
                 return (
-                <li key={rdv.id} className="card-compact flex items-center justify-between gap-4 p-3">
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Link href={`/cars/${rdv.car_id}`} className="text-caption font-medium text-[var(--foreground)] hover:underline">
-                        {title}
-                      </Link>
-                      <span className="text-[10px] font-mono text-[var(--muted-foreground)]">
-                        #{rdv.car_id.slice(0, 8)}
-                      </span>
-                      {intentLabel && (
-                        <span className="rounded bg-[var(--border)] px-2 py-0.5 text-[10px] text-[var(--muted-foreground)]">
-                          {intentLabel}
-                        </span>
+                  <li key={rdv.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--border)] bg-[var(--card)] p-4">
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Link href={`/cars/${rdv.car_id}`} className="text-sm font-medium text-[var(--foreground)] hover:underline">
+                          {title}
+                        </Link>
+                        {intentLabel && (
+                          <span className="rounded bg-[var(--border)] px-2 py-0.5 text-[10px] text-[var(--muted-foreground)]">{intentLabel}</span>
+                        )}
+                      </div>
+                      {rdv.suggested_price != null && rdv.suggested_price > 0 && (
+                        <p className="mt-1 text-[11px] font-medium text-[var(--accent)]">
+                          {t("buyerOffer")} {formatPrice(rdv.suggested_price, "USD", null)}
+                        </p>
                       )}
                     </div>
-                    {rdv.suggested_price != null && rdv.suggested_price > 0 && (
-                      <p className="mt-0.5 text-[10px] font-medium text-[var(--foreground)]">
-                        Buyer offer: {formatPrice(rdv.suggested_price, "USD", null)}
-                      </p>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] text-[var(--muted-foreground)]">
-                      {new Date(rdv.created_at).toLocaleDateString()}
-                    </span>
-                    <Link href={`/cars/${rdv.car_id}`} className="text-[10px] font-medium text-[var(--accent)] hover:underline">View</Link>
-                    <button type="button" onClick={() => dismissRdv(rdv.id)} className="text-[10px] font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)]">Dismiss</button>
-                  </div>
-                </li>
-              );})}
+                    <div className="flex items-center gap-3">
+                      <span className="text-[10px] text-[var(--muted-foreground)]">{new Date(rdv.created_at).toLocaleDateString()}</span>
+                      <Link href={`/cars/${rdv.car_id}`} className="text-[11px] font-medium text-[var(--accent)] hover:underline">
+                        {t("view")}
+                      </Link>
+                      <button type="button" onClick={() => dismissRdv(rdv.id)} className="text-[11px] font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)]">
+                        {t("dismiss")}
+                      </button>
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>
@@ -371,89 +653,142 @@ export default function SellerDashboardPage() {
 
       {activeTab === "listings" && (
         <>
-          <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-            <p className="text-body text-[var(--muted-foreground)]">
-              {canListCars ? t("yourListingsNote") : t("verifyEmailToAdd")}
-            </p>
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap gap-1.5">
+              {(
+                [
+                  ["all", t("allListingsFilter"), cars.length],
+                  ["live", t("liveListings"), metrics.live],
+                  ["pending", t("pendingListings"), metrics.pending],
+                  ["draft", t("draftListings"), metrics.drafts],
+                  ["sold", t("soldListings"), metrics.sold],
+                ] as const
+              ).map(([key, label, count]) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setListingFilter(key)}
+                  className={`rounded-full border px-3 py-1.5 text-[11px] font-medium transition ${
+                    listingFilter === key
+                      ? "border-[var(--accent)] bg-[var(--accent-muted)] text-[var(--accent)]"
+                      : "border-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+                  }`}
+                >
+                  {label} ({count})
+                </button>
+              ))}
+            </div>
             {canListCars ? (
-              <Link href="/dashboard/cars/new" className="btn-primary">{t("addCar")}</Link>
+              <Link href="/dashboard/cars/new" className="btn-primary px-4 py-2 text-sm">
+                {t("addCar")}
+              </Link>
             ) : (
-              <Link href="/dashboard/cars/new" className="btn-secondary">{t("addCarVerifyFirst")}</Link>
+              <Link href="/dashboard/cars/new" className="btn-secondary px-4 py-2 text-sm">
+                {t("addCarVerifyFirst")}
+              </Link>
             )}
           </div>
-          {cars.length === 0 ? (
-            <div className="card-premium flex flex-col items-center justify-center gap-2 p-12 text-center">
-              <p className="text-body text-[var(--muted-foreground)]">No listings yet. Click &quot;Add car&quot; to create one.</p>
-              <Link href="/dashboard/cars/new" className="btn-primary mt-2">{t("addCar")}</Link>
+
+          {filteredCars.length === 0 ? (
+            <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--card)] p-12 text-center">
+              <p className="text-body text-[var(--muted-foreground)]">{t("noListingsYetAdd")}</p>
+              <Link href="/dashboard/cars/new" className="btn-primary">
+                {t("addCar")}
+              </Link>
             </div>
           ) : (
             <ul className="space-y-3">
-          {cars.map((car) => (
-            <li key={car.id} className="card-premium flex flex-wrap items-center justify-between gap-4 p-4">
-              <div className="min-w-0">
-                <p className="font-semibold text-[var(--foreground)]">{car.title}</p>
-                <p className="text-small text-[var(--muted-foreground)]">
-                  {car.make} {car.model}
-                  {car.year != null ? ` · ${car.year}` : ""} · {formatPrice(car.price, "USD", "USD")}
-                </p>
-                <span
-                  className={`mt-1 inline-block rounded-[var(--radius)] px-2 py-0.5 text-caption ${
-                    car.is_sold
-                      ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400"
-                      : car.is_draft === true
-                        ? "bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300"
-                        : car.is_approved
-                          ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-                          : "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400"
-                  }`}
-                >
-                  {car.is_sold ? t("sold") : car.is_draft ? t("draft") : car.is_approved ? "Approved" : "Pending approval"}
-                </span>
-                {!car.is_draft && !car.is_approved && car.rejection_reason && (
-                  <div className="mt-2 rounded-[var(--radius)] border border-amber-200 bg-amber-50 p-2 text-caption text-amber-900 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-200">
-                    <p className="font-medium">{t("rejectionReason")}: {car.rejection_reason}</p>
-                    <a href={`mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(`Re: Listing - ${car.title}`)}`} className="mt-1 inline-block text-[10px] font-medium text-amber-700 underline dark:text-amber-300">
-                      {t("reachOut")} →
-                    </a>
+              {filteredCars.map((car) => (
+                <li key={car.id} className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4">
+                  <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div className="flex min-w-0 flex-1 gap-3">
+                      <div className="hidden h-16 w-20 shrink-0 overflow-hidden rounded-md bg-[var(--border)] sm:block">
+                        {car.images?.[0] ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={car.images[0]} alt="" className="h-full w-full object-cover" />
+                        ) : null}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-semibold text-[var(--foreground)]">{car.title}</p>
+                        <p className="text-small text-[var(--muted-foreground)]">
+                          {car.make} {car.model}
+                          {car.year != null ? ` · ${car.year}` : ""} · {formatPrice(car.price, "USD", "USD")}
+                        </p>
+                        <span
+                          className={`mt-1.5 inline-block rounded px-2 py-0.5 text-[10px] font-medium ${
+                            car.is_sold
+                              ? "bg-emerald-500/15 text-emerald-400"
+                              : car.is_draft
+                                ? "bg-slate-500/20 text-slate-300"
+                                : car.is_approved
+                                  ? "bg-[var(--accent-muted)] text-[var(--accent)]"
+                                  : "bg-amber-500/15 text-amber-300"
+                          }`}
+                        >
+                          {car.is_sold ? t("sold") : car.is_draft ? t("draft") : car.is_approved ? t("approved") : t("pendingApproval")}
+                        </span>
+                        {!car.is_draft && !car.is_approved && car.rejection_reason && (
+                          <div className="mt-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-2 text-caption text-amber-100">
+                            <p className="font-medium">
+                              {t("rejectionReason")}: {car.rejection_reason}
+                            </p>
+                            <a
+                              href={`mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(`Re: Listing - ${car.title}`)}`}
+                              className="mt-1 inline-block text-[10px] font-medium text-amber-300 underline"
+                            >
+                              {t("reachOut")} →
+                            </a>
+                          </div>
+                        )}
+                        <div className="mt-2 flex flex-wrap gap-3 text-[10px] text-[var(--muted-foreground)]">
+                          <span>
+                            {t("viewsLabel")} <span className="font-semibold text-[var(--foreground)]">{stats[car.id]?.views ?? 0}</span>
+                          </span>
+                          <span>
+                            {t("favoritesLabel")} <span className="font-semibold text-[var(--foreground)]">{stats[car.id]?.favorites ?? 0}</span>
+                          </span>
+                          <span>
+                            {t("unlocksLabel")} <span className="font-semibold text-[var(--foreground)]">{stats[car.id]?.unlocks ?? 0}</span>
+                          </span>
+                          <span>
+                            {t("rdvLabel")} <span className="font-semibold text-[var(--foreground)]">{stats[car.id]?.rdv ?? 0}</span>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <Link href={`/dashboard/cars/${car.id}/edit`} className="btn-secondary py-2 text-xs">
+                        {t("edit")}
+                      </Link>
+                      {!car.is_sold && car.is_approved && !car.is_draft && (
+                        <button
+                          type="button"
+                          onClick={() => handleMarkAsSold(car.id)}
+                          className="rounded border border-emerald-500/40 px-3 py-2 text-xs font-medium text-emerald-400 hover:bg-emerald-500/10"
+                        >
+                          {t("markAsSold")}
+                        </button>
+                      )}
+                      {car.is_sold && (
+                        <button
+                          type="button"
+                          onClick={() => handleMarkAsAvailable(car.id)}
+                          className="rounded border border-emerald-500/40 px-3 py-2 text-xs font-medium text-emerald-400 hover:bg-emerald-500/10"
+                        >
+                          {t("markAsAvailable")}
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(car.id)}
+                        className="rounded border border-red-500/40 px-3 py-2 text-xs font-medium text-red-400 hover:bg-red-500/10"
+                      >
+                        {t("adminDeleteListing")}
+                      </button>
+                    </div>
                   </div>
-                )}
-                <div className="mt-2 flex flex-wrap gap-3 text-[10px] text-[var(--muted-foreground)]">
-                  <span>Views: <span className="font-semibold text-[var(--foreground)]">{stats[car.id]?.views ?? 0}</span></span>
-                  <span>Favorites: <span className="font-semibold text-[var(--foreground)]">{stats[car.id]?.favorites ?? 0}</span></span>
-                  <span>Unlocks: <span className="font-semibold text-[var(--foreground)]">{stats[car.id]?.unlocks ?? 0}</span></span>
-                  <span>RDV: <span className="font-semibold text-[var(--foreground)]">{stats[car.id]?.rdv ?? 0}</span></span>
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <Link href={`/dashboard/cars/${car.id}/edit`} className="btn-secondary py-2">Edit</Link>
-                {!car.is_sold && car.is_approved && !car.is_draft && (
-                  <button
-                    type="button"
-                    onClick={() => handleMarkAsSold(car.id)}
-                    className="rounded-[var(--radius)] border border-emerald-200 px-3 py-2 text-small font-medium text-emerald-700 hover:bg-emerald-50 dark:border-emerald-800 dark:text-emerald-400 dark:hover:bg-emerald-900/20"
-                  >
-                    {t("markAsSold")}
-                  </button>
-                )}
-                {car.is_sold && (
-                  <button
-                    type="button"
-                    onClick={() => handleMarkAsAvailable(car.id)}
-                    className="rounded-[var(--radius)] border border-emerald-200 px-3 py-2 text-small font-medium text-emerald-700 hover:bg-emerald-50 dark:border-emerald-800 dark:text-emerald-400 dark:hover:bg-emerald-900/20"
-                  >
-                    {t("markAsAvailable")}
-                  </button>
-                )}
-                <button
-                  type="button"
-                  onClick={() => handleDelete(car.id)}
-                  className="rounded-[var(--radius)] border border-red-200 px-3 py-2 text-small font-medium text-red-600 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20"
-                >
-                  Delete
-                </button>
-              </div>
-            </li>
-          ))}
+                </li>
+              ))}
             </ul>
           )}
         </>

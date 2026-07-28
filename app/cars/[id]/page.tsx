@@ -13,6 +13,8 @@ import ShareButtons from "@/app/components/ShareButtons";
 import CarImageGallery from "@/app/components/CarImageGallery";
 import VerifiedSellerBadge from "@/app/components/VerifiedSellerBadge";
 import CarProductJsonLd from "@/app/components/CarProductJsonLd";
+import BuyerCarCard from "@/app/components/BuyerCarCard";
+import FadeInSection from "@/app/components/FadeInSection";
 import { formatListedDate } from "@/lib/date-utils";
 import { RENTAL_EVENT_TRANSLATION_KEYS, LISTING_TYPE_TRANSLATION_KEYS, CAR_FEATURE_BY_ID } from "@/lib/constants";
 
@@ -52,6 +54,8 @@ type Car = {
   is_sold?: boolean | null;
 };
 
+type SimilarCar = Pick<Car, "id" | "title" | "price" | "currency" | "images" | "year" | "condition" | "is_sold">;
+
 export default function CarDetailPage() {
   const params = useParams();
   const searchParams = useSearchParams();
@@ -79,6 +83,7 @@ export default function CarDetailPage() {
     dealer_verified?: boolean;
   } | null>(null);
   const [sellerProfile, setSellerProfile] = useState<{ company_name?: string | null; city?: string | null; avatar_url?: string | null } | null>(null);
+  const [similarCars, setSimilarCars] = useState<SimilarCar[]>([]);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user: u } }) => setUser(u ?? null));
@@ -147,6 +152,20 @@ export default function CarDetailPage() {
       const { data } = await query.single();
       const carData = data as Car | null;
       setCar(carData);
+      if (carData?.make) {
+        const { data: similarData } = await supabase
+          .from("cars")
+          .select("id, title, price, currency, images, year, condition, is_sold")
+          .eq("make", carData.make)
+          .eq("is_approved", true)
+          .eq("is_draft", false)
+          .neq("id", carData.id)
+          .order("created_at", { ascending: false })
+          .limit(4);
+        setSimilarCars((similarData as SimilarCar[] | null) ?? []);
+      } else {
+        setSimilarCars([]);
+      }
       if (carData?.owner_id) {
         const { data: prof } = await supabase
           .from("profiles")
@@ -237,9 +256,9 @@ export default function CarDetailPage() {
   if (!car) {
     return (
       <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
-        <p className="text-body text-[var(--muted-foreground)]">Listing not found.</p>
+        <p className="text-body text-[var(--muted-foreground)]">{t("listingNotFound")}</p>
         <Link href="/cars" className="mt-4 inline-block font-medium text-[var(--foreground)] underline hover:no-underline">
-          ← Browse cars
+          ← {t("browseCars")}
         </Link>
       </div>
     );
@@ -250,12 +269,12 @@ export default function CarDetailPage() {
       <CarProductJsonLd car={car} />
       {isAdminPreview && (
         <div className="mb-4 rounded-lg border border-amber-500 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800 dark:bg-amber-900/30 dark:text-amber-200">
-          Admin preview — this listing is not live yet. Only you can see it.{" "}
-          <Link href="/dashboard/admin" className="underline">Back to admin</Link>
+          {t("adminPreviewNote")}{" "}
+          <Link href="/dashboard/admin" className="underline">{t("backToAdmin")}</Link>
         </div>
       )}
       <nav className="mb-6 flex flex-wrap items-center gap-1 text-caption text-[var(--muted-foreground)]" aria-label="Breadcrumb">
-        <Link href="/" className="hover:text-[var(--foreground)] hover:underline">Home</Link>
+        <Link href="/" className="hover:text-[var(--foreground)] hover:underline">{t("home")}</Link>
         <span>/</span>
         <Link href="/cars" className="hover:text-[var(--foreground)] hover:underline">{t("browseCars")}</Link>
         <span>/</span>
@@ -272,9 +291,14 @@ export default function CarDetailPage() {
       )}
 
       {car.is_sold && (
-        <div className="mb-4 flex items-center justify-center gap-2 rounded-lg border-2 border-slate-500 bg-slate-800 px-4 py-3 text-center">
+        <div className="mb-4 flex flex-wrap items-center justify-center gap-2 rounded-lg border-2 border-slate-500 bg-slate-800 px-4 py-3 text-center">
           <span className="text-base font-bold uppercase tracking-wider text-white">{t("sold")}</span>
           <span className="text-sm text-slate-200">— {t("soldListingNote")}</span>
+          {car.make && (
+            <Link href={`/cars?make=${encodeURIComponent(car.make)}`} className="text-sm font-semibold text-[var(--accent)] hover:underline">
+              {t("browseSimilar")}
+            </Link>
+          )}
         </div>
       )}
 
@@ -284,7 +308,7 @@ export default function CarDetailPage() {
           <div className="min-w-0 flex flex-col gap-4">
             {/* Header: title + meta */}
             <div>
-              <h1 className="text-heading text-[var(--foreground)] leading-tight">{car.title}</h1>
+              <h1 className="font-mono text-xl font-bold leading-tight text-[var(--foreground)] sm:text-2xl">{car.title}</h1>
               <p className="mt-0.5 text-[11px] text-[var(--muted-foreground)]">
                 {car.listing_type === "rent" ? t("forRent") : car.listing_type === "both" ? t("saleAndRent") : car.condition === "new" ? t("new") : t("used")}
                 {car.created_at && ` · ${formatListedDate(car.created_at, (k) => t(k as "listedToday" | "listedYesterday" | "listedDaysAgo"))}`}
@@ -297,7 +321,7 @@ export default function CarDetailPage() {
                 <div className="flex flex-wrap items-baseline gap-2">
                   {car.discount_percent != null && car.discount_percent > 0 && (
                     <span className="rounded bg-green-600 px-1.5 py-0.5 text-[10px] font-semibold text-white">
-                      {Math.round(car.discount_percent)}% off
+                      {Math.round(car.discount_percent)}{t("percentOff")}
                     </span>
                   )}
                   <span className="text-lg font-bold tracking-tight text-[var(--accent)]">
@@ -348,42 +372,42 @@ export default function CarDetailPage() {
             {/* Specs: 2-column compact grid */}
             <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-[12px]">
               <div className="min-w-0">
-                <dt className="text-[10px] uppercase tracking-wide text-[var(--muted-foreground)]">Make / Model</dt>
+                <dt className="text-[10px] uppercase tracking-wide text-[var(--muted-foreground)]">{t("makeModel")}</dt>
                 <dd className="font-medium text-[var(--foreground)] truncate">{car.make} {car.model}</dd>
               </div>
               {car.year != null && (
                 <div>
-                  <dt className="text-[10px] uppercase tracking-wide text-[var(--muted-foreground)]">Year</dt>
+                  <dt className="text-[10px] uppercase tracking-wide text-[var(--muted-foreground)]">{t("year")}</dt>
                   <dd className="font-medium text-[var(--foreground)]">{car.year}</dd>
                 </div>
               )}
               {car.mileage != null && (
                 <div>
-                  <dt className="text-[10px] uppercase tracking-wide text-[var(--muted-foreground)]">Mileage</dt>
+                  <dt className="text-[10px] uppercase tracking-wide text-[var(--muted-foreground)]">{t("mileage")}</dt>
                   <dd className="font-medium text-[var(--foreground)]">{car.mileage.toLocaleString()} km</dd>
                 </div>
               )}
               {car.type && (
                 <div>
-                  <dt className="text-[10px] uppercase tracking-wide text-[var(--muted-foreground)]">Type</dt>
+                  <dt className="text-[10px] uppercase tracking-wide text-[var(--muted-foreground)]">{t("vehicleType")}</dt>
                   <dd className="font-medium text-[var(--foreground)]">{car.type}</dd>
                 </div>
               )}
               {car.transmission && (
                 <div>
-                  <dt className="text-[10px] uppercase tracking-wide text-[var(--muted-foreground)]">Transmission</dt>
+                  <dt className="text-[10px] uppercase tracking-wide text-[var(--muted-foreground)]">{t("shopByTransmission")}</dt>
                   <dd className="font-medium text-[var(--foreground)]">{t(car.transmission as "automatic" | "manual")}</dd>
                 </div>
               )}
               {car.fuel_type && (
                 <div>
-                  <dt className="text-[10px] uppercase tracking-wide text-[var(--muted-foreground)]">Fuel</dt>
+                  <dt className="text-[10px] uppercase tracking-wide text-[var(--muted-foreground)]">{t("shopByFuel")}</dt>
                   <dd className="font-medium text-[var(--foreground)]">{t(car.fuel_type as "essence" | "diesel" | "electric" | "hybrid")}</dd>
                 </div>
               )}
               {(car.province || car.city || car.country) && (
                 <div className="col-span-2 min-w-0">
-                  <dt className="text-[10px] uppercase tracking-wide text-[var(--muted-foreground)]">Location</dt>
+                  <dt className="text-[10px] uppercase tracking-wide text-[var(--muted-foreground)]">{t("location")}</dt>
                   <dd className="font-medium text-[var(--foreground)] truncate">{[car.province, car.city, car.country].filter(Boolean).join(", ")}</dd>
                 </div>
               )}
@@ -392,7 +416,7 @@ export default function CarDetailPage() {
             {/* Features pills */}
             {car.features && car.features.length > 0 && (
               <div>
-                <span className="mb-1.5 block text-[10px] uppercase tracking-wide text-[var(--muted-foreground)]">Features</span>
+                <span className="mb-1.5 block text-[10px] uppercase tracking-wide text-[var(--muted-foreground)]">{t("features")}</span>
                 <div className="flex flex-wrap gap-1.5">
                   {car.features.map((fId) => {
                     const raw = (CAR_FEATURE_BY_ID as Record<string, unknown>)[fId];
@@ -412,7 +436,7 @@ export default function CarDetailPage() {
             )}
 
             {/* Contact & actions: grouped and clear hierarchy */}
-            <div id="contact" className="mt-1 flex flex-col gap-3 border-t border-[var(--border)] pt-4">
+            <div className="mt-1 flex flex-col gap-3 border-t border-[var(--border)] pt-4">
               <div className="flex items-center gap-3">
                 {sellerProfile?.avatar_url && (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -426,6 +450,11 @@ export default function CarDetailPage() {
                   <p className="text-[11px] font-semibold text-[var(--foreground)]">
                     {sellerProfile?.company_name || t("seller")}
                   </p>
+                  {car.owner_id && (
+                    <Link href={`/seller/${car.owner_id}`} className="text-[10px] font-medium text-[var(--accent)] hover:underline">
+                      {t("viewSellerStorefront")}
+                    </Link>
+                  )}
                   <p className="text-[10px] text-[var(--muted-foreground)]">
                     {[sellerProfile?.city, car.city, car.province].filter(Boolean).join(" · ")}
                   </p>
@@ -438,6 +467,7 @@ export default function CarDetailPage() {
                       />
                     </div>
                   )}
+                  <p className="mt-1 text-[10px] text-[var(--muted-foreground)]">{t("sellerTrustNote")}</p>
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-2">
@@ -451,8 +481,8 @@ export default function CarDetailPage() {
                 <ShareButtons path={`/cars/${id}`} title={car.title} />
               </div>
               {hasUnlocked && contact ? (
-                <div className="w-full space-y-2 rounded-lg border border-green-200 bg-green-50 p-3 dark:border-green-800 dark:bg-green-900/20">
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-green-800 dark:text-green-400">{t("sellerContact")}</p>
+                <div className="w-full space-y-2 rounded-lg border border-[var(--accent)]/30 bg-[var(--accent-muted)] p-3">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--accent)]">{t("sellerContact")}</p>
                   {contact.owner_whatsapp && (
                     <a
                       href={`https://wa.me/${contact.owner_whatsapp.replace(/\D/g, "")}?text=${encodeURIComponent(`Hi, I'm interested in your car: ${car.title}`)}`}
@@ -463,52 +493,41 @@ export default function CarDetailPage() {
                       <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
                       </svg>
-                      {t("whatsapp")} seller
+                      {t("whatsappSeller")}
                     </a>
                   )}
-                  <p className="text-[12px]">Phone: {contact.owner_phone || "—"}</p>
+                  <p className="text-[12px]">{t("phone")}: {contact.owner_phone || "—"}</p>
                   {!contact.owner_whatsapp && contact.owner_phone && (
                     <a
                       href={`tel:${contact.owner_phone}`}
                       className="btn-primary inline-flex min-h-[40px]"
                     >
-                      Call seller
+                      {t("callSeller")}
                     </a>
                   )}
-                  {contact.owner_address && <p className="text-[12px]">Address: {contact.owner_address}</p>}
+                  {contact.owner_address && <p className="text-[12px]">{t("address")}: {contact.owner_address}</p>}
                 </div>
               ) : null}
               <div className="flex flex-col gap-2">
                 {user ? (
                   rdvSent ? (
-                    <p className="rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-[12px] text-green-800 dark:border-green-800 dark:bg-green-900/20 dark:text-green-400">
+                    <p id="contact" className="rounded-lg border border-[var(--accent)]/30 bg-[var(--accent-muted)] px-3 py-2 text-[12px] text-[var(--accent)]">
                       {t("meetingRequestSent")}
                     </p>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const form = document.getElementById("rdv-form");
-                        if (form) (form as HTMLDivElement).classList.toggle("hidden");
-                      }}
-                      className="btn-secondary w-full min-h-[44px]"
-                    >
-                      {t("requestMeeting")}
-                    </button>
-                  )
+                  ) : null
                 ) : (
-                  <Link href={`/login?next=/cars/${id}`} className="btn-secondary w-full min-h-[44px] text-center">
+                  <Link id="contact" href={`/login?next=/cars/${id}`} className="btn-secondary w-full min-h-[44px] text-center">
                     {t("logIn")} — {t("requestMeeting")}
                   </Link>
                 )}
               </div>
             </div>
             {user && !rdvSent && (
-              <div id="rdv-form" className="mt-3 hidden rounded-lg border border-[var(--border)] bg-[var(--background)] p-3">
+              <div id="contact" className="mt-3 rounded-lg border border-[var(--border)] bg-[var(--background)] p-3">
                 <p className="text-[12px] mb-2 text-[var(--muted-foreground)]">{t("meetingReassurance")}</p>
                 {(car.listing_type === "both") && (
                   <div className="mb-3">
-                    <label className="text-caption mb-1.5 block">I am interested in</label>
+                    <label className="text-caption mb-1.5 block">{t("interestedIn")}</label>
                     <div className="flex gap-3">
                       <label className="flex cursor-pointer items-center gap-2 text-[12px]">
                         <input type="radio" name="rdvIntent" checked={rdvIntent === "sale"} onChange={() => setRdvIntent("sale")} className="rounded-full" />
@@ -522,7 +541,7 @@ export default function CarDetailPage() {
                   </div>
                 )}
                 <textarea
-                  placeholder="Your message (optional)"
+                  placeholder={t("messageOptional")}
                   value={rdvMessage}
                   onChange={(e) => setRdvMessage(e.target.value)}
                   rows={2}
@@ -598,14 +617,27 @@ export default function CarDetailPage() {
         </div>
         {car.description && (
           <div className="border-t border-[var(--border)] p-4 sm:p-6">
-            <h2 className="text-heading mb-2 text-[var(--foreground)]">Description</h2>
+            <h2 className="text-heading mb-2 text-[var(--foreground)]">{t("description")}</h2>
             <p className="text-body whitespace-pre-wrap text-[var(--muted-foreground)]">{car.description}</p>
           </div>
         )}
       </div>
 
+      {similarCars.length > 0 && (
+        <section className="mt-8">
+          <FadeInSection>
+            <h2 className="text-heading mb-4 text-[var(--foreground)]">{t("similarCars")}</h2>
+          </FadeInSection>
+          <FadeInSection stagger delay={80} className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {similarCars.map((similarCar) => (
+              <BuyerCarCard key={similarCar.id} car={similarCar} compact />
+            ))}
+          </FadeInSection>
+        </section>
+      )}
+
       {/* Sticky CTA on mobile */}
-      <div className="safe-area-bottom fixed bottom-0 left-0 right-0 z-40 flex gap-2 border-t border-[var(--border)] bg-[var(--background)] p-4 sm:hidden">
+      <div className="safe-area-bottom animate-slide-up-in fixed bottom-0 left-0 right-0 z-40 flex gap-2 border-t border-[var(--border)] bg-[var(--background)] p-4 sm:hidden">
         <a href="#contact" className="btn-accent flex-1 text-center">
           {(car.listing_type === "rent" || car.listing_type === "both") ? t("rentThisCar") : t("requestMeeting")}
         </a>

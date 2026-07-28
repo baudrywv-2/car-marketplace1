@@ -9,6 +9,7 @@ import { readGuestFavorites, GUEST_FAVORITES_KEY } from "@/lib/guest-favorites";
 import FavoriteButton from "@/app/components/FavoriteButton";
 import OptimizedCarImage from "@/app/components/OptimizedCarImage";
 import CarImagePlaceholder from "@/app/components/CarImagePlaceholder";
+import FadeInSection from "@/app/components/FadeInSection";
 
 type Car = {
   id: string;
@@ -101,11 +102,14 @@ export default function FavoritesPage() {
       </Link>
       <h1 className="text-heading text-[var(--foreground)]">{t("myFavorites")}</h1>
       {cars.length === 0 ? (
-        <p className="mt-4 text-body text-[var(--muted-foreground)]">
-          {t("favoritesEmpty")}
-        </p>
+        <div className="mt-8 rounded-xl border border-dashed border-[var(--border)] bg-[var(--card)] px-6 py-12 text-center">
+          <p className="text-body text-[var(--muted-foreground)]">{t("favoritesEmpty")}</p>
+          <Link href="/cars" className="btn-accent mt-5 inline-flex px-5 py-2.5 text-sm">
+            {t("browseCars")}
+          </Link>
+        </div>
       ) : (
-        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
+        <FadeInSection stagger className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
           {cars.map((car) => (
             <Link
               key={car.id}
@@ -148,7 +152,7 @@ export default function FavoritesPage() {
               </div>
             </Link>
           ))}
-        </div>
+        </FadeInSection>
       )}
     </div>
   );

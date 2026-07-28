@@ -59,8 +59,10 @@ export default function EditCarPage() {
         router.replace(`/login?next=${encodeURIComponent(`/dashboard/cars/${id}/edit`)}`);
         return;
       }
-      const { data: p } = await supabase.from("profiles").select("phone, whatsapp").eq("id", u.id).single();
-      setProfile(p ?? null);
+      const { syncSellerProfileFromAuth } = await import("@/lib/seller-profile");
+      const synced = await syncSellerProfileFromAuth(supabase, u);
+      const p = { phone: synced.phone, whatsapp: synced.whatsapp };
+      setProfile(p);
 
       const { data, error: err } = await supabase
         .from("cars")
@@ -69,7 +71,7 @@ export default function EditCarPage() {
         .single();
 
       if (err || !data) {
-        setError("Listing not found.");
+        setError(t("listingNotFound"));
         setLoading(false);
         return;
       }
@@ -176,7 +178,7 @@ export default function EditCarPage() {
       return;
     }
     if (!form.title.trim()) {
-      setError("Title is required to save a draft.");
+      setError(t("titleRequired"));
       setSaving(false);
       return;
     }
@@ -203,7 +205,7 @@ export default function EditCarPage() {
       return;
     }
     if ((form.listing_type === "sale" || form.listing_type === "both") && !form.price.trim()) {
-      setError("Sale price is required.");
+      setError(t("salePriceRequired"));
       setSaving(false);
       return;
     }
@@ -243,7 +245,7 @@ export default function EditCarPage() {
   if (loading) {
     return (
       <div className="mx-auto max-w-2xl px-4 py-8">
-        <p className="text-body text-[var(--muted-foreground)]">Loading…</p>
+        <p className="text-body text-[var(--muted-foreground)]">{t("loading")}</p>
       </div>
     );
   }
@@ -253,7 +255,7 @@ export default function EditCarPage() {
       <div className="mx-auto max-w-2xl px-4 py-8">
         <p className="text-red-600">{error}</p>
         <Link href="/dashboard" className="mt-4 inline-block text-caption font-medium text-[var(--foreground)] hover:underline">
-          ← Dashboard
+          {t("backToDashboard")}
         </Link>
       </div>
     );
@@ -264,9 +266,9 @@ export default function EditCarPage() {
   return (
     <div className="mx-auto max-w-2xl px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
       <Link href="/dashboard" className="text-caption mb-6 inline-block font-medium text-[var(--foreground)] hover:underline">
-        ← Dashboard
+        {t("backToDashboard")}
       </Link>
-      <h1 className="text-heading mb-6 text-[var(--foreground)]">Edit car</h1>
+      <h1 className="text-heading mb-6 text-[var(--foreground)]">{t("editCar")}</h1>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
         <div>
@@ -289,18 +291,18 @@ export default function EditCarPage() {
         </div>
 
         <div>
-          <label className="mb-1.5 block text-caption font-medium text-[var(--foreground)]">Title *</label>
+          <label className="mb-1.5 block text-caption font-medium text-[var(--foreground)]">{t("title")} *</label>
           <input type="text" required value={form.title} onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))} className={inputClass} />
         </div>
 
         <div>
-          <label className="mb-1.5 block text-caption font-medium text-[var(--foreground)]">Description</label>
+          <label className="mb-1.5 block text-caption font-medium text-[var(--foreground)]">{t("description")}</label>
           <textarea rows={3} value={form.description} onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))} className={`${inputClass} min-h-[88px] resize-y`} />
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label className="mb-1.5 block text-caption font-medium text-[var(--foreground)]">Currency</label>
+            <label className="mb-1.5 block text-caption font-medium text-[var(--foreground)]">{t("currency")}</label>
             <select value={form.currency} onChange={(e) => setForm((p) => ({ ...p, currency: e.target.value }))} className={inputClass}>
               {CURRENCIES.map((c) => (
                 <option key={c} value={c}>{c}</option>
@@ -308,22 +310,22 @@ export default function EditCarPage() {
             </select>
           </div>
           <div>
-            <label className="mb-1.5 block text-caption font-medium text-[var(--foreground)]">Condition</label>
+            <label className="mb-1.5 block text-caption font-medium text-[var(--foreground)]">{t("condition")}</label>
             <select value={form.condition} onChange={(e) => setForm((p) => ({ ...p, condition: e.target.value }))} className={inputClass}>
               {CONDITIONS.map((c) => (
-                <option key={c.value} value={c.value}>{c.labelEn}</option>
+                <option key={c.value} value={c.value}>{t(c.value as "new" | "used")}</option>
               ))}
             </select>
           </div>
           <div className="sm:col-span-2">
-            <label className="mb-1.5 block text-caption font-medium text-[var(--foreground)]">Discount % (optional)</label>
+            <label className="mb-1.5 block text-caption font-medium text-[var(--foreground)]">{t("discountPercent")}</label>
             <input type="number" min={0} max={100} value={form.discount_percent} onChange={(e) => setForm((p) => ({ ...p, discount_percent: e.target.value }))} className={inputClass} />
           </div>
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {(form.listing_type === "sale" || form.listing_type === "both") && (
             <div>
-              <label className="mb-1.5 block text-caption font-medium text-[var(--foreground)]">Sale price *</label>
+              <label className="mb-1.5 block text-caption font-medium text-[var(--foreground)]">{t("salePrice")} *</label>
               <input
                 type="number"
                 min={0}
@@ -336,7 +338,7 @@ export default function EditCarPage() {
             </div>
           )}
           <div>
-            <label className="mb-1.5 block text-caption font-medium text-[var(--foreground)]">Year</label>
+            <label className="mb-1.5 block text-caption font-medium text-[var(--foreground)]">{t("year")}</label>
             <input type="number" min={1900} max={2030} value={form.year} onChange={(e) => setForm((p) => ({ ...p, year: e.target.value }))} className={inputClass} />
           </div>
         </div>
@@ -386,7 +388,7 @@ export default function EditCarPage() {
                 <input type="number" min={1} value={form.rental_min_hours} onChange={(e) => setForm((p) => ({ ...p, rental_min_hours: e.target.value }))} placeholder="e.g. 2" className={inputClass} />
               </div>
               <div>
-                <label className="mb-1.5 block text-caption font-medium text-[var(--foreground)]">Rental currency</label>
+                <label className="mb-1.5 block text-caption font-medium text-[var(--foreground)]">{t("currency")}</label>
                 <select value={form.rental_currency} onChange={(e) => setForm((p) => ({ ...p, rental_currency: e.target.value }))} className={inputClass}>
                   {CURRENCIES.map((c) => (
                     <option key={c} value={c}>{c}</option>
@@ -421,7 +423,7 @@ export default function EditCarPage() {
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label className="mb-1.5 block text-caption font-medium text-[var(--foreground)]">Make *</label>
+            <label className="mb-1.5 block text-caption font-medium text-[var(--foreground)]">{t("make")} *</label>
             <select
               value={form.make === OTHER_MAKE ? OTHER_MAKE : CAR_MAKES.includes(form.make as (typeof CAR_MAKES)[number]) ? form.make : ""}
               onChange={(e) => setForm((p) => ({ ...p, make: e.target.value, make_other: e.target.value === OTHER_MAKE ? p.make_other : "" }))}
@@ -446,20 +448,20 @@ export default function EditCarPage() {
             )}
           </div>
           <div>
-            <label className="mb-1.5 block text-caption font-medium text-[var(--foreground)]">Model *</label>
+            <label className="mb-1.5 block text-caption font-medium text-[var(--foreground)]">{t("model")} *</label>
             <input type="text" required value={form.model} onChange={(e) => setForm((p) => ({ ...p, model: e.target.value }))} className={inputClass} />
           </div>
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label className="mb-1.5 block text-caption font-medium text-[var(--foreground)]">Mileage</label>
+            <label className="mb-1.5 block text-caption font-medium text-[var(--foreground)]">{t("mileage")}</label>
             <input type="number" min={0} value={form.mileage} onChange={(e) => setForm((p) => ({ ...p, mileage: e.target.value }))} className={inputClass} />
           </div>
           <div>
-            <label className="mb-1.5 block text-caption font-medium text-[var(--foreground)]">Type</label>
+            <label className="mb-1.5 block text-caption font-medium text-[var(--foreground)]">{t("vehicleType")}</label>
             <select value={form.type} onChange={(e) => setForm((p) => ({ ...p, type: e.target.value }))} className={inputClass}>
-              <option value="">Select</option>
+              <option value="">{t("selectOption")}</option>
               {CAR_TYPES.map((ty) => (
                 <option key={ty} value={ty}>{ty}</option>
               ))}
@@ -469,7 +471,7 @@ export default function EditCarPage() {
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label className="mb-1.5 block text-caption font-medium text-[var(--foreground)]">Transmission</label>
+            <label className="mb-1.5 block text-caption font-medium text-[var(--foreground)]">{t("shopByTransmission")}</label>
             <select value={form.transmission} onChange={(e) => setForm((p) => ({ ...p, transmission: e.target.value }))} className={inputClass}>
               <option value="">—</option>
               {TRANSMISSIONS.map((tr) => (
@@ -478,7 +480,7 @@ export default function EditCarPage() {
             </select>
           </div>
           <div>
-            <label className="mb-1.5 block text-caption font-medium text-[var(--foreground)]">Fuel</label>
+            <label className="mb-1.5 block text-caption font-medium text-[var(--foreground)]">{t("shopByFuel")}</label>
             <select value={form.fuel_type} onChange={(e) => setForm((p) => ({ ...p, fuel_type: e.target.value }))} className={inputClass}>
               <option value="">—</option>
               {FUEL_TYPES.map((f) => (
@@ -489,8 +491,8 @@ export default function EditCarPage() {
         </div>
 
         <div>
-          <label className="mb-2 block text-caption font-medium text-[var(--foreground)]">Features</label>
-          <p className="mb-3 text-[11px] text-[var(--muted-foreground)]">Select all that apply</p>
+          <label className="mb-2 block text-caption font-medium text-[var(--foreground)]">{t("features")}</label>
+          <p className="mb-3 text-[11px] text-[var(--muted-foreground)]">{t("selectAllThatApply")}</p>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
             {CAR_FEATURES.map((f) => {
               const selected = form.features.includes(f.id);
@@ -517,20 +519,20 @@ export default function EditCarPage() {
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label className="mb-1.5 block text-caption font-medium text-[var(--foreground)]">Town / City</label>
+            <label className="mb-1.5 block text-caption font-medium text-[var(--foreground)]">{t("townCity")}</label>
             <select
               value={form.province}
               onChange={(e) => setForm((p) => ({ ...p, province: e.target.value }))}
               className={inputClass}
             >
-              <option value="">Select town/city</option>
+              <option value="">{t("selectTownCity")}</option>
               {DRC_LOCATIONS.map((p) => (
                 <option key={p} value={p}>{p}</option>
               ))}
             </select>
           </div>
           <div>
-            <label className="mb-1 block text-[10px] font-medium">Country</label>
+            <label className="mb-1 block text-[10px] font-medium">{t("country")}</label>
             <input
               type="text"
               value={form.country}
@@ -541,7 +543,7 @@ export default function EditCarPage() {
         </div>
 
         <div>
-          <label className="mb-1 block text-[10px] font-medium">Images</label>
+          <label className="mb-1 block text-[10px] font-medium">{t("images")}</label>
           <ImageUpload
             value={form.images}
             onChange={(urls) => setForm((p) => ({ ...p, images: urls.slice(0, 4) }))}
@@ -577,7 +579,7 @@ export default function EditCarPage() {
             </div>
           </div>
           <div>
-            <label className="mb-1.5 block text-caption font-medium text-[var(--foreground)]">Address (optional)</label>
+            <label className="mb-1.5 block text-caption font-medium text-[var(--foreground)]">{t("addressOptional")}</label>
             <input type="text" value={form.owner_address} onChange={(e) => setForm((p) => ({ ...p, owner_address: e.target.value }))} className={inputClass} placeholder="e.g. Kinshasa, Gombe" />
           </div>
         </div>

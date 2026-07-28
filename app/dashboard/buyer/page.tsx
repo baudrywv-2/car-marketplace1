@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useLocale } from "@/app/contexts/LocaleContext";
 import { LISTING_TYPE_TRANSLATION_KEYS } from "@/lib/constants";
+import FirstVisitTips, { type TourStep } from "@/app/components/FirstVisitTips";
 
 type RdvRequest = {
   id: string;
@@ -141,7 +142,7 @@ export default function BuyerDashboardPage() {
   }, [router]);
 
   async function cancelRdv(rdvId: string) {
-    if (!confirm("Cancel this meeting request? The seller will no longer see it.")) return;
+    if (!confirm(t("cancelMeetingConfirm"))) return;
     await supabase.from("rendezvous_requests").delete().eq("id", rdvId);
     setRdvRequests((prev) => prev.filter((r) => r.id !== rdvId));
   }
@@ -154,10 +155,17 @@ export default function BuyerDashboardPage() {
     );
   }
 
+  const tourSteps: TourStep[] = [
+    { targetId: "buyer-tip-stats", messageKey: "tipBuyerStats" },
+    { targetId: "buyer-tip-browse", messageKey: "tipBuyerBrowse" },
+    { targetId: "buyer-tip-meetings", messageKey: "tipBuyerMeetings" },
+  ];
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
+      <FirstVisitTips storageKey="buyer-dashboard-tips-seen" steps={tourSteps} />
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-        <h1 className="text-heading text-[var(--foreground)]">My account</h1>
+        <h1 className="text-heading text-[var(--foreground)]">{t("myAccount")}</h1>
         <Link href="/dashboard" className="text-caption text-[var(--muted-foreground)] hover:text-[var(--foreground)]">
           ← {t("backToDashboard")}
         </Link>
@@ -177,6 +185,7 @@ export default function BuyerDashboardPage() {
             {t("tabOverview")}
           </button>
           <button
+            id="buyer-tip-meetings"
             type="button"
             onClick={() => setActiveTab("meetings")}
             className={`border-b-2 px-1 py-3 text-caption font-medium transition-colors ${
@@ -195,9 +204,9 @@ export default function BuyerDashboardPage() {
       {notifications.length > 0 && (
         <div className="mb-6 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--card)] p-4">
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-[11px] font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">Notifications</h2>
+            <h2 className="text-[11px] font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">{t("notifications")}</h2>
             {notifications.some((n) => !n.read_at) && (
-              <button type="button" onClick={clearAllNotifications} className="text-[10px] font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)]">Clear all</button>
+              <button type="button" onClick={clearAllNotifications} className="text-[10px] font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)]">{t("clearAll")}</button>
             )}
           </div>
           <ul className="space-y-2">
@@ -210,7 +219,7 @@ export default function BuyerDashboardPage() {
                   {n.body && <p className="mt-0.5 text-[11px] text-[var(--muted-foreground)]">{n.body}</p>}
                   <p className="mt-1 text-[10px] text-[var(--muted-foreground)]">{new Date(n.created_at).toLocaleString()}</p>
                 </div>
-                <button type="button" onClick={() => dismissNotification(n.id)} className="shrink-0 text-[10px] font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)]">Dismiss</button>
+                <button type="button" onClick={() => dismissNotification(n.id)} className="shrink-0 text-[10px] font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)]">{t("dismiss")}</button>
               </li>
             ))}
           </ul>
@@ -220,13 +229,13 @@ export default function BuyerDashboardPage() {
       {visibleAdminMessages.length > 0 && (
         <div className="mb-6 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--card)] p-4">
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-[11px] font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">Messages from admin</h2>
+            <h2 className="text-[11px] font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">{t("messagesFromAdmin")}</h2>
             <button
               type="button"
               onClick={clearAllAdminMessages}
               className="text-[10px] font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
             >
-              Clear all
+              {t("clearAll")}
             </button>
           </div>
           <ul className="space-y-3">
@@ -242,7 +251,7 @@ export default function BuyerDashboardPage() {
                   onClick={() => dismissAdminMessage(m.id)}
                   className="shrink-0 text-[10px] font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
                 >
-                  Dismiss
+                  {t("dismiss")}
                 </button>
               </li>
             ))}
@@ -250,14 +259,14 @@ export default function BuyerDashboardPage() {
         </div>
       )}
 
-      <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-3">
+      <div id="buyer-tip-stats" className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-3">
         <StatCard label={t("myFavorites")} value={favoritesCount} href="/favorites" />
-        <StatCard label="Contact unlocks" value={unlocksCount} />
-        <StatCard label="Meeting requests" value={rdvRequests.length} />
+        <StatCard label={t("contactUnlocks")} value={unlocksCount} />
+        <StatCard label={t("meetingRequests")} value={rdvRequests.length} />
       </div>
 
-      <div className="mb-6">
-        <h2 className="text-body mb-3 font-semibold text-[var(--foreground)]">Quick actions</h2>
+      <div id="buyer-tip-browse" className="mb-6">
+        <h2 className="text-body mb-3 font-semibold text-[var(--foreground)]">{t("quickActions")}</h2>
         <div className="flex flex-wrap gap-3">
           <Link href="/cars" className="btn-primary">{t("browseCars")}</Link>
           <Link href="/favorites" className="btn-secondary">{t("myFavorites")}</Link>
@@ -269,9 +278,9 @@ export default function BuyerDashboardPage() {
 
       {activeTab === "meetings" && rdvRequests.length > 0 && (
         <div>
-          <h2 className="text-body mb-3 font-semibold text-[var(--foreground)]">Your meeting requests</h2>
+          <h2 className="text-body mb-3 font-semibold text-[var(--foreground)]">{t("yourMeetingRequests")}</h2>
           <p className="text-caption mb-4 text-[var(--muted-foreground)]">
-            Status of your rendez-vous requests. Admin will process and connect you with the seller.
+            {t("meetingReassurance")}
           </p>
           <ul className="space-y-3">
             {rdvRequests.map((rdv) => {
@@ -299,7 +308,7 @@ export default function BuyerDashboardPage() {
                     </p>
                     {rdv.suggested_price != null && rdv.suggested_price > 0 && (
                       <p className="mt-0.5 text-[10px] font-medium text-[var(--foreground)]">
-                        Your offer: {Number(rdv.suggested_price).toLocaleString()}
+                        {t("yourOffer")} {Number(rdv.suggested_price).toLocaleString()}
                       </p>
                     )}
                   </div>
@@ -311,14 +320,14 @@ export default function BuyerDashboardPage() {
                           : "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
                       }`}
                     >
-                      {rdv.status === "pending" ? "Pending" : "Approved"}
+                      {rdv.status === "pending" ? t("pending") : t("approved")}
                     </span>
                     <button
                       type="button"
                       onClick={() => cancelRdv(rdv.id)}
                       className="rounded border border-red-300 px-2 py-1 text-[10px] font-medium text-red-600 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20"
                     >
-                      Cancel request
+                      {t("cancelRequest")}
                     </button>
                   </div>
                 </li>
@@ -331,7 +340,7 @@ export default function BuyerDashboardPage() {
       {activeTab === "meetings" && rdvRequests.length === 0 && (
         <div className="card-premium flex flex-col items-center justify-center gap-2 p-12 text-center">
           <p className="text-body text-[var(--muted-foreground)]">
-            You haven&apos;t requested any meetings yet. Browse cars and click &quot;Request meeting&quot; on a listing.
+            {t("noMeetingRequests")}
           </p>
           <Link href="/cars" className="btn-primary mt-2">{t("browseCars")}</Link>
         </div>

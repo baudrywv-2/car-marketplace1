@@ -35,7 +35,7 @@ function useCloseOnClickOutside(
 }
 
 function LangDropdown({ mobile, inOverlay }: { mobile?: boolean; inOverlay?: boolean }) {
-  const { locale, setLocale } = useLocale();
+  const { locale, setLocale, t } = useLocale();
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
   const ref = useRef<HTMLDivElement>(null);
@@ -81,7 +81,7 @@ function LangDropdown({ mobile, inOverlay }: { mobile?: boolean; inOverlay?: boo
         className="flex min-h-[44px] min-w-[44px] items-center gap-1.5 rounded-[var(--radius)] border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-[10px] font-medium text-[var(--foreground)] hover:bg-[var(--border)] md:min-h-[2.25rem] md:min-w-0 md:py-1.5"
         aria-expanded={open}
         aria-haspopup="listbox"
-        aria-label="Language"
+        aria-label={t("language")}
       >
         <span>{LOCALE_LABELS[locale]}</span>
         <svg className="h-4 w-4 shrink-0 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -113,7 +113,7 @@ function LangDropdown({ mobile, inOverlay }: { mobile?: boolean; inOverlay?: boo
 }
 
 function CurrencyDropdown({ mobile, inOverlay }: { mobile?: boolean; inOverlay?: boolean }) {
-  const { currency, setCurrency } = useLocale();
+  const { currency, setCurrency, t } = useLocale();
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
   const ref = useRef<HTMLDivElement>(null);
@@ -159,7 +159,7 @@ function CurrencyDropdown({ mobile, inOverlay }: { mobile?: boolean; inOverlay?:
         className="flex min-h-[44px] min-w-[44px] items-center gap-1.5 rounded-[var(--radius)] border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-[10px] font-medium text-[var(--foreground)] hover:bg-[var(--border)] md:min-h-[2.25rem] md:min-w-0 md:py-1.5"
         aria-expanded={open}
         aria-haspopup="listbox"
-        aria-label="Currency"
+        aria-label={t("currencyLabel")}
       >
         <span>{currency}</span>
         <svg className="h-4 w-4 shrink-0 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24">

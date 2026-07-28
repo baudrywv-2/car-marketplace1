@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { supabase } from "@/lib/supabase";
+import { useLocale } from "@/app/contexts/LocaleContext";
 
 const MAX_IMAGES = 4;
 const MAX_SIZE_MB = 3;
@@ -13,6 +14,7 @@ type Props = {
 };
 
 export default function ImageUpload({ value, onChange, disabled }: Props) {
+  const { t } = useLocale();
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
   const [pasteUrl, setPasteUrl] = useState("");
@@ -103,7 +105,7 @@ export default function ImageUpload({ value, onChange, disabled }: Props) {
           onClick={() => inputRef.current?.click()}
           className="rounded border border-zinc-300 px-3 py-1.5 text-[10px] font-medium hover:bg-zinc-100 disabled:opacity-50 dark:border-zinc-600 dark:hover:bg-zinc-800"
         >
-          {uploading ? "Uploading…" : "Upload images"}
+          {uploading ? t("uploading") : t("uploadImages")}
         </button>
         <span className="text-[10px] text-zinc-500">
           {value.length}/{MAX_IMAGES} · max {MAX_SIZE_MB} MB each
@@ -125,8 +127,8 @@ export default function ImageUpload({ value, onChange, disabled }: Props) {
                   disabled={disabled || idx === 0}
                   onClick={() => moveImage(idx, -1)}
                   className="rounded bg-[var(--border)] px-1.5 py-0.5 text-[10px] disabled:opacity-40"
-                  title="Move earlier (first image = main)"
-                  aria-label="Move earlier"
+                  title={t("moveLeft")}
+                  aria-label={t("moveLeft")}
                 >
                   ↑
                 </button>
@@ -135,8 +137,8 @@ export default function ImageUpload({ value, onChange, disabled }: Props) {
                   disabled={disabled || idx === value.length - 1}
                   onClick={() => moveImage(idx, 1)}
                   className="rounded bg-[var(--border)] px-1.5 py-0.5 text-[10px] disabled:opacity-40"
-                  title="Move later"
-                  aria-label="Move later"
+                  title={t("moveRight")}
+                  aria-label={t("moveRight")}
                 >
                   ↓
                 </button>
@@ -145,12 +147,12 @@ export default function ImageUpload({ value, onChange, disabled }: Props) {
                   disabled={disabled}
                   onClick={() => handleRemove(idx)}
                   className="rounded bg-red-500 px-1.5 py-0.5 text-[10px] text-white hover:bg-red-600 disabled:opacity-50"
-                  aria-label="Remove"
+                  aria-label={t("remove")}
                 >
                   ×
                 </button>
               </div>
-              {idx === 0 && <span className="mt-0.5 text-[8px] text-[var(--muted-foreground)]">Main</span>}
+              {idx === 0 && <span className="mt-0.5 text-[8px] text-[var(--muted-foreground)]">{t("main")}</span>}
             </div>
           ))}
         </div>
@@ -161,7 +163,7 @@ export default function ImageUpload({ value, onChange, disabled }: Props) {
           value={pasteUrl}
           onChange={(e) => setPasteUrl(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddUrl())}
-          placeholder="Or paste image URL"
+          placeholder={t("pasteImageUrl")}
           disabled={disabled || value.length >= MAX_IMAGES}
           className="flex-1 rounded border border-zinc-300 px-2 py-1.5 text-[10px] dark:border-zinc-600 dark:bg-zinc-800 dark:text-white"
         />

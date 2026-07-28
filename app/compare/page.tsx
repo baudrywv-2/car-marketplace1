@@ -141,7 +141,7 @@ function CompareInner() {
           </thead>
           <tbody>
             <tr>
-              <td className="py-2 text-[9px] font-semibold text-[var(--muted-foreground)]">Price</td>
+              <td className="py-2 text-[9px] font-semibold text-[var(--muted-foreground)]">{t("price")}</td>
               {cars.map((car) => (
                 <td key={car.id} className="py-2 text-[var(--foreground)]">
                   {formatPrice(car.price, currency, car.currency ?? null)}
@@ -149,7 +149,7 @@ function CompareInner() {
               ))}
             </tr>
             <tr>
-              <td className="py-2 text-[9px] font-semibold text-[var(--muted-foreground)]">Condition</td>
+              <td className="py-2 text-[9px] font-semibold text-[var(--muted-foreground)]">{t("condition")}</td>
               {cars.map((car) => (
                 <td key={car.id} className="py-2">
                   {car.condition === "new" ? t("new") : t("used")}
@@ -157,7 +157,7 @@ function CompareInner() {
               ))}
             </tr>
             <tr>
-              <td className="py-2 text-[9px] font-semibold text-[var(--muted-foreground)]">Mileage</td>
+              <td className="py-2 text-[9px] font-semibold text-[var(--muted-foreground)]">{t("mileage")}</td>
               {cars.map((car) => (
                 <td key={car.id} className="py-2">
                   {car.mileage != null ? `${car.mileage.toLocaleString()} km` : "—"}
@@ -165,7 +165,7 @@ function CompareInner() {
               ))}
             </tr>
             <tr>
-              <td className="py-2 text-[9px] font-semibold text-[var(--muted-foreground)]">Type</td>
+              <td className="py-2 text-[9px] font-semibold text-[var(--muted-foreground)]">{t("vehicleType")}</td>
               {cars.map((car) => (
                 <td key={car.id} className="py-2">
                   {car.type || "—"}
@@ -173,7 +173,7 @@ function CompareInner() {
               ))}
             </tr>
             <tr>
-              <td className="py-2 text-[9px] font-semibold text-[var(--muted-foreground)]">Transmission</td>
+              <td className="py-2 text-[9px] font-semibold text-[var(--muted-foreground)]">{t("shopByTransmission")}</td>
               {cars.map((car) => (
                 <td key={car.id} className="py-2">
                   {car.transmission ? t(car.transmission as "automatic" | "manual") : "—"}
@@ -181,7 +181,7 @@ function CompareInner() {
               ))}
             </tr>
             <tr>
-              <td className="py-2 text-[9px] font-semibold text-[var(--muted-foreground)]">Fuel</td>
+              <td className="py-2 text-[9px] font-semibold text-[var(--muted-foreground)]">{t("shopByFuel")}</td>
               {cars.map((car) => (
                 <td key={car.id} className="py-2">
                   {car.fuel_type ? t(car.fuel_type as "essence" | "diesel" | "electric" | "hybrid") : "—"}
@@ -189,7 +189,7 @@ function CompareInner() {
               ))}
             </tr>
             <tr>
-              <td className="py-2 text-[9px] font-semibold text-[var(--muted-foreground)]">Location</td>
+              <td className="py-2 text-[9px] font-semibold text-[var(--muted-foreground)]">{t("location")}</td>
               {cars.map((car) => (
                 <td key={car.id} className="py-2">
                   {[car.province, car.city].filter(Boolean).join(", ") || "—"}

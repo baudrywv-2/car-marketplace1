@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import type { User } from "@supabase/supabase-js";
 import { useLocale } from "@/app/contexts/LocaleContext";
+import { readGuestFavorites, GUEST_FAVORITES_KEY } from "@/lib/guest-favorites";
 
 type Props = { mobile?: boolean; onNavigate?: () => void };
 
@@ -16,6 +17,7 @@ export default function AuthNav({ mobile, onNavigate }: Props) {
   const [userName, setUserName] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [favCount, setFavCount] = useState(0);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -25,6 +27,34 @@ export default function AuthNav({ mobile, onNavigate }: Props) {
     );
     return () => subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadFavCount() {
+      const local = readGuestFavorites().length;
+      if (!user) {
+        if (!cancelled) setFavCount(local);
+        return;
+      }
+      try {
+        const res = await fetch("/api/favorites", { credentials: "include" });
+        const data = await res.json();
+        const serverIds = ((data.carIds ?? []) as string[]).filter(Boolean);
+        if (!cancelled) setFavCount(new Set([...serverIds, ...readGuestFavorites()]).size);
+      } catch {
+        if (!cancelled) setFavCount(local);
+      }
+    }
+    loadFavCount();
+    function onStorage(e: StorageEvent) {
+      if (e.key === GUEST_FAVORITES_KEY || e.key === null) loadFavCount();
+    }
+    window.addEventListener("storage", onStorage);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("storage", onStorage);
+    };
+  }, [user]);
 
   useEffect(() => {
     if (!user) {
@@ -88,12 +118,21 @@ export default function AuthNav({ mobile, onNavigate }: Props) {
 
   const linkClass = `text-[11px] font-medium text-[var(--foreground)] hover:text-[var(--accent)] transition-colors ${mobile ? "block py-2.5" : ""}`;
 
+  const favoritesLink = (
+    <Link href="/favorites" onClick={onNavigate} className={`${linkClass} inline-flex items-center gap-1.5`}>
+      {t("myFavorites")}
+      {favCount > 0 && (
+        <span className="rounded-full bg-[var(--accent)] px-1.5 py-0.5 text-[9px] font-bold leading-none text-[var(--accent-foreground)]">
+          {favCount > 99 ? "99+" : favCount}
+        </span>
+      )}
+    </Link>
+  );
+
   if (!user) {
     return (
       <nav className={mobile ? "flex flex-col gap-1" : "flex items-center gap-5"}>
-        <Link href="/favorites" onClick={onNavigate} className={linkClass}>
-          {t("myFavorites")}
-        </Link>
+        {favoritesLink}
         <Link href="/login" onClick={onNavigate} className={linkClass}>
           {t("logIn")}
         </Link>
@@ -114,9 +153,7 @@ export default function AuthNav({ mobile, onNavigate }: Props) {
         <Link href="/dashboard" onClick={onNavigate} className={linkClass}>
           {t("myDashboard")}
         </Link>
-        <Link href="/favorites" onClick={onNavigate} className={linkClass}>
-          {t("myFavorites")}
-        </Link>
+        {favoritesLink}
         <Link href="/dashboard/settings" onClick={onNavigate} className={linkClass}>
           {t("contactSettings")}
         </Link>
@@ -144,7 +181,7 @@ export default function AuthNav({ mobile, onNavigate }: Props) {
         className="flex items-center gap-2 rounded-[var(--radius)] border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-[11px] font-medium text-[var(--foreground)] hover:border-[var(--border-strong)] hover:bg-[var(--border)] transition-colors"
         aria-expanded={userMenuOpen}
         aria-haspopup="menu"
-        aria-label="Account menu"
+        aria-label={t("accountMenu")}
       >
         <span className="hidden max-w-[120px] truncate sm:inline">{user.email}</span>
         {avatarUrl ? (
@@ -190,10 +227,15 @@ export default function AuthNav({ mobile, onNavigate }: Props) {
           <Link
             href="/favorites"
             onClick={() => { setUserMenuOpen(false); onNavigate?.(); }}
-            className="block px-3 py-2 text-[11px] font-medium text-[var(--foreground)] hover:bg-[var(--border)]"
+            className="flex items-center justify-between gap-2 px-3 py-2 text-[11px] font-medium text-[var(--foreground)] hover:bg-[var(--border)]"
             role="menuitem"
           >
-            {t("myFavorites")}
+            <span>{t("myFavorites")}</span>
+            {favCount > 0 && (
+              <span className="rounded-full bg-[var(--accent)] px-1.5 py-0.5 text-[9px] font-bold text-[var(--accent-foreground)]">
+                {favCount > 99 ? "99+" : favCount}
+              </span>
+            )}
           </Link>
           <Link
             href="/dashboard/settings"

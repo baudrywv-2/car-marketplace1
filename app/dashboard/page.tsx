@@ -40,17 +40,17 @@ export default function DashboardPage() {
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
       <p className="text-body text-[var(--muted-foreground)]">{t("loading")}</p>
       <p className="mt-2 text-caption text-[var(--muted-foreground)]">
-        Redirecting to your dashboard…
+        {t("redirectingDashboard")}
       </p>
       <div className="mt-4 flex flex-wrap gap-3">
         <Link href="/dashboard/admin" className="text-caption text-[var(--accent)] hover:underline">
-          Admin
+          {t("adminRole")}
         </Link>
         <Link href="/dashboard/seller" className="text-caption text-[var(--accent)] hover:underline">
-          Seller
+          {t("seller")}
         </Link>
         <Link href="/dashboard/buyer" className="text-caption text-[var(--accent)] hover:underline">
-          Buyer
+          {t("buyer")}
         </Link>
       </div>
     </div>
