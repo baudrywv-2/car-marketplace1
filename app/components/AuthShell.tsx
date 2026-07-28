@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
+import Logo from "./Logo";
 import { useLocale } from "@/app/contexts/LocaleContext";
 
 type Props = {
@@ -34,13 +34,8 @@ export default function AuthShell({ title, subtitle, children, wide, footer }: P
       <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-6 safe-area-bottom sm:px-6 sm:py-10 lg:flex-row lg:items-center lg:gap-12 lg:py-14 xl:gap-16">
         {/* Brand column — compact on mobile, full on desktop */}
         <div className="mb-5 shrink-0 animate-fade-up sm:mb-8 lg:mb-0 lg:max-w-md lg:flex-1 lg:pr-4">
-          <Link
-            href="/"
-            className="inline-flex min-h-[44px] items-center font-logo text-sm tracking-wide text-[var(--accent)] sm:min-h-0 sm:text-base"
-          >
-            <span className="opacity-60">&gt;</span> {t("siteName")}
-          </Link>
-          <h1 className="mt-2 font-mono text-[1.35rem] font-bold leading-[1.15] tracking-[-0.04em] text-white sm:mt-4 sm:text-3xl lg:text-[2.35rem]">
+          <Logo showTagline={false} size="md" className="min-h-[44px]" />
+          <h1 className="mt-3 font-mono text-[1.35rem] font-bold leading-[1.15] tracking-[-0.04em] text-white sm:mt-4 sm:text-3xl lg:text-[2.35rem]">
             {title}
           </h1>
           <p className="mt-2 max-w-md text-[12px] leading-relaxed text-white/65 sm:mt-3 sm:text-[13px] sm:text-sm">

@@ -147,9 +147,13 @@ export default function HomePage() {
         <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-1 flex-col justify-center px-4 py-8 sm:px-6 sm:py-10 md:py-12 lg:py-14">
           <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between lg:gap-16">
             <div className="max-w-xl animate-fade-up md:max-w-2xl lg:max-w-3xl">
-              <p className="mb-2 font-logo text-sm tracking-wide text-[var(--accent)] md:mb-3 md:text-base lg:text-lg">
+              <Link
+                href="/"
+                className="mb-2 inline-flex items-center font-logo text-sm tracking-wide text-[var(--accent)] transition-opacity hover:opacity-90 md:mb-3 md:text-base lg:text-lg"
+                aria-label={t("backToHome")}
+              >
                 <span className="opacity-60">&gt;</span> {t("siteName")}
-              </p>
+              </Link>
               <h1 className="font-mono text-[1.35rem] font-bold leading-[1.15] tracking-[-0.06em] text-white sm:text-[1.5rem] md:text-[2.35rem] lg:text-[2.75rem] xl:text-[3rem]">
                 {t("homeTitle")}
               </h1>

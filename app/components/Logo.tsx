@@ -23,7 +23,9 @@ export default function Logo({ showTagline = false, size = "md", className = "",
     <Link
       href="/"
       onClick={onNavigate}
-      className={`group inline-flex items-center gap-3 transition-opacity hover:opacity-90 ${className}`}
+      aria-label={t("backToHome")}
+      title={t("siteName")}
+      className={`group inline-flex items-center gap-3 transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] ${className}`}
     >
       <LogoMark size={sizes.icon} className="shrink-0" />
       <span className="flex flex-col">

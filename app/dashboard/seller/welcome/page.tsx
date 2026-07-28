@@ -65,9 +65,13 @@ export default function SellerWelcomePage() {
     <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6 sm:py-12">
       <div className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--card)]">
         <div className="border-b border-[var(--border)] bg-gradient-to-br from-[var(--accent-muted)] via-transparent to-transparent px-5 py-6 sm:px-8 sm:py-8">
-          <p className="text-[11px] font-mono text-[var(--accent)]">
-            <span className="opacity-60">&gt;</span> DRCCARS
-          </p>
+          <Link
+            href="/"
+            className="inline-flex text-[11px] font-mono text-[var(--accent)] transition-opacity hover:opacity-90"
+            aria-label={t("backToHome")}
+          >
+            <span className="opacity-60">&gt;</span> {t("siteName")}
+          </Link>
           <h1 className="mt-2 font-mono text-2xl font-bold tracking-tight text-[var(--foreground)] sm:text-3xl">
             {t("sellerOnboardingTitle")}
             {displayName ? ` — ${displayName}` : ""}
