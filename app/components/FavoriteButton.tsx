@@ -45,7 +45,7 @@ export default function FavoriteButton({ carId, isFav, onToggle, loggedIn, class
           toast.success(t("removedFromFavorites"));
         } else {
           const msg = (data as { error?: string }).error;
-          toast.error(msg === "Unauthorized" ? t("pleaseLogInAgain") : (msg || t("pleaseLogInAgain")));
+          toast.error(msg === "Unauthorized" ? t("pleaseLogInAgain") : t("actionFailedRetry"));
         }
       } else {
         const res = await fetch("/api/favorites", {
@@ -60,7 +60,7 @@ export default function FavoriteButton({ carId, isFav, onToggle, loggedIn, class
           toast.success(t("addedToFavorites"));
         } else {
           const msg = (data as { error?: string }).error;
-          toast.error(msg === "Unauthorized" ? t("pleaseLogInAgain") : (msg || t("pleaseLogInAgain")));
+          toast.error(msg === "Unauthorized" ? t("pleaseLogInAgain") : t("actionFailedRetry"));
         }
       }
     } finally {

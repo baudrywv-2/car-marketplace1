@@ -1,4 +1,4 @@
-import { SITE_URL } from "@/lib/constants";
+import { SITE_URL, SUPPORT_EMAIL } from "@/lib/constants";
 
 export default function JsonLd() {
   const organization = {
@@ -7,6 +7,13 @@ export default function JsonLd() {
     name: "DRCCARS",
     url: SITE_URL,
     logo: `${SITE_URL}/icon.svg`,
+    email: SUPPORT_EMAIL,
+    contactPoint: {
+      "@type": "ContactPoint",
+      email: SUPPORT_EMAIL,
+      contactType: "customer support",
+      availableLanguage: ["fr", "en", "ln", "sw"],
+    },
     description: "Your trusted car marketplace in the Democratic Republic of Congo. Browse and list new and used vehicles—no platform fees.",
   };
 

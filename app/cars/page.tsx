@@ -17,6 +17,7 @@ import VerifiedSellerBadge from "@/app/components/VerifiedSellerBadge";
 import LoadingFallback from "@/app/components/LoadingFallback";
 import CompareBar from "@/app/components/CompareBar";
 import FadeInSection from "@/app/components/FadeInSection";
+import EmptyState from "@/app/components/EmptyState";
 import { formatListedDate } from "@/lib/date-utils";
 
 type Car = {
@@ -1028,24 +1029,12 @@ function CarsPageContent() {
             </div>
           </div>
           {cars.length === 0 ? (
-            <div className="rounded-xl border-2 border-dashed border-[var(--border)] bg-[var(--card)] py-14 px-6 text-center">
-              <p className="text-body mb-6 text-[var(--foreground)]">
-                {hasActiveFilters ? t("tryRemovingFilters") : t("noListingsCta")}
-              </p>
-              {hasActiveFilters ? (
-                <button
-                  type="button"
-                  onClick={clearAllFilters}
-                  className="btn-accent"
-                >
-                  {t("browseAllCars")}
-                </button>
-              ) : (
-                <Link href="/dashboard/cars/new" className="btn-accent inline-flex">
-                  {t("listYourCar")}
-                </Link>
-              )}
-            </div>
+            <EmptyState
+              title={hasActiveFilters ? t("tryRemovingFilters") : t("noListingsCta")}
+              actionHref={hasActiveFilters ? undefined : "/dashboard/cars/new"}
+              actionLabel={hasActiveFilters ? t("browseAllCars") : t("listYourCar")}
+              onAction={hasActiveFilters ? clearAllFilters : undefined}
+            />
           ) : (
             <>
               <div

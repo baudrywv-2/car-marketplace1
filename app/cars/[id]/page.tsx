@@ -511,6 +511,7 @@ export default function CarDetailPage() {
                     </a>
                   )}
                   {contact.owner_address && <p className="text-[12px]">{t("address")}: {contact.owner_address}</p>}
+                  <p className="text-[11px] leading-relaxed text-[var(--muted-foreground)]">{t("unlockSafetyNote")}</p>
                 </div>
               ) : null}
               <div className="flex flex-col gap-2">

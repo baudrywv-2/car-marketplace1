@@ -5,7 +5,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useLocale } from "@/app/contexts/LocaleContext";
+import { useToast } from "@/app/contexts/ToastContext";
 import { formatPrice } from "@/lib/format-utils";
+import type { translations } from "@/lib/translations";
+import EmptyState from "@/app/components/EmptyState";
+import OptimizedCarImage from "@/app/components/OptimizedCarImage";
 
 type Car = {
   id: string;
@@ -16,18 +20,27 @@ type Car = {
   year: number | null;
   is_approved: boolean;
   is_draft?: boolean;
+  is_sold?: boolean;
   boost_score?: number | null;
   rejection_reason: string | null;
   owner_id: string;
   owner_phone: string | null;
   owner_whatsapp: string | null;
   owner_address: string | null;
+  images?: string[] | null;
+  listing_type?: string | null;
+  created_at?: string | null;
+  currency?: string | null;
 };
 
 type Profile = {
   id: string;
   full_name: string | null;
   company_name: string | null;
+  phone?: string | null;
+  whatsapp?: string | null;
+  city?: string | null;
+  listings_count?: number;
   phone_verified?: boolean;
   id_verified?: boolean;
   dealer_verified?: boolean;
@@ -52,19 +65,81 @@ type RdvRequest = {
   car_owner_address?: string | null;
 };
 
-function StatCard({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
-  return (
-    <div className="card-premium p-4">
+function StatCard({
+  label,
+  value,
+  sub,
+  highlight,
+  onClick,
+}: {
+  label: string;
+  value: string | number;
+  sub?: string;
+  highlight?: boolean;
+  onClick?: () => void;
+}) {
+  const className = `card-premium p-3.5 text-left transition ${
+    onClick ? "cursor-pointer hover:border-[var(--accent)]/40" : ""
+  } ${highlight ? "border-[var(--accent)]/40 bg-[var(--accent-muted)]" : ""}`;
+  const inner = (
+    <>
       <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">{label}</p>
-      <p className="mt-1 text-xl font-bold text-[var(--foreground)]">{value}</p>
+      <p className={`mt-1 font-mono text-2xl font-bold tabular-nums ${highlight ? "text-[var(--accent)]" : "text-[var(--foreground)]"}`}>
+        {value}
+      </p>
       {sub && <p className="mt-0.5 text-[11px] text-[var(--muted-foreground)]">{sub}</p>}
-    </div>
+    </>
   );
+  if (onClick) {
+    return (
+      <button type="button" onClick={onClick} className={className}>
+        {inner}
+      </button>
+    );
+  }
+  return <div className={className}>{inner}</div>;
+}
+
+function StatusBadge({ tone, children }: { tone: "live" | "pending" | "draft" | "rejected" | "sold" | "muted"; children: string }) {
+  const styles =
+    tone === "live"
+      ? "bg-emerald-500/15 text-emerald-400"
+      : tone === "pending"
+        ? "bg-amber-500/15 text-amber-300"
+        : tone === "rejected"
+          ? "bg-red-500/15 text-red-400"
+          : tone === "sold"
+            ? "bg-slate-500/25 text-slate-400"
+            : tone === "draft"
+              ? "bg-slate-500/20 text-slate-300"
+              : "bg-[var(--border)] text-[var(--muted-foreground)]";
+  return (
+    <span className={`inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium ${styles}`}>{children}</span>
+  );
+}
+
+function isPendingCar(c: Car) {
+  return !c.is_approved && !c.is_draft && !c.rejection_reason;
+}
+
+function isRejectedCar(c: Car) {
+  return !c.is_approved && !c.is_draft && !!c.rejection_reason;
+}
+
+function isLiveCar(c: Car) {
+  return c.is_approved && !c.is_draft && !c.is_sold;
+}
+
+function listingTypeLabel(listing_type: string | null | undefined, t: (key: keyof typeof translations.en) => string) {
+  if (listing_type === "rent") return t("forRent");
+  if (listing_type === "both") return t("saleAndRent");
+  return t("forSale");
 }
 
 export default function AdminPage() {
   const router = useRouter();
   const { t } = useLocale();
+  const toast = useToast();
   const [profile, setProfile] = useState<{ role: string } | null>(null);
   const [cars, setCars] = useState<Car[]>([]);
   const [profiles, setProfiles] = useState<Record<string, Profile>>({});
@@ -108,6 +183,11 @@ export default function AdminPage() {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [adminListingsError, setAdminListingsError] = useState<string | null>(null);
   const [rdvFetchError, setRdvFetchError] = useState<string | null>(null);
+  const [listingFilter, setListingFilter] = useState<"all" | "pending" | "live" | "drafts" | "rejected" | "sold">("all");
+  const [listingSearch, setListingSearch] = useState("");
+  const [selectedPendingIds, setSelectedPendingIds] = useState<string[]>([]);
+  const [sellersFetchError, setSellersFetchError] = useState<string | null>(null);
+  const [setupDismissed, setSetupDismissed] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -123,33 +203,26 @@ export default function AdminPage() {
       }
       setProfile(profileData);
 
-      // Use admin_get_cars RPC (bypasses RLS) so admin always sees all listings including pending
-      const { data: carsRpc, error: carsRpcError } = await supabase.rpc("admin_get_cars");
+      setAdminListingsError(null);
       let carsList: Car[] = [];
-      if (!carsRpcError && Array.isArray(carsRpc)) {
-        carsList = carsRpc as Car[];
-      } else {
-        // Fallback: direct select (RLS applies - may hide cars if is_admin() fails)
-        const { data: carsData } = await supabase
-          .from("cars")
-          .select("id, title, price, make, model, year, is_approved, is_draft, boost_score, rejection_reason, owner_id, owner_phone, owner_whatsapp, owner_address")
-          .order("boost_score", { ascending: false, nullsFirst: false })
-          .order("created_at", { ascending: false });
-        carsList = (carsData as Car[]) ?? [];
+      let profMap: Record<string, Profile> = {};
+      try {
+        const res = await fetch("/api/admin/cars", { credentials: "include" });
+        const json = await res.json().catch(() => ({}));
+        if (res.ok && json && Array.isArray(json.cars)) {
+          carsList = json.cars as Car[];
+          if (json.profiles && typeof json.profiles === "object") {
+            profMap = json.profiles as Record<string, Profile>;
+          }
+        } else {
+          const errMsg = (json as { error?: string }).error || `HTTP ${res.status}`;
+          setAdminListingsError(errMsg);
+        }
+      } catch (e) {
+        setAdminListingsError(e instanceof Error ? e.message : t("adminNetworkError"));
       }
       setCars(carsList);
-      setAdminListingsError(carsRpcError?.message ?? null);
-
-      const ownerIds = [...new Set(carsList.map((c) => c.owner_id).filter(Boolean))];
-      if (ownerIds.length > 0) {
-        const { data: profData } = await supabase
-          .from("profiles")
-          .select("id, full_name, company_name, phone_verified, id_verified, dealer_verified")
-          .in("id", ownerIds);
-        const profMap: Record<string, Profile> = {};
-        (profData ?? []).forEach((p) => { profMap[p.id] = p; });
-        setProfiles(profMap);
-      }
+      setProfiles(profMap);
 
       // API route uses service role (bypasses RLS) — single source of truth for admin RDV
       let rdvList: RdvRequest[] = [];
@@ -257,6 +330,28 @@ export default function AdminPage() {
     })();
   }, [activeTab, profile, trafficFrom, trafficTo]);
 
+  useEffect(() => {
+    if (activeTab !== "sellers" || !profile) return;
+    (async () => {
+      setSellersFetchError(null);
+      try {
+        const res = await fetch("/api/admin/sellers", { credentials: "include" });
+        const json = await res.json().catch(() => ({}));
+        if (res.ok && json && Array.isArray(json.sellers)) {
+          const map: Record<string, Profile> = {};
+          (json.sellers as Profile[]).forEach((s) => {
+            map[s.id] = s;
+          });
+          setProfiles(map);
+        } else {
+          setSellersFetchError((json as { error?: string }).error || t("adminSellersLoadError"));
+        }
+      } catch (e) {
+        setSellersFetchError(e instanceof Error ? e.message : t("adminNetworkError"));
+      }
+    })();
+  }, [activeTab, profile, refreshTrigger, t]);
+
   async function sendAdminMessage(e: React.FormEvent) {
     e.preventDefault();
     if (!messageSubject.trim() || !messageBody.trim()) return;
@@ -285,10 +380,48 @@ export default function AdminPage() {
   }
 
   async function approveCar(carId: string) {
-    await supabase.from("cars").update({ is_approved: true, is_draft: false, rejection_reason: null }).eq("id", carId);
+    const res = await fetch("/api/admin/cars", {
+      method: "PATCH",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: carId, action: "approve" }),
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      toast.error((json as { error?: string }).error || t("adminActionFailed"));
+      return;
+    }
     setCars((prev) =>
       prev.map((c) => (c.id === carId ? { ...c, is_approved: true, is_draft: false, rejection_reason: null } : c))
     );
+    setSelectedPendingIds((prev) => prev.filter((id) => id !== carId));
+    toast.success(t("adminListingApproved"));
+  }
+
+  async function bulkApproveSelected() {
+    const ids = selectedPendingIds.filter((id) => {
+      const car = cars.find((c) => c.id === id);
+      return car && isPendingCar(car);
+    });
+    if (!ids.length) return;
+    const res = await fetch("/api/admin/cars", {
+      method: "PATCH",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "bulk_approve", ids }),
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      toast.error((json as { error?: string }).error || t("adminActionFailed"));
+      return;
+    }
+    setCars((prev) =>
+      prev.map((c) =>
+        ids.includes(c.id) ? { ...c, is_approved: true, is_draft: false, rejection_reason: null } : c
+      )
+    );
+    setSelectedPendingIds([]);
+    toast.success(t("adminListingApproved"));
   }
 
   function openRejectModal(car: Car) {
@@ -298,10 +431,21 @@ export default function AdminPage() {
 
   async function submitReject() {
     if (!rejectModal) return;
-    await supabase
-      .from("cars")
-      .update({ is_approved: false, rejection_reason: rejectReason.trim() || null })
-      .eq("id", rejectModal.carId);
+    const res = await fetch("/api/admin/cars", {
+      method: "PATCH",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id: rejectModal.carId,
+        action: "reject",
+        rejection_reason: rejectReason.trim() || null,
+      }),
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      toast.error((json as { error?: string }).error || t("adminActionFailed"));
+      return;
+    }
     setCars((prev) =>
       prev.map((c) =>
         c.id === rejectModal.carId
@@ -311,29 +455,85 @@ export default function AdminPage() {
     );
     setRejectModal(null);
     setRejectReason("");
-  }
-
-  async function deleteCar(carId: string) {
-    if (!confirm(t("adminRemoveListingConfirm"))) return;
-    await supabase.from("cars").delete().eq("id", carId);
-    setCars((prev) => prev.filter((c) => c.id !== carId));
+    toast.success(t("adminListingRejected"));
   }
 
   async function deleteListing(carId: string) {
     if (!confirm(t("adminDeleteListingConfirm"))) return;
-    await supabase.from("cars").delete().eq("id", carId);
+    const res = await fetch(`/api/admin/cars?id=${encodeURIComponent(carId)}`, {
+      method: "DELETE",
+      credentials: "include",
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      toast.error((json as { error?: string }).error || t("adminActionFailed"));
+      return;
+    }
     setCars((prev) => prev.filter((c) => c.id !== carId));
+    setSelectedPendingIds((prev) => prev.filter((id) => id !== carId));
+    toast.success(t("adminDeleteListing"));
+  }
+
+  async function setBoost(carId: string, boost_score: number) {
+    const res = await fetch("/api/admin/cars", {
+      method: "PATCH",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: carId, action: "boost", boost_score }),
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      toast.error((json as { error?: string }).error || t("adminActionFailed"));
+      return;
+    }
+    setCars((prev) => prev.map((c) => (c.id === carId ? { ...c, boost_score } : c)));
+  }
+
+  async function setSold(carId: string, is_sold: boolean) {
+    const res = await fetch("/api/admin/cars", {
+      method: "PATCH",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: carId, action: "sold", is_sold }),
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      toast.error((json as { error?: string }).error || t("adminActionFailed"));
+      return;
+    }
+    setCars((prev) => prev.map((c) => (c.id === carId ? { ...c, is_sold } : c)));
+    toast.success(is_sold ? t("sold") : t("approved"));
   }
 
   async function approveRdv(rdvId: string) {
-    await supabase.from("rendezvous_requests").update({ status: "approved" }).eq("id", rdvId);
+    const res = await fetch("/api/admin/rdv", {
+      method: "PATCH",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: rdvId, action: "approve" }),
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      toast.error((json as { error?: string }).error || t("adminActionFailed"));
+      return;
+    }
     setRdvRequests((prev) => prev.map((r) => (r.id === rdvId ? { ...r, status: "approved" } : r)));
+    toast.success(t("adminRdvApproved"));
   }
 
   async function deleteRdv(rdvId: string) {
     if (!confirm(t("adminRemoveRdvConfirm"))) return;
-    await supabase.from("rendezvous_requests").delete().eq("id", rdvId);
+    const res = await fetch(`/api/admin/rdv?id=${encodeURIComponent(rdvId)}`, {
+      method: "DELETE",
+      credentials: "include",
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      toast.error((json as { error?: string }).error || t("adminActionFailed"));
+      return;
+    }
     setRdvRequests((prev) => prev.filter((r) => r.id !== rdvId));
+    toast.success(t("adminRemove"));
   }
 
   async function deleteAdminMessage(msgId: string) {
@@ -347,139 +547,218 @@ export default function AdminPage() {
     field: "phone_verified" | "id_verified" | "dealer_verified",
     value: boolean
   ) {
-    await supabase.from("profiles").update({ [field]: value }).eq("id", profileId);
+    const res = await fetch("/api/admin/sellers", {
+      method: "PATCH",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: profileId, [field]: value }),
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      toast.error((json as { error?: string }).error || t("adminActionFailed"));
+      return;
+    }
     setProfiles((prev) => ({
       ...prev,
       [profileId]: { ...prev[profileId], [field]: value },
     }));
+    toast.success(t("adminVerifyUpdated"));
   }
 
   if (loading || !profile) {
     return (
-      <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
-        <p className="text-body text-[var(--muted-foreground)]">{t("loading")}</p>
+      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
+        <div className="mb-6 h-10 w-64 animate-pulse rounded bg-[var(--border)]" />
+        <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="h-20 animate-pulse rounded-[var(--radius)] border border-[var(--border)] bg-[var(--card)]" />
+          ))}
+        </div>
+        <div className="h-48 animate-pulse rounded-[var(--radius)] border border-[var(--border)] bg-[var(--card)]" />
       </div>
     );
   }
 
   const totalListings = cars.length;
-  const approvedListings = cars.filter((c) => c.is_approved && !c.is_draft).length;
-  const pendingListings = cars.filter((c) => !c.is_approved && !c.is_draft).length;
+  const approvedListings = cars.filter((c) => c.is_approved && !c.is_draft && !c.is_sold).length;
+  const pendingListings = cars.filter((c) => isPendingCar(c)).length;
+  const rejectedListings = cars.filter((c) => isRejectedCar(c)).length;
+  const soldListings = cars.filter((c) => !!c.is_sold).length;
   const draftListings = cars.filter((c) => c.is_draft).length;
   const uniqueBrands = new Set(profiles ? Object.values(profiles).map((p) => p.company_name).filter(Boolean) : []).size;
   const pendingRdv = rdvRequests.filter((r) => r.status === "pending").length;
   const approvedRdv = rdvRequests.filter((r) => r.status === "approved").length;
+  const needsAttention = pendingListings + pendingRdv;
+
+  const pendingCarIds = cars.filter((c) => isPendingCar(c)).map((c) => c.id);
+  const allPendingSelected = pendingCarIds.length > 0 && pendingCarIds.every((id) => selectedPendingIds.includes(id));
+
+  const baseFilteredCars =
+    listingFilter === "pending"
+      ? cars.filter((c) => isPendingCar(c))
+      : listingFilter === "live"
+        ? cars.filter((c) => isLiveCar(c))
+        : listingFilter === "drafts"
+          ? cars.filter((c) => !!c.is_draft)
+          : listingFilter === "rejected"
+            ? cars.filter((c) => isRejectedCar(c))
+            : listingFilter === "sold"
+              ? cars.filter((c) => !!c.is_sold)
+              : cars;
+
+  const searchQ = listingSearch.trim().toLowerCase();
+  const filteredCars = searchQ
+    ? baseFilteredCars.filter((c) => {
+        const brand = profiles[c.owner_id]?.company_name ?? "";
+        return [c.title, c.make, c.model, brand].some((field) => field?.toLowerCase().includes(searchQ));
+      })
+    : baseFilteredCars;
+
+  const tabs: { id: typeof activeTab; label: string; count?: number; badge?: number }[] = [
+    { id: "listings", label: t("adminTabListings"), count: totalListings, badge: pendingListings || undefined },
+    { id: "rdv", label: t("adminTabRdv"), count: rdvRequests.length, badge: pendingRdv || undefined },
+    { id: "sellers", label: t("adminTabSellers"), count: Object.keys(profiles).length },
+    { id: "analytics", label: t("adminTabAnalytics") },
+    { id: "users", label: t("adminTabUsers") },
+    { id: "traffic", label: t("adminTabTraffic") },
+    { id: "messages", label: t("adminTabMessages"), count: adminMessages.length },
+  ];
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-        <h1 className="text-heading text-[var(--foreground)]">{t("adminDashboard")}</h1>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => { setLoading(true); setRefreshTrigger((t) => t + 1); }}
-            className="rounded border border-[var(--border)] px-3 py-1.5 text-[10px] font-medium text-[var(--foreground)] hover:bg-[var(--border)]"
-          >
-            {t("adminRefresh")}
-          </button>
-          <Link href="/dashboard" className="text-caption text-[var(--muted-foreground)] hover:text-[var(--foreground)]">
-            ← {t("backToDashboard")}
-          </Link>
+    <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
+      <section className="mb-6 overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--card)]">
+        <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[var(--border)] bg-gradient-to-br from-[var(--accent-muted)] via-transparent to-transparent px-4 py-5 sm:px-6">
+          <div className="min-w-0">
+            <p className="font-mono text-[11px] text-[var(--accent)]">
+              <span className="opacity-60">&gt;</span> {t("adminRole")}
+            </p>
+            <h1 className="mt-1 font-mono text-2xl font-bold tracking-tight text-[var(--foreground)] sm:text-3xl">
+              {t("adminDashboard")}
+            </h1>
+            <p className="mt-1.5 max-w-xl text-[12px] text-[var(--muted-foreground)]">{t("adminListingsHelp")}</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setLoading(true);
+                setRefreshTrigger((n) => n + 1);
+              }}
+              className="btn-secondary min-h-10 px-3 text-[12px]"
+            >
+              {t("adminRefresh")}
+            </button>
+            <Link href="/dashboard" className="btn-secondary min-h-10 px-3 text-[12px]">
+              ← {t("backToDashboard")}
+            </Link>
+          </div>
         </div>
-      </div>
 
-      <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-6">
-        <StatCard label={t("adminTotalListings")} value={totalListings} />
-        <StatCard label={t("approved")} value={approvedListings} sub={t("adminLiveOnSite")} />
-        <StatCard label={t("pending")} value={pendingListings} sub={t("adminAwaitingReview")} />
-        <StatCard label={t("draftListings")} value={draftListings} />
-        <StatCard label={t("adminSellerBrands")} value={uniqueBrands} />
-        <StatCard label={t("adminRdvPending")} value={pendingRdv} sub={t("adminApprovedCount").replace("{n}", String(approvedRdv))} />
-      </div>
+        {needsAttention > 0 && (
+          <div className="flex flex-wrap items-center gap-2 border-b border-[var(--border)] px-4 py-3 sm:px-6">
+            <span className="text-[11px] font-semibold uppercase tracking-wide text-amber-300">{t("pending")}</span>
+            {pendingListings > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab("listings");
+                  setListingFilter("pending");
+                }}
+                className="rounded-full border border-amber-500/40 bg-amber-500/10 px-3 py-1 text-[11px] text-amber-200 hover:bg-amber-500/20"
+              >
+                {pendingListings} {t("adminAwaitingReview")}
+              </button>
+            )}
+            {pendingRdv > 0 && (
+              <button
+                type="button"
+                onClick={() => setActiveTab("rdv")}
+                className="rounded-full border border-amber-500/40 bg-amber-500/10 px-3 py-1 text-[11px] text-amber-200 hover:bg-amber-500/20"
+              >
+                {pendingRdv} {t("adminRdvPending")}
+              </button>
+            )}
+          </div>
+        )}
 
-      <div className="mb-6 flex gap-2 border-b border-[var(--border)]">
-        <button
-          type="button"
-          onClick={() => setActiveTab("listings")}
-          className={`border-b-2 px-4 py-2 text-[11px] font-medium transition ${
-            activeTab === "listings"
-              ? "border-[var(--accent)] text-[var(--foreground)]"
-              : "border-transparent text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
-          }`}
-        >
-          {t("adminTabListings")}
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab("rdv")}
-          className={`border-b-2 px-4 py-2 text-[11px] font-medium transition ${
-            activeTab === "rdv"
-              ? "border-[var(--accent)] text-[var(--foreground)]"
-              : "border-transparent text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
-          }`}
-        >
-          {t("adminTabRdv")} ({rdvRequests.length})
-          {pendingRdv > 0 && (
-            <span className="ml-1 rounded-full bg-amber-500 px-1.5 py-0.5 text-[9px] text-black">
-              {pendingRdv}
-            </span>
-          )}
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab("sellers")}
-          className={`border-b-2 px-4 py-2 text-[11px] font-medium transition ${
-            activeTab === "sellers"
-              ? "border-[var(--accent)] text-[var(--foreground)]"
-              : "border-transparent text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
-          }`}
-        >
-          {t("adminTabSellers")}
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab("analytics")}
-          className={`border-b-2 px-4 py-2 text-[11px] font-medium transition ${
-            activeTab === "analytics"
-              ? "border-[var(--accent)] text-[var(--foreground)]"
-              : "border-transparent text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
-          }`}
-        >
-          {t("adminTabAnalytics")}
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab("users")}
-          className={`border-b-2 px-4 py-2 text-[11px] font-medium transition ${
-            activeTab === "users"
-              ? "border-[var(--accent)] text-[var(--foreground)]"
-              : "border-transparent text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
-          }`}
-        >
-          {t("adminTabUsers")}
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab("traffic")}
-          className={`border-b-2 px-4 py-2 text-[11px] font-medium transition ${
-            activeTab === "traffic"
-              ? "border-[var(--accent)] text-[var(--foreground)]"
-              : "border-transparent text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
-          }`}
-        >
-          {t("adminTabTraffic")}
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab("messages")}
-          className={`border-b-2 px-4 py-2 text-[11px] font-medium transition ${
-            activeTab === "messages"
-              ? "border-[var(--accent)] text-[var(--foreground)]"
-              : "border-transparent text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
-          }`}
-        >
-          {t("adminTabMessages")}
-        </button>
+        <div className="grid grid-cols-2 gap-2 p-3 sm:grid-cols-3 lg:grid-cols-6 sm:p-4">
+          <StatCard
+            label={t("adminTotalListings")}
+            value={totalListings}
+            onClick={() => {
+              setActiveTab("listings");
+              setListingFilter("all");
+            }}
+          />
+          <StatCard
+            label={t("approved")}
+            value={approvedListings}
+            sub={t("adminLiveOnSite")}
+            onClick={() => {
+              setActiveTab("listings");
+              setListingFilter("live");
+            }}
+          />
+          <StatCard
+            label={t("pending")}
+            value={pendingListings}
+            sub={t("adminAwaitingReview")}
+            highlight={pendingListings > 0}
+            onClick={() => {
+              setActiveTab("listings");
+              setListingFilter("pending");
+            }}
+          />
+          <StatCard
+            label={t("draftListings")}
+            value={draftListings}
+            onClick={() => {
+              setActiveTab("listings");
+              setListingFilter("drafts");
+            }}
+          />
+          <StatCard
+            label={t("soldListings")}
+            value={soldListings}
+            onClick={() => {
+              setActiveTab("listings");
+              setListingFilter("sold");
+            }}
+          />
+          <StatCard label={t("adminSellerBrands")} value={uniqueBrands} onClick={() => setActiveTab("sellers")} />
+          <StatCard
+            label={t("adminRdvPending")}
+            value={pendingRdv}
+            sub={t("adminApprovedCount").replace("{n}", String(approvedRdv))}
+            highlight={pendingRdv > 0}
+            onClick={() => setActiveTab("rdv")}
+          />
+        </div>
+      </section>
+
+      <div className="mb-5 border-b border-[var(--border)]">
+        <nav className="-mb-px flex gap-1 overflow-x-auto pb-px" aria-label="Admin tabs">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveTab(tab.id)}
+              className={`inline-flex shrink-0 items-center gap-1.5 border-b-2 px-3 py-3 text-[11px] font-medium transition sm:px-4 ${
+                activeTab === tab.id
+                  ? "border-[var(--accent)] text-[var(--foreground)]"
+                  : "border-transparent text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+              }`}
+            >
+              {tab.label}
+              {typeof tab.count === "number" && (
+                <span className="font-mono text-[10px] text-[var(--muted-foreground)]">{tab.count}</span>
+              )}
+              {tab.badge != null && tab.badge > 0 && (
+                <span className="rounded-full bg-amber-500 px-1.5 py-0.5 text-[9px] font-bold text-black">{tab.badge}</span>
+              )}
+            </button>
+          ))}
+        </nav>
       </div>
 
       {activeTab === "analytics" ? (
@@ -886,7 +1165,7 @@ export default function AdminPage() {
             </div>
           )}
           {adminMessages.length === 0 && (
-            <p className="text-caption text-[var(--muted-foreground)]">{t("adminNoMessages")}</p>
+            <EmptyState title={t("adminNoMessages")} className="mt-4" />
           )}
         </>
       ) : activeTab === "sellers" ? (
@@ -894,10 +1173,11 @@ export default function AdminPage() {
           <p className="mb-4 text-caption text-[var(--muted-foreground)]">
             {t("adminSellersHelp")}
           </p>
+          {sellersFetchError && (
+            <p className="mb-4 text-[11px] text-red-600 dark:text-red-400">{sellersFetchError}</p>
+          )}
           {Object.keys(profiles).length === 0 ? (
-            <div className="card-premium flex flex-col items-center justify-center gap-2 p-12 text-center">
-              <p className="text-body text-[var(--muted-foreground)]">{t("adminNoSellers")}</p>
-            </div>
+            <EmptyState title={t("adminNoSellers")} />
           ) : (
             <ul className="space-y-4">
               {Object.entries(profiles).map(([id, p]) => (
@@ -907,8 +1187,14 @@ export default function AdminPage() {
                     {p.company_name && (
                       <p className="text-[11px] text-[var(--muted-foreground)]">{p.company_name}</p>
                     )}
+                    {p.city && (
+                      <p className="text-[10px] text-[var(--muted-foreground)]">{p.city}</p>
+                    )}
                     <p className="text-[10px] text-[var(--muted-foreground)]">
-                      {t("adminListingsCount").replace("{n}", String(cars.filter((c) => c.owner_id === id).length))}
+                      {t("phone")}: {p.phone ?? "—"} · {t("whatsapp")}: {p.whatsapp ?? "—"}
+                    </p>
+                    <p className="text-[10px] text-[var(--muted-foreground)]">
+                      {t("adminListingsCount").replace("{n}", String(p.listings_count ?? 0))}
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-4">
@@ -951,41 +1237,34 @@ export default function AdminPage() {
             {t("adminRdvHelp")}
           </p>
           {rdvFetchError && (
-            <div className="mb-4 rounded border border-amber-500 bg-amber-50 p-4 text-[11px] dark:border-amber-600 dark:bg-amber-900/20">
-              <p className="font-semibold text-amber-800 dark:text-amber-400">{t("adminRdvLoadError")}</p>
-              <p className="mt-1 text-amber-700 dark:text-amber-300">{rdvFetchError}</p>
-              <p className="mt-2 text-amber-600 dark:text-amber-400">
-                {t("adminRdvEnvHint")}
-              </p>
-            </div>
+            <details className="mb-4 rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-[11px]">
+              <summary className="cursor-pointer font-semibold text-amber-200">{t("adminRdvLoadError")}</summary>
+              <p className="mt-2 text-amber-100/90">{rdvFetchError}</p>
+              <p className="mt-1 text-amber-100/70">{t("adminRdvEnvHint")}</p>
+            </details>
           )}
           {rdvRequests.length === 0 ? (
-            <div className="card-premium flex flex-col items-center justify-center gap-3 p-12 text-center">
-              <p className="text-body text-[var(--muted-foreground)]">{t("adminNoRdv")}</p>
-              <p className="max-w-sm text-[11px] text-[var(--muted-foreground)]">
-                {t("adminNoRdvHint")}
-              </p>
-            </div>
+            <EmptyState title={t("adminNoRdv")} hint={t("adminNoRdvHint")} />
           ) : (
             <ul className="space-y-4">
               {rdvRequests.map((rdv) => {
                 const carRel = rdv.cars;
                 const carData = Array.isArray(carRel) ? carRel[0] : carRel;
-                const title = (carData && typeof carData === "object" && carData?.title) ? carData.title : t("adminViewListing");
+                const matchedCar = cars.find((c) => c.id === rdv.car_id);
+                const title = (carData && typeof carData === "object" && carData?.title) ? carData.title : matchedCar?.title ?? t("adminViewListing");
                 const intentLabel = rdv.intent === "rent" ? t("adminIntentRent") : rdv.intent === "sale" ? t("adminIntentBuy") : ((carData && "listing_type" in carData) ? (carData.listing_type === "rent" ? t("adminIntentRent") : t("adminIntentBuy")) : null);
-                const ownerId = (carData && typeof carData === "object" && "owner_id" in carData) ? (carData as { owner_id?: string }).owner_id : null;
+                const ownerId = (carData && typeof carData === "object" && "owner_id" in carData) ? (carData as { owner_id?: string }).owner_id : matchedCar?.owner_id ?? null;
                 const sellerProfile = ownerId ? profiles[ownerId] : null;
                 const brand = sellerProfile?.company_name ?? sellerProfile?.full_name ?? "—";
-                const ownerCar = cars.find((c) => c.owner_id === ownerId);
-                const ownerPhone = (carData && typeof carData === "object" && "owner_phone" in carData)
-                  ? (carData as { owner_phone?: string }).owner_phone
-                  : ownerCar?.owner_phone;
-                const ownerWhatsapp = (carData && typeof carData === "object" && "owner_whatsapp" in carData)
-                  ? (carData as { owner_whatsapp?: string }).owner_whatsapp
-                  : ownerCar?.owner_whatsapp;
-                const ownerAddress = (carData && typeof carData === "object" && "owner_address" in carData)
-                  ? (carData as { owner_address?: string }).owner_address
-                  : ownerCar?.owner_address;
+                const ownerPhone =
+                  (carData && typeof carData === "object" && "owner_phone" in carData && (carData as { owner_phone?: string }).owner_phone)
+                  ?? matchedCar?.owner_phone;
+                const ownerWhatsapp =
+                  (carData && typeof carData === "object" && "owner_whatsapp" in carData && (carData as { owner_whatsapp?: string }).owner_whatsapp)
+                  ?? matchedCar?.owner_whatsapp;
+                const ownerAddress =
+                  (carData && typeof carData === "object" && "owner_address" in carData && (carData as { owner_address?: string }).owner_address)
+                  ?? matchedCar?.owner_address;
                 return (
                   <li key={rdv.id} className="card-premium overflow-hidden p-4">
                     <div className="flex flex-wrap items-start justify-between gap-4">
@@ -1073,101 +1352,231 @@ export default function AdminPage() {
         </>
       ) : (
         <>
-          {adminListingsError && cars.length === 0 && (
-            <div className="mb-4 rounded border border-amber-500 bg-amber-50 p-4 text-[11px] dark:bg-amber-900/20 dark:border-amber-600">
-              <p className="font-semibold text-amber-800 dark:text-amber-400">{t("adminSetupRequired")}</p>
-              <p className="mt-1 text-amber-700 dark:text-amber-300">
-                {t("adminSetupSqlHint")}
-              </p>
+          {adminListingsError && !setupDismissed && (
+            <div className="mb-4 rounded-lg border border-amber-500/35 bg-amber-500/10 px-4 py-3 text-[11px]">
+              <div className="flex items-start justify-between gap-3">
+                <p className="font-semibold text-amber-200">{t("adminSetupRequired")}</p>
+                <button
+                  type="button"
+                  className="shrink-0 text-[12px] text-amber-100/60 hover:text-amber-100"
+                  aria-label="Dismiss"
+                  onClick={() => setSetupDismissed(true)}
+                >
+                  ✕
+                </button>
+              </div>
+              <p className="mt-2 leading-relaxed text-amber-100/85">{adminListingsError}</p>
+              <p className="mt-1 text-amber-100/70">{t("adminRdvEnvHint")}</p>
             </div>
           )}
-          <p className="mb-6 text-caption text-[var(--muted-foreground)]">
-            {t("adminListingsHelp")}
-          </p>
-          {cars.length === 0 ? (
-            <div className="card-premium flex flex-col items-center justify-center gap-2 p-12 text-center">
-              <p className="text-body text-[var(--muted-foreground)]">{t("adminNoListings")}</p>
-              {adminListingsError && (
-                <p className="mt-2 max-w-md text-[10px] text-amber-600 dark:text-amber-400">
-                  {t("adminSetupSqlFallback")}
-                </p>
-              )}
+
+          <div className="mb-4 flex flex-col gap-3">
+            <input
+              type="search"
+              value={listingSearch}
+              onChange={(e) => setListingSearch(e.target.value)}
+              placeholder={t("adminSearchListings")}
+              className="input-premium w-full max-w-md text-[12px]"
+            />
+            <div className="flex flex-wrap items-center gap-2">
+              {(
+                [
+                  { id: "all" as const, label: t("adminTotalListings"), n: totalListings },
+                  { id: "pending" as const, label: t("pending"), n: pendingListings },
+                  { id: "live" as const, label: t("approved"), n: approvedListings },
+                  { id: "rejected" as const, label: t("adminRejected"), n: rejectedListings },
+                  { id: "sold" as const, label: t("soldListings"), n: soldListings },
+                  { id: "drafts" as const, label: t("draftListings"), n: draftListings },
+                ] as const
+              ).map((f) => (
+                <button
+                  key={f.id}
+                  type="button"
+                  onClick={() => setListingFilter(f.id)}
+                  className={`rounded-full border px-3 py-1.5 text-[11px] font-medium transition ${
+                    listingFilter === f.id
+                      ? "border-[var(--accent)] bg-[var(--accent-muted)] text-[var(--accent)]"
+                      : "border-[var(--border)] text-[var(--muted-foreground)] hover:border-[var(--accent)]/40 hover:text-[var(--foreground)]"
+                  }`}
+                >
+                  {f.label} <span className="font-mono opacity-80">{f.n}</span>
+                </button>
+              ))}
             </div>
+            {pendingCarIds.length > 0 && (
+              <div className="flex flex-wrap items-center gap-3">
+                <label className="flex items-center gap-2 text-[11px] text-[var(--muted-foreground)]">
+                  <input
+                    type="checkbox"
+                    checked={allPendingSelected}
+                    onChange={() => {
+                      if (allPendingSelected) setSelectedPendingIds([]);
+                      else setSelectedPendingIds(pendingCarIds);
+                    }}
+                    className="rounded border-[var(--border)]"
+                  />
+                  {t("adminSelectPending")}
+                </label>
+                {selectedPendingIds.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={bulkApproveSelected}
+                    className="btn-primary py-1.5 text-[11px]"
+                  >
+                    {t("adminBulkApprove")} ({selectedPendingIds.length})
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+
+          {filteredCars.length === 0 ? (
+            <EmptyState
+              title={t("adminNoListings")}
+              hint={adminListingsError ? t("adminRdvEnvHint") : t("adminListingsHelp")}
+              actionLabel={t("adminRefresh")}
+              onAction={() => {
+                setLoading(true);
+                setRefreshTrigger((n) => n + 1);
+              }}
+            />
           ) : (
-            <ul className="space-y-4">
-              {cars.map((car) => {
+            <ul className="space-y-3">
+              {filteredCars.map((car) => {
                 const seller = profiles[car.owner_id];
                 const brand = seller?.company_name ?? seller?.full_name ?? "—";
+                const statusTone = car.is_sold
+                  ? "sold"
+                  : car.is_draft
+                    ? "draft"
+                    : car.is_approved
+                      ? "live"
+                      : car.rejection_reason
+                        ? "rejected"
+                        : "pending";
+                const statusLabel = car.is_sold
+                  ? t("sold")
+                  : car.is_draft
+                    ? t("draft")
+                    : car.is_approved
+                      ? t("approved")
+                      : car.rejection_reason
+                        ? t("adminRejected")
+                        : t("pending");
+                const thumb = car.images?.[0];
+                const carPending = isPendingCar(car);
                 return (
                   <li key={car.id} className="card-premium p-4">
                     <div className="flex flex-wrap items-start justify-between gap-4">
-                      <div>
-                        <p className="font-semibold text-[var(--foreground)]">{car.title}</p>
-                        <p className="text-caption text-[var(--muted-foreground)]">
-                          {car.make} {car.model}
-                          {car.year != null ? ` · ${car.year}` : ""} · {formatPrice(car.price, "USD", "USD")}
-                          {car.is_draft && (
-                            <span className="ml-1 rounded bg-slate-200 px-1 dark:bg-slate-600">{t("draft")}</span>
+                      <div className="flex min-w-0 flex-1 gap-3">
+                        {carPending && (
+                          <input
+                            type="checkbox"
+                            checked={selectedPendingIds.includes(car.id)}
+                            onChange={() => {
+                              setSelectedPendingIds((prev) =>
+                                prev.includes(car.id) ? prev.filter((id) => id !== car.id) : [...prev, car.id]
+                              );
+                            }}
+                            className="mt-1 shrink-0 rounded border-[var(--border)]"
+                            aria-label={t("adminSelectPending")}
+                          />
+                        )}
+                        {thumb && (
+                          <div className="relative h-16 w-24 shrink-0 overflow-hidden rounded-md border border-[var(--border)] bg-[var(--background)]">
+                            <OptimizedCarImage src={thumb} alt={car.title} sizes="96px" />
+                          </div>
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="font-semibold text-[var(--foreground)]">{car.title}</p>
+                            <StatusBadge tone={statusTone}>{statusLabel}</StatusBadge>
+                            {car.listing_type && (
+                              <StatusBadge tone="muted">{listingTypeLabel(car.listing_type, t)}</StatusBadge>
+                            )}
+                            {(car.boost_score ?? 0) > 0 && (
+                              <StatusBadge tone="muted">{t("adminBoostN").replace("{n}", String(car.boost_score))}</StatusBadge>
+                            )}
+                          </div>
+                          <p className="mt-1 text-caption text-[var(--muted-foreground)]">
+                            {car.make} {car.model}
+                            {car.year != null ? ` · ${car.year}` : ""} · {formatPrice(car.price, "USD", car.currency ?? "USD")}
+                          </p>
+                          {car.created_at && (
+                            <p className="mt-0.5 text-[10px] text-[var(--muted-foreground)]">
+                              {new Date(car.created_at).toLocaleDateString()}
+                            </p>
                           )}
-                          {(car.boost_score ?? 0) > 0 && (
-                            <span className="ml-1 rounded bg-[var(--accent)]/20 px-1.5 py-0.5 text-[10px] font-medium text-[var(--accent)]">
-                              {t("adminBoostN").replace("{n}", String(car.boost_score))}
-                            </span>
+                          <p className="mt-1 text-[10px] text-[var(--muted-foreground)]">
+                            {t("adminBrandLabel")} {brand}
+                          </p>
+                          {car.rejection_reason && (
+                            <p className="mt-1 rounded border border-red-500/30 bg-red-500/10 px-2 py-1 text-[10px] text-red-300">
+                              {car.rejection_reason}
+                            </p>
                           )}
-                        </p>
-                        <p className="mt-1 text-[10px] text-[var(--muted-foreground)]">
-                          {t("adminBrandLabel")}: {brand}
-                        </p>
-                        <div className="mt-2 rounded bg-[var(--background)] p-2 text-[10px]">
-                          <p>{t("phone")}: {car.owner_phone ?? "—"}</p>
-                          <p>{t("whatsapp")}: {car.owner_whatsapp ?? "—"}</p>
-                          <p>{t("address")}: {car.owner_address ?? "—"}</p>
+                          <div className="mt-2 grid gap-1 rounded-lg border border-[var(--border)] bg-[var(--background)]/60 p-2.5 text-[10px] sm:grid-cols-3">
+                            <p>
+                              {t("phone")}: {car.owner_phone ?? "—"}
+                            </p>
+                            <p>
+                              {t("whatsapp")}: {car.owner_whatsapp ?? "—"}
+                            </p>
+                            <p>
+                              {t("address")}: {car.owner_address ?? "—"}
+                            </p>
+                          </div>
                         </div>
                       </div>
                       <div className="flex flex-wrap gap-2">
                         <select
                           value={car.boost_score ?? 0}
-                          onChange={async (e) => {
-                            const v = parseInt(e.target.value, 10);
-                            await supabase.from("cars").update({ boost_score: v }).eq("id", car.id);
-                            setCars((prev) => prev.map((c) => (c.id === car.id ? { ...c, boost_score: v } : c)));
-                          }}
-                          className="rounded border border-[var(--border)] bg-[var(--background)] px-2 py-1.5 text-[10px] text-[var(--foreground)]"
+                          onChange={(e) => setBoost(car.id, parseInt(e.target.value, 10))}
+                          className="min-h-9 rounded border border-[var(--border)] bg-[var(--background)] px-2 py-1.5 text-[10px] text-[var(--foreground)]"
                           title={t("adminBoostTitle")}
                         >
                           {[0, 1, 2, 3, 4, 5].map((n) => (
-                            <option key={n} value={n}>{n === 0 ? t("adminNoBoost") : t("adminBoostN").replace("{n}", String(n))}</option>
+                            <option key={n} value={n}>
+                              {n === 0 ? t("adminNoBoost") : t("adminBoostN").replace("{n}", String(n))}
+                            </option>
                           ))}
                         </select>
                         <Link
                           href={`/cars/${car.id}?preview=1`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="rounded border border-[var(--border)] px-3 py-1.5 text-[10px] font-medium text-[var(--foreground)] hover:bg-[var(--background)] dark:hover:bg-[var(--border)]"
+                          className="btn-secondary min-h-9 px-3 text-[10px]"
                         >
                           {t("adminPreview")}
                         </Link>
+                        {car.is_approved && !car.is_draft && (
+                          <button
+                            type="button"
+                            onClick={() => setSold(car.id, !car.is_sold)}
+                            className="min-h-9 rounded border border-[var(--border)] px-3 py-1.5 text-[10px] font-medium text-[var(--muted-foreground)] hover:bg-[var(--border)]/50"
+                          >
+                            {car.is_sold ? t("approved") : t("markAsSold")}
+                          </button>
+                        )}
                         {car.is_approved ? (
                           <button
                             type="button"
                             onClick={() => openRejectModal(car)}
-                            className="rounded border border-amber-500 px-3 py-1.5 text-[10px] font-medium text-amber-600 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-900/20"
+                            className="min-h-9 rounded border border-amber-500/50 px-3 py-1.5 text-[10px] font-medium text-amber-300 hover:bg-amber-500/10"
                           >
                             {t("adminReject")}
                           </button>
                         ) : (
-                          <button
-                            type="button"
-                            onClick={() => approveCar(car.id)}
-                            className="btn-primary py-1.5 text-[10px]"
-                          >
-                            {t("adminApprove")}
-                          </button>
+                          carPending && (
+                            <button type="button" onClick={() => approveCar(car.id)} className="btn-primary min-h-9 py-1.5 text-[10px]">
+                              {t("adminApprove")}
+                            </button>
+                          )
                         )}
                         <button
                           type="button"
                           onClick={() => deleteListing(car.id)}
-                          className="rounded border border-red-300 px-3 py-1.5 text-[10px] font-medium text-red-600 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20"
+                          className="min-h-9 rounded border border-red-500/40 px-3 py-1.5 text-[10px] font-medium text-red-400 hover:bg-red-500/10"
                         >
                           {t("adminDeleteListing")}
                         </button>

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useLocale } from "@/app/contexts/LocaleContext";
+import { SUPPORT_EMAIL, SUPPORT_MAILTO } from "@/lib/constants";
 
 export default function SiteMapContent() {
   const { t } = useLocale();
@@ -46,6 +47,11 @@ export default function SiteMapContent() {
         <h2 className="text-subheading mb-4 text-[var(--foreground)]">{t("help")}</h2>
         <ul className="space-y-2 text-body">
           <li><Link href="/faq" className="text-[var(--foreground)] hover:text-[var(--accent)] hover:underline">{t("faq")}</Link></li>
+          <li>
+            <a href={SUPPORT_MAILTO} className="text-[var(--foreground)] hover:text-[var(--accent)] hover:underline">
+              {t("contactSupport")} ({SUPPORT_EMAIL})
+            </a>
+          </li>
           <li><Link href="/site-map" className="text-[var(--foreground)] hover:text-[var(--accent)] hover:underline">{t("siteMap")}</Link></li>
         </ul>
       </section>

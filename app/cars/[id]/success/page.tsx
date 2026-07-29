@@ -70,6 +70,7 @@ export default function UnlockSuccessPage() {
         <p><strong>{t("whatsapp")}:</strong> {contact?.owner_whatsapp || "—"}</p>
         <p><strong>{t("address")}:</strong> {contact?.owner_address || "—"}</p>
       </div>
+      <p className="mt-3 text-[12px] leading-relaxed text-[var(--muted-foreground)]">{t("unlockSafetyNote")}</p>
       <Link href={`/cars/${carId}`} className="mt-6 inline-block text-zinc-900 underline dark:text-white">
         {t("backToListing")}
       </Link>

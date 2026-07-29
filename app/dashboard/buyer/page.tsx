@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabase";
 import { useLocale } from "@/app/contexts/LocaleContext";
 import { LISTING_TYPE_TRANSLATION_KEYS } from "@/lib/constants";
 import FirstVisitTips, { type TourStep } from "@/app/components/FirstVisitTips";
+import EmptyState from "@/app/components/EmptyState";
 
 type RdvRequest = {
   id: string;
@@ -338,12 +339,11 @@ export default function BuyerDashboardPage() {
       )}
 
       {activeTab === "meetings" && rdvRequests.length === 0 && (
-        <div className="card-premium flex flex-col items-center justify-center gap-2 p-12 text-center">
-          <p className="text-body text-[var(--muted-foreground)]">
-            {t("noMeetingRequests")}
-          </p>
-          <Link href="/cars" className="btn-primary mt-2">{t("browseCars")}</Link>
-        </div>
+        <EmptyState
+          title={t("noMeetingRequests")}
+          actionHref="/cars"
+          actionLabel={t("browseCars")}
+        />
       )}
     </div>
   );

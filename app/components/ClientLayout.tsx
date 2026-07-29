@@ -8,6 +8,7 @@ import { LocaleProvider, useLocale } from "@/app/contexts/LocaleContext";
 import { ToastProvider } from "@/app/contexts/ToastContext";
 import type { Locale } from "@/lib/translations";
 import type { Currency } from "@/lib/constants";
+import { SUPPORT_EMAIL, SUPPORT_MAILTO } from "@/lib/constants";
 import AuthNav from "./AuthNav";
 import CookieNotice from "./CookieNotice";
 import LogVisit from "./LogVisit";
@@ -197,6 +198,9 @@ function Footer() {
         <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex flex-col gap-0.5">
             <Logo showTagline size="sm" className="scale-95 origin-left [&_.font-logo]:text-[13px] [&_.font-mono]:text-[10px]" />
+            <a href={SUPPORT_MAILTO} className="mt-2 link-accent font-mono text-[10px]">
+              {SUPPORT_EMAIL}
+            </a>
           </div>
           <nav className="flex flex-wrap gap-x-5 gap-y-0.5 sm:flex-nowrap sm:gap-5">
             <div className="flex flex-col gap-0.5">
@@ -234,6 +238,9 @@ function Footer() {
               <Link href="/faq" className="link-accent">
                 {t("faq")}
               </Link>
+              <a href={SUPPORT_MAILTO} className="link-accent">
+                {t("contactSupport")}
+              </a>
               <Link href="/site-map" className="link-accent">
                 {t("siteMap")}
               </Link>

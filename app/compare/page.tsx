@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useLocale } from "@/app/contexts/LocaleContext";
 import { formatPrice } from "@/lib/format-utils";
+import EmptyState from "@/app/components/EmptyState";
 import CarImagePlaceholder from "@/app/components/CarImagePlaceholder";
 import OptimizedCarImage from "@/app/components/OptimizedCarImage";
 import LoadingFallback from "@/app/components/LoadingFallback";
@@ -82,10 +83,12 @@ function CompareInner() {
   if (cars.length === 0) {
     return (
       <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
-        <p className="text-body text-[var(--muted-foreground)]">{t("noCarsToCompare")}</p>
-        <Link href="/cars" className="mt-4 inline-block font-medium text-[var(--foreground)] underline hover:no-underline">
-          ← {t("browseCars")}
-        </Link>
+        <EmptyState
+          title={t("noCarsToCompare")}
+          hint={t("noCarsToCompareHint")}
+          actionHref="/cars"
+          actionLabel={`← ${t("browseCars")}`}
+        />
       </div>
     );
   }

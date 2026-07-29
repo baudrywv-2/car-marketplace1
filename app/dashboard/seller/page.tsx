@@ -13,6 +13,7 @@ import {
   isCompanySeller,
 } from "@/lib/seller-profile";
 import FirstVisitTips, { type TourStep } from "@/app/components/FirstVisitTips";
+import EmptyState from "@/app/components/EmptyState";
 
 type Profile = {
   id: string;
@@ -94,11 +95,14 @@ export default function SellerDashboardPage() {
   const router = useRouter();
   const { t } = useLocale();
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [user, setUser] = useState<{ email_confirmed_at?: string | null; email?: string | null } | null>(null);
+  const [user, setUser] = useState<{ id?: string; email_confirmed_at?: string | null; email?: string | null } | null>(null);
   const [cars, setCars] = useState<Car[]>([]);
   const [approvedRdv, setApprovedRdv] = useState<ApprovedRdv[]>([]);
   const [stats, setStats] = useState<Record<string, { views: number; favorites: number; unlocks: number; rdv: number }>>({});
   const [adminMessages, setAdminMessages] = useState<{ id: string; subject: string; body: string; created_at: string }[]>([]);
+  const [notifications, setNotifications] = useState<
+    { id: string; type: string; car_id: string | null; title: string; body: string | null; read_at: string | null; created_at: string }[]
+  >([]);
   const [dismissedMsgIds, setDismissedMsgIds] = useState<Set<string>>(() => {
     if (typeof window === "undefined") return new Set();
     try {
@@ -166,6 +170,23 @@ export default function SellerDashboardPage() {
       } catch {}
       return next;
     });
+  }
+
+  async function dismissNotification(notifId: string) {
+    if (!user) return;
+    await supabase.from("user_notifications").update({ read_at: new Date().toISOString() }).eq("id", notifId).eq("user_id", user.id);
+    setNotifications((prev) => prev.map((n) => (n.id === notifId ? { ...n, read_at: new Date().toISOString() } : n)));
+  }
+
+  async function clearAllNotifications() {
+    if (!user) return;
+    const unread = notifications.filter((n) => !n.read_at);
+    await Promise.all(
+      unread.map((n) =>
+        supabase.from("user_notifications").update({ read_at: new Date().toISOString() }).eq("id", n.id).eq("user_id", user.id)
+      )
+    );
+    setNotifications((prev) => prev.map((n) => ({ ...n, read_at: n.read_at ?? new Date().toISOString() })));
   }
 
   useEffect(() => {
@@ -237,6 +258,24 @@ export default function SellerDashboardPage() {
         .order("created_at", { ascending: false })
         .limit(5);
       setAdminMessages((msgData ?? []) as { id: string; subject: string; body: string; created_at: string }[]);
+
+      const { data: notifData } = await supabase
+        .from("user_notifications")
+        .select("id, type, car_id, title, body, read_at, created_at")
+        .eq("user_id", u.id)
+        .order("created_at", { ascending: false })
+        .limit(20);
+      setNotifications(
+        (notifData ?? []) as {
+          id: string;
+          type: string;
+          car_id: string | null;
+          title: string;
+          body: string | null;
+          read_at: string | null;
+          created_at: string;
+        }[]
+      );
 
       setLoading(false);
     }
@@ -398,6 +437,14 @@ export default function SellerDashboardPage() {
               >
                 {t("howItWorks")}
               </Link>
+              <a
+                href="/DRCCARS-Guide-Vendeur.pdf"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-lg border border-[var(--border)] px-4 py-2 text-sm text-[var(--muted-foreground)] transition hover:border-[var(--accent)]/40 hover:text-[var(--accent)]"
+              >
+                {t("downloadSellerGuide")}
+              </a>
             </div>
           </div>
         </div>
@@ -465,6 +512,58 @@ export default function SellerDashboardPage() {
 
       {activeTab === "overview" && (
         <div className="space-y-6">
+          {notifications.length > 0 && (
+            <section className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4">
+              <div className="mb-3 flex items-center justify-between">
+                <h2 className="text-[11px] font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">
+                  {t("notifications")}
+                </h2>
+                {notifications.some((n) => !n.read_at) && (
+                  <button
+                    type="button"
+                    onClick={clearAllNotifications}
+                    className="text-[10px] font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+                  >
+                    {t("clearAll")}
+                  </button>
+                )}
+              </div>
+              <ul className="space-y-2">
+                {notifications.map((n) => (
+                  <li
+                    key={n.id}
+                    className={`flex items-start justify-between gap-2 rounded-lg border p-3 ${
+                      n.read_at
+                        ? "border-[var(--border)] bg-[var(--background)] opacity-75"
+                        : "border-[var(--accent)]/30 bg-[var(--accent)]/5"
+                    }`}
+                  >
+                    <div className="min-w-0">
+                      {n.car_id ? (
+                        <Link href={`/cars/${n.car_id}`} className="font-semibold text-[var(--foreground)] hover:underline">
+                          {n.title}
+                        </Link>
+                      ) : (
+                        <p className="font-semibold text-[var(--foreground)]">{n.title}</p>
+                      )}
+                      {n.body && <p className="mt-0.5 text-[11px] text-[var(--muted-foreground)]">{n.body}</p>}
+                      <p className="mt-1 text-[10px] text-[var(--muted-foreground)]">{new Date(n.created_at).toLocaleString()}</p>
+                    </div>
+                    {!n.read_at && (
+                      <button
+                        type="button"
+                        onClick={() => dismissNotification(n.id)}
+                        className="shrink-0 text-[10px] font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+                      >
+                        {t("dismiss")}
+                      </button>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
           {setupIncomplete && (
             <section id="seller-tip-checklist" className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 sm:p-5">
               <h2 className="text-subheading text-amber-200">{t("setupChecklist")}</h2>
@@ -558,9 +657,7 @@ export default function SellerDashboardPage() {
               </button>
             </div>
             {topListings.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-[var(--border)] px-4 py-8 text-center text-sm text-[var(--muted-foreground)]">
-                {t("noTopListingsYet")}
-              </div>
+              <EmptyState title={t("noTopListingsYet")} hint={t("emptyTopListingsHint")} />
             ) : (
               <ul className="grid gap-3 sm:grid-cols-2">
                 {topListings.map(({ car, views = 0, favorites = 0, unlocks = 0, rdv = 0 }) => (
@@ -603,9 +700,7 @@ export default function SellerDashboardPage() {
           </div>
           <p className="mb-4 text-caption text-[var(--muted-foreground)]">{t("rdvHelpSeller")}</p>
           {visibleApprovedRdv.length === 0 ? (
-            <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-8 text-center">
-              <p className="text-body text-[var(--muted-foreground)]">{t("noApprovedRdv")}</p>
-            </div>
+            <EmptyState title={t("noApprovedRdv")} hint={t("noApprovedRdvHint")} />
           ) : (
             <ul className="space-y-2">
               {visibleApprovedRdv.map((rdv) => {

@@ -110,7 +110,6 @@ export default function SettingsPage() {
       {
         id: profile!.id,
         full_name: name,
-        role: profile!.role,
         phone: ph,
         whatsapp: wa,
         company_name: resolvedCompany,
@@ -123,7 +122,7 @@ export default function SettingsPage() {
     );
     setSaving(false);
     if (err) {
-      setError(err.message);
+      setError(t("actionFailedRetry"));
       return;
     }
     setSuccess(true);
@@ -183,7 +182,7 @@ export default function SettingsPage() {
         contentType: file.type || "image/jpeg",
       });
       if (uploadError) {
-        setError(uploadError.message || t("avatarUploadFailed"));
+        setError(t("avatarUploadFailed"));
         return;
       }
       const {
@@ -192,8 +191,8 @@ export default function SettingsPage() {
       await persistAvatarUrl(publicUrl);
       setSuccessKey("avatarSaved");
       setSuccess(true);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t("avatarUploadFailed"));
+    } catch {
+      setError(t("avatarUploadFailed"));
     } finally {
       setAvatarUploading(false);
     }
@@ -208,8 +207,8 @@ export default function SettingsPage() {
       await persistAvatarUrl(null);
       setSuccessKey("avatarSaved");
       setSuccess(true);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t("avatarUploadFailed"));
+    } catch {
+      setError(t("actionFailedRetry"));
     } finally {
       setAvatarUploading(false);
     }

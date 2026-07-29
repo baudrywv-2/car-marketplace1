@@ -9,6 +9,7 @@ import { useLocale } from "@/app/contexts/LocaleContext";
 import { COMMON_MAKES, OTHER_MAKE } from "@/lib/constants";
 import FadeInSection from "@/app/components/FadeInSection";
 import BuyerCarCard, { type BuyerCarCardData } from "@/app/components/BuyerCarCard";
+import CarCardSkeleton from "@/app/components/CarCardSkeleton";
 
 type RecentCar = BuyerCarCardData;
 
@@ -29,6 +30,7 @@ export default function HomePage() {
   const { t } = useLocale();
   const [recent, setRecent] = useState<RecentCar[]>([]);
   const [featured, setFeatured] = useState<BuyerCarCardData[]>([]);
+  const [featuredLoading, setFeaturedLoading] = useState(true);
   const [popularMakes, setPopularMakes] = useState<string[]>([]);
   const [searchQ, setSearchQ] = useState("");
   const [searchMake, setSearchMake] = useState("");
@@ -37,6 +39,7 @@ export default function HomePage() {
 
   useEffect(() => {
     (async () => {
+      setFeaturedLoading(true);
       const [{ data: metaData }, { data: featuredData }] = await Promise.all([
         supabase.from("cars").select("make").eq("is_approved", true).eq("is_draft", false).limit(500),
         supabase
@@ -60,6 +63,7 @@ export default function HomePage() {
         .map(([m]) => m);
       setPopularMakes([...topMakes, ...(otherCount > 0 ? [OTHER_MAKE] : [])]);
       setFeatured((featuredData ?? []) as BuyerCarCardData[]);
+      setFeaturedLoading(false);
     })();
   }, []);
 
@@ -253,8 +257,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {featured.length > 0 && (
-        <section className="shrink-0 border-b border-[var(--border)] py-6 sm:py-8 md:py-10">
+      {(featuredLoading || featured.length > 0) && (
+        <section className="shrink-0 border-b border-[var(--border)] py-6 sm:py-8 md:py-10" aria-busy={featuredLoading}>
           <div className="mx-auto max-w-6xl px-4 sm:px-6">
             <FadeInSection>
               <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
@@ -266,11 +270,19 @@ export default function HomePage() {
                 </Link>
               </div>
             </FadeInSection>
-            <FadeInSection stagger delay={80} className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 sm:gap-4">
-              {featured.map((car) => (
-                <BuyerCarCard key={car.id} car={car} />
-              ))}
-            </FadeInSection>
+            {featuredLoading ? (
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 sm:gap-4" aria-label={t("featuredLoading")}>
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <CarCardSkeleton key={i} compact />
+                ))}
+              </div>
+            ) : (
+              <FadeInSection stagger delay={80} className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 sm:gap-4">
+                {featured.map((car) => (
+                  <BuyerCarCard key={car.id} car={car} />
+                ))}
+              </FadeInSection>
+            )}
           </div>
         </section>
       )}

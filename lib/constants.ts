@@ -4,8 +4,9 @@ export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://drccars.com
 // Approximate USD → CDF rate (update via env or admin later)
 export const CDF_PER_USD = Number(process.env.NEXT_PUBLIC_CDF_PER_USD) || 2750;
 
-/** Support/admin email for sellers to reach out (e.g. when listing rejected) */
+/** Canonical public support address — use everywhere users need to contact DRCCARS */
 export const SUPPORT_EMAIL = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@drccars.com";
+export const SUPPORT_MAILTO = `mailto:${SUPPORT_EMAIL}`;
 
 export const CURRENCIES = ["USD", "CDF"] as const;
 export type Currency = (typeof CURRENCIES)[number];

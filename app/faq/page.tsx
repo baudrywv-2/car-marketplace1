@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useLocale } from "@/app/contexts/LocaleContext";
+import { SUPPORT_EMAIL, SUPPORT_MAILTO } from "@/lib/constants";
 
 function FAQItem({ q, a, open, onToggle }: { q: string; a: string; open: boolean; onToggle: () => void }) {
   return (
@@ -52,6 +53,14 @@ export default function FAQPage() {
           open={faqOpen === 4}
           onToggle={() => setFaqOpen(faqOpen === 4 ? null : 4)}
         />
+      </div>
+
+      <div className="mt-8 rounded-lg border border-[var(--border)] bg-[var(--card)] px-5 py-5">
+        <p className="text-sm font-medium text-[var(--foreground)]">{t("contactSupport")}</p>
+        <p className="mt-1 text-[12px] text-[var(--muted-foreground)]">{t("contactSupportHint")}</p>
+        <a href={SUPPORT_MAILTO} className="mt-3 inline-flex font-mono text-sm text-[var(--accent)] hover:underline">
+          {SUPPORT_EMAIL}
+        </a>
       </div>
 
       <section className="mt-14 border-t border-[var(--border)] pt-10">

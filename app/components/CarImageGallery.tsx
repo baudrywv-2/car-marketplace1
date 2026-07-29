@@ -62,11 +62,13 @@ export default function CarImageGallery({ images, title }: Props) {
               key={i}
               type="button"
               onClick={() => setActive(i)}
-              className={`relative h-14 w-20 shrink-0 overflow-hidden rounded-[var(--radius)] border-2 transition ${
+              className={`relative h-14 w-20 shrink-0 overflow-hidden rounded-[var(--radius)] border-2 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] ${
                 i === active ? "border-[var(--accent)]" : "border-transparent opacity-70 hover:opacity-100"
               }`}
+              aria-label={`${title} – ${i + 1}`}
+              aria-current={i === active ? "true" : undefined}
             >
-              <img src={src} alt="" className="h-full w-full object-cover" loading="lazy" decoding="async" />
+              <OptimizedCarImage src={src} alt="" sizes="80px" />
             </button>
           ))}
         </div>

@@ -111,6 +111,14 @@ export default function SellerWelcomePage() {
           <Link href="/dashboard/settings" className="btn-secondary px-4 py-2.5 text-center text-sm">
             {t("sellerOnboardEditProfile")}
           </Link>
+          <a
+            href="/DRCCARS-Guide-Vendeur.pdf"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-secondary px-4 py-2.5 text-center text-sm"
+          >
+            {t("downloadSellerGuide")}
+          </a>
           <button type="button" onClick={goDashboard} className="btn-accent px-4 py-2.5 text-sm">
             {t("sellerOnboardGoDashboard")}
           </button>
