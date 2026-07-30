@@ -286,8 +286,8 @@ export default function HomePage() {
       {/* Merged trust strip: how it works + contact */}
       <section className="shrink-0 border-t border-white/10 bg-black py-6 sm:py-10">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr] lg:gap-12">
-            <div>
+          <div className="grid gap-0 lg:grid-cols-[1.4fr_1fr] lg:gap-12">
+            <div className="pb-5 sm:pb-0">
               <h2 className="mb-3 text-base font-semibold tracking-tight text-white sm:mb-5 sm:text-xl">
                 {t("howItWorks")}
               </h2>
@@ -326,7 +326,7 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div>
+            <div className="border-t border-white/15 pt-5 sm:border-t-0 sm:pt-0 lg:border-l lg:border-white/10 lg:pl-10 lg:pt-0">
               <h2 className="mb-2.5 text-base font-semibold tracking-tight text-white sm:mb-4 sm:text-xl">
                 {t("findUsTitle")}
               </h2>
