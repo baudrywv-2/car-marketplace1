@@ -4,8 +4,10 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 
 /**
+ * Mobile: one static hero — no dots, no auto-rotate (avoids “gallery” confusion).
+ * Desktop: quiet ambient crossfade for atmosphere only (no controls).
+ *
  * Cars sit in the lower third of each photo.
- * Mobile: bias crop toward the car (bottom). Desktop keeps cinematic framing.
  */
 const HERO_SLIDES = [
   {
@@ -25,21 +27,39 @@ const HERO_SLIDES = [
   },
 ];
 
+/** Strongest single frame for mobile first viewport */
+const MOBILE_HERO = HERO_SLIDES[1];
+
 type Props = {
   className?: string;
 };
 
+function useIsDesktopHero() {
+  const [desktop, setDesktop] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 640px)");
+    const sync = () => setDesktop(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
+
+  return desktop;
+}
+
 export default function HomeHeroCarousel({ className = "" }: Props) {
+  const isDesktop = useIsDesktopHero();
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
 
   useEffect(() => {
-    if (paused) return;
+    if (!isDesktop || paused) return;
     const id = window.setInterval(() => {
       setIndex((i) => (i + 1) % HERO_SLIDES.length);
-    }, 5500);
+    }, 6500);
     return () => window.clearInterval(id);
-  }, [paused]);
+  }, [isDesktop, paused]);
 
   return (
     <div
@@ -47,49 +67,44 @@ export default function HomeHeroCarousel({ className = "" }: Props) {
       aria-hidden
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
-      onTouchStart={() => setPaused(true)}
-      onTouchEnd={() => setPaused(false)}
     >
-      {HERO_SLIDES.map((slide, i) => (
-        <div
-          key={slide.src}
-          className={`absolute inset-0 transition-opacity duration-[1200ms] ease-out ${
-            i === index ? "opacity-100" : "opacity-0"
-          }`}
-        >
-          <Image
-            src={slide.src}
-            alt={slide.alt}
-            fill
-            className={`object-cover ${slide.position}`}
-            sizes="100vw"
-            priority={i === 0}
-            fetchPriority={i === 0 ? "high" : "auto"}
-          />
-        </div>
-      ))}
-      {/* Lighter mobile gradient — cars must stay readable; desktop keeps depth */}
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/35 via-transparent to-black/50 sm:from-black/45 sm:via-black/10 sm:to-black/85" />
+      {/* Mobile: single static image */}
+      <div className="absolute inset-0 sm:hidden">
+        <Image
+          src={MOBILE_HERO.src}
+          alt={MOBILE_HERO.alt}
+          fill
+          className={`object-cover ${MOBILE_HERO.position}`}
+          sizes="100vw"
+          priority
+          fetchPriority="high"
+        />
+      </div>
 
-      {/* Dots: bottom of image on mobile (clear of copy); top on desktop */}
-      <div className="absolute bottom-3 left-1/2 z-20 flex -translate-x-1/2 items-center gap-0.5 sm:bottom-auto sm:top-4">
+      {/* Desktop: ambient crossfade — no dots / arrows */}
+      <div className="absolute inset-0 hidden sm:block">
         {HERO_SLIDES.map((slide, i) => (
-          <button
+          <div
             key={slide.src}
-            type="button"
-            aria-label={slide.alt}
-            aria-current={i === index ? "true" : undefined}
-            onClick={() => setIndex(i)}
-            className="flex h-10 w-10 items-center justify-center sm:h-11 sm:w-11"
+            className={`absolute inset-0 transition-opacity duration-[1600ms] ease-out ${
+              i === index ? "opacity-100" : "opacity-0"
+            }`}
           >
-            <span
-              className={`block h-1.5 rounded-full transition-all duration-300 ${
-                i === index ? "w-7 bg-[var(--accent)]" : "w-2.5 bg-white/55"
-              }`}
+            <Image
+              src={slide.src}
+              alt={slide.alt}
+              fill
+              className={`object-cover ${slide.position}`}
+              sizes="100vw"
+              priority={i === 0}
+              fetchPriority={i === 0 ? "high" : "auto"}
             />
-          </button>
+          </div>
         ))}
       </div>
+
+      {/* Lighter mobile gradient — cars readable; desktop keeps depth */}
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/35 via-transparent to-black/50 sm:from-black/45 sm:via-black/10 sm:to-black/85" />
     </div>
   );
 }

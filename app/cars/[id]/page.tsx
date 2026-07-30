@@ -82,8 +82,14 @@ export default function CarDetailPage() {
     id_verified?: boolean;
     dealer_verified?: boolean;
   } | null>(null);
-  const [sellerProfile, setSellerProfile] = useState<{ company_name?: string | null; city?: string | null; avatar_url?: string | null } | null>(null);
+  const [sellerProfile, setSellerProfile] = useState<{
+    company_name?: string | null;
+    full_name?: string | null;
+    city?: string | null;
+    avatar_url?: string | null;
+  } | null>(null);
   const [similarCars, setSimilarCars] = useState<SimilarCar[]>([]);
+  const [featuresOpen, setFeaturesOpen] = useState(false);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user: u } }) => setUser(u ?? null));
@@ -171,7 +177,7 @@ export default function CarDetailPage() {
       const profilePromise = carData.owner_id
         ? supabase
             .from("profiles")
-            .select("company_name, city, avatar_url")
+            .select("company_name, full_name, city, avatar_url")
             .eq("id", carData.owner_id)
             .maybeSingle()
         : Promise.resolve({ data: null });
@@ -270,7 +276,7 @@ export default function CarDetailPage() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-8 pb-24 sm:px-6 sm:py-10 sm:pb-10">
+    <div className="mx-auto max-w-4xl px-4 py-6 pb-32 sm:px-6 sm:py-10 sm:pb-10">
       <CarProductJsonLd car={car} />
       {isAdminPreview && (
         <div className="mb-4 rounded-lg border border-amber-500 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800 dark:bg-amber-900/30 dark:text-amber-200">
@@ -313,7 +319,9 @@ export default function CarDetailPage() {
           <div className="min-w-0 flex flex-col gap-4">
             {/* Header: title + meta */}
             <div>
-              <h1 className="font-mono text-xl font-bold leading-tight text-[var(--foreground)] sm:text-2xl">{car.title}</h1>
+              <h1 className="font-mono text-xl font-bold leading-tight text-[var(--foreground)] sm:text-2xl">
+                {car.title.replace(/_/g, " ")}
+              </h1>
               <p className="mt-0.5 text-[11px] text-[var(--muted-foreground)]">
                 {car.listing_type === "rent" ? t("forRent") : car.listing_type === "both" ? t("saleAndRent") : car.condition === "new" ? t("new") : t("used")}
                 {car.created_at && ` · ${formatListedDate(car.created_at, (k) => t(k as "listedToday" | "listedYesterday" | "listedDaysAgo"))}`}
@@ -374,12 +382,16 @@ export default function CarDetailPage() {
               </div>
             )}
 
-            {/* Specs: 2-column compact grid */}
-            <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-[12px]">
-              <div className="min-w-0">
-                <dt className="text-[10px] uppercase tracking-wide text-[var(--muted-foreground)]">{t("makeModel")}</dt>
-                <dd className="font-medium text-[var(--foreground)] truncate">{car.make} {car.model}</dd>
-              </div>
+            {/* Specs — readable on mobile, no truncation */}
+            <dl className="grid grid-cols-2 gap-x-3 gap-y-3 text-[13px] sm:gap-x-4 sm:gap-y-2 sm:text-[12px]">
+              {(car.make || car.model) && (
+                <div className="col-span-2 min-w-0 sm:col-span-1">
+                  <dt className="text-[10px] uppercase tracking-wide text-[var(--muted-foreground)]">{t("makeModel")}</dt>
+                  <dd className="break-words font-medium leading-snug text-[var(--foreground)]">
+                    {[car.make, car.model].filter(Boolean).join(" ")}
+                  </dd>
+                </div>
+              )}
               {car.year != null && (
                 <div>
                   <dt className="text-[10px] uppercase tracking-wide text-[var(--muted-foreground)]">{t("year")}</dt>
@@ -410,69 +422,111 @@ export default function CarDetailPage() {
                   <dd className="font-medium text-[var(--foreground)]">{t(car.fuel_type as "essence" | "diesel" | "electric" | "hybrid")}</dd>
                 </div>
               )}
-              {(car.province || car.city || car.country) && (
+              {(car.city || car.province || car.country) && (
                 <div className="col-span-2 min-w-0">
                   <dt className="text-[10px] uppercase tracking-wide text-[var(--muted-foreground)]">{t("location")}</dt>
-                  <dd className="font-medium text-[var(--foreground)] truncate">{[car.province, car.city, car.country].filter(Boolean).join(", ")}</dd>
+                  <dd className="break-words font-medium leading-snug text-[var(--foreground)]">
+                    {[car.city, car.province].filter(Boolean).join(", ") || car.country}
+                  </dd>
                 </div>
               )}
             </dl>
 
-            {/* Features pills */}
-            {car.features && car.features.length > 0 && (
-              <div>
-                <span className="mb-1.5 block text-[10px] uppercase tracking-wide text-[var(--muted-foreground)]">{t("features")}</span>
-                <div className="flex flex-wrap gap-1.5">
-                  {car.features.map((fId) => {
-                    const raw = (CAR_FEATURE_BY_ID as Record<string, unknown>)[fId];
-                    const f = raw && typeof raw === "object" ? (raw as { labelEn?: string; labelKey?: string }) : null;
-                    const label = f ? (f.labelKey ? t(f.labelKey as Parameters<typeof t>[0]) : (f.labelEn ?? fId)) : fId;
-                    return (
-                      <span
-                        key={fId}
-                        className="rounded-md border border-[var(--accent)]/30 bg-[var(--accent)]/10 px-2 py-1 text-[10px] font-medium text-[var(--foreground)]"
-                      >
-                        {label}
-                      </span>
-                    );
-                  })}
+            {/* Features — collapse long lists on mobile */}
+            {car.features && car.features.length > 0 && (() => {
+              const FEATURE_PREVIEW = 10;
+              const list = featuresOpen ? car.features : car.features.slice(0, FEATURE_PREVIEW);
+              const hasMore = car.features.length > FEATURE_PREVIEW;
+              return (
+                <div>
+                  <span className="mb-2 block text-[10px] uppercase tracking-wide text-[var(--muted-foreground)]">
+                    {t("features")}
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {list.map((fId) => {
+                      const raw = (CAR_FEATURE_BY_ID as Record<string, unknown>)[fId];
+                      const f = raw && typeof raw === "object" ? (raw as { labelEn?: string; labelKey?: string }) : null;
+                      const label = f ? (f.labelKey ? t(f.labelKey as Parameters<typeof t>[0]) : (f.labelEn ?? fId)) : fId;
+                      return (
+                        <span
+                          key={fId}
+                          className="rounded-md border border-[var(--accent)]/30 bg-[var(--accent)]/10 px-2.5 py-1.5 text-[11px] font-medium leading-snug text-[var(--foreground)]"
+                        >
+                          {label}
+                        </span>
+                      );
+                    })}
+                  </div>
+                  {hasMore && (
+                    <button
+                      type="button"
+                      onClick={() => setFeaturesOpen((o) => !o)}
+                      className="mt-2 min-h-10 text-[12px] font-medium text-[var(--accent)] hover:underline"
+                    >
+                      {featuresOpen
+                        ? t("showLessFeatures")
+                        : `${t("showMoreFeatures")} (${car.features.length - FEATURE_PREVIEW})`}
+                    </button>
+                  )}
                 </div>
-              </div>
-            )}
+              );
+            })()}
 
-            {/* Contact & actions: grouped and clear hierarchy */}
+            {/* Seller — complete block on mobile */}
             <div className="mt-1 flex flex-col gap-3 border-t border-[var(--border)] pt-4">
-              <div className="flex items-center gap-3">
-                {sellerProfile?.avatar_url && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={sellerProfile.avatar_url}
-                    alt={sellerProfile.company_name ?? "Seller"}
-                    className="h-10 w-10 rounded-full object-cover"
-                  />
-                )}
-                <div className="min-w-0">
-                  <p className="text-[11px] font-semibold text-[var(--foreground)]">
-                    {sellerProfile?.company_name || t("seller")}
-                  </p>
-                  {car.owner_id && (
-                    <Link href={`/seller/${car.owner_id}`} className="text-[10px] font-medium text-[var(--accent)] hover:underline">
-                      {t("viewSellerStorefront")}
-                    </Link>
+              <div className="rounded-lg border border-[var(--accent)]/25 bg-[#0c0c0e] p-3.5 sm:border-0 sm:bg-transparent sm:p-0">
+                <p className="mb-2.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--accent)]">
+                  {t("seller")}
+                </p>
+                <div className="flex items-start gap-3">
+                  {sellerProfile?.avatar_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={sellerProfile.avatar_url}
+                      alt={sellerProfile.company_name || sellerProfile.full_name || t("seller")}
+                      className="h-12 w-12 shrink-0 rounded-full object-cover"
+                    />
+                  ) : (
+                    <span
+                      className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[var(--accent)]/35 bg-black text-sm font-semibold text-[var(--accent)]"
+                      aria-hidden
+                    >
+                      {(sellerProfile?.company_name || sellerProfile?.full_name || "D").charAt(0).toUpperCase()}
+                    </span>
                   )}
-                  <p className="text-[10px] text-[var(--muted-foreground)]">
-                    {[sellerProfile?.city, car.city, car.province].filter(Boolean).join(" · ")}
-                  </p>
-                  {sellerVerification && (
-                    <div className="mt-1">
-                      <VerifiedSellerBadge
-                        phoneVerified={sellerVerification.phone_verified}
-                        idVerified={sellerVerification.id_verified}
-                        dealerVerified={sellerVerification.dealer_verified}
-                      />
-                    </div>
-                  )}
-                  <p className="mt-1 text-[10px] text-[var(--muted-foreground)]">{t("sellerTrustNote")}</p>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[14px] font-semibold leading-snug text-[var(--foreground)]">
+                      {sellerProfile?.company_name || sellerProfile?.full_name || t("seller")}
+                    </p>
+                    {(sellerProfile?.city || car.city || car.province) && (
+                      <p className="mt-0.5 text-[12px] text-[var(--muted-foreground)]">
+                        {[sellerProfile?.city, car.city, car.province]
+                          .filter(Boolean)
+                          .filter((v, i, a) => a.indexOf(v) === i)
+                          .join(" · ")}
+                      </p>
+                    )}
+                    {sellerVerification && (
+                      <div className="mt-1.5">
+                        <VerifiedSellerBadge
+                          phoneVerified={sellerVerification.phone_verified}
+                          idVerified={sellerVerification.id_verified}
+                          dealerVerified={sellerVerification.dealer_verified}
+                        />
+                      </div>
+                    )}
+                    {car.owner_id && (
+                      <Link
+                        href={`/seller/${car.owner_id}`}
+                        className="mt-2 inline-flex min-h-10 items-center text-[13px] font-medium text-[var(--accent)] hover:underline"
+                      >
+                        {t("viewSellerStorefront")}
+                      </Link>
+                    )}
+                    <p className="mt-2 text-[11px] leading-relaxed text-[var(--muted-foreground)]">
+                      {t("sellerTrustNote")}
+                    </p>
+                  </div>
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-2">
@@ -529,7 +583,7 @@ export default function CarDetailPage() {
               </div>
             </div>
             {user && !rdvSent && (
-              <div id="contact" className="mt-3 rounded-lg border border-[var(--border)] bg-[var(--background)] p-3">
+              <div id="contact" className="mt-3 scroll-mt-28 rounded-lg border border-[var(--border)] bg-[var(--background)] p-3 sm:scroll-mt-4">
                 <p className="text-[12px] mb-2 text-[var(--muted-foreground)]">{t("meetingReassurance")}</p>
                 {(car.listing_type === "both") && (
                   <div className="mb-3">
