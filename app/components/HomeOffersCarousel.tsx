@@ -13,7 +13,7 @@ type Props = {
 };
 
 const CARD_W =
-  "w-[min(72vw,210px)] shrink-0 snap-start sm:w-[180px] md:w-[190px] lg:w-[200px] xl:w-[210px]";
+  "w-[min(68vw,196px)] shrink-0 snap-start sm:w-[180px] md:w-[190px] lg:w-[200px] xl:w-[210px]";
 
 export default function HomeOffersCarousel({ cars, loading, autoPlay = true }: Props) {
   const { t } = useLocale();

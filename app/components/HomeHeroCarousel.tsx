@@ -29,7 +29,7 @@ const HERO_SLIDES = [
 const MOBILE_HERO = {
   src: "/hero/hero-gwagon-mobile-dark.jpg",
   alt: "Mercedes-Benz G-Wagon",
-  position: "object-[center_52%]",
+  position: "object-[center_48%]",
 };
 
 type Props = {

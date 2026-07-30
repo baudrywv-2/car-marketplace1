@@ -174,7 +174,7 @@ export default function HomePage() {
             <Link
               key={m}
               href={stripHref(m)}
-              className="group flex shrink-0 items-center gap-1.5 px-3 py-2.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-[var(--accent)] transition hover:bg-[var(--accent)]/10 sm:px-4 sm:py-3 sm:text-xs"
+              className="group flex shrink-0 items-center gap-1.5 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--accent)] transition hover:bg-[var(--accent)]/10 sm:px-4 sm:py-3 sm:text-xs"
             >
               <span className="inline-block h-1 w-1 rounded-full bg-[var(--accent)]" aria-hidden />
               {stripLabel(m)}
@@ -193,30 +193,30 @@ export default function HomePage() {
           <HomeHeroCarousel />
         </div>
 
-        <div className="relative z-10 mx-auto flex min-h-[min(88svh,760px)] w-full max-w-7xl flex-col justify-center px-4 py-10 sm:min-h-[54vh] sm:justify-end sm:px-6 sm:pb-7 sm:pt-14 md:min-h-[60vh] md:pb-8">
-          <div className="pointer-events-auto mx-auto w-full max-w-md text-center sm:mx-0 sm:max-w-none sm:text-left">
-            <div className="mb-5 flex flex-col items-center gap-4 sm:mb-5 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
+        <div className="relative z-10 mx-auto flex min-h-[min(46svh,400px)] w-full max-w-7xl flex-col justify-center px-4 py-5 sm:min-h-[54vh] sm:justify-end sm:px-6 sm:pb-7 sm:pt-14 md:min-h-[60vh] md:pb-8">
+          <div className="pointer-events-auto mx-auto w-full max-w-sm text-center sm:mx-0 sm:max-w-none sm:text-left">
+            <div className="mb-3 flex flex-col items-center gap-2.5 sm:mb-5 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
               <div className="max-w-xl animate-fade-up">
-                <p className="font-logo text-[1.15rem] tracking-[0.24em] text-[var(--accent)] drop-shadow-[0_1px_14px_rgba(0,0,0,0.65)] sm:text-xl md:text-2xl">
+                <p className="font-logo text-[1.05rem] tracking-[0.22em] text-[var(--accent)] drop-shadow-[0_1px_14px_rgba(0,0,0,0.65)] sm:text-xl md:text-2xl">
                   {t("siteName")}
                 </p>
-                <h1 className="mx-auto mt-2.5 max-w-[18.5rem] text-[0.95rem] font-medium leading-snug tracking-tight text-white/95 drop-shadow-[0_1px_12px_rgba(0,0,0,0.55)] sm:mx-0 sm:mt-1.5 sm:max-w-lg sm:text-base md:text-lg">
+                <h1 className="mx-auto mt-1.5 max-w-[17.5rem] text-[0.8125rem] font-medium leading-snug tracking-tight text-white/92 drop-shadow-[0_1px_12px_rgba(0,0,0,0.55)] sm:mx-0 sm:mt-1.5 sm:max-w-lg sm:text-base md:text-lg">
                   {t("trustedIn")}
                 </h1>
               </div>
               <div
-                className="flex w-full max-w-sm flex-row gap-2 animate-fade-up sm:w-auto sm:max-w-none sm:justify-end"
+                className="flex w-full flex-row gap-1.5 animate-fade-up sm:w-auto sm:max-w-none sm:justify-end sm:gap-2"
                 style={{ animationDelay: "50ms" }}
               >
                 <Link
                   href="/cars"
-                  className="btn-accent min-h-11 flex-1 px-4 py-2.5 text-sm shadow-[0_8px_28px_rgba(0,0,0,0.4)] sm:flex-none sm:px-5 sm:py-3 sm:shadow-none"
+                  className="btn-accent min-h-10 flex-1 px-3 py-2 text-[13px] shadow-[0_8px_28px_rgba(0,0,0,0.4)] sm:min-h-11 sm:flex-none sm:px-5 sm:py-3 sm:text-sm sm:shadow-none"
                 >
                   {t("browseCars")}
                 </Link>
                 <Link
                   href="/rent"
-                  className="inline-flex min-h-11 flex-1 items-center justify-center border border-white/30 bg-black/50 px-4 py-2.5 text-sm font-medium text-white/95 backdrop-blur-md transition hover:border-[var(--accent)]/60 hover:text-[var(--accent)] sm:flex-none sm:bg-black/40 sm:px-5 sm:py-3"
+                  className="inline-flex min-h-10 flex-1 items-center justify-center border border-white/30 bg-black/50 px-3 py-2 text-[13px] font-medium text-white/95 backdrop-blur-md transition hover:border-[var(--accent)]/60 hover:text-[var(--accent)] sm:min-h-11 sm:flex-none sm:bg-black/40 sm:px-5 sm:py-3 sm:text-sm"
                 >
                   {t("rentCars")}
                 </Link>
@@ -224,20 +224,20 @@ export default function HomePage() {
             </div>
 
             <form onSubmit={handleSearch} className="animate-fade-up" style={{ animationDelay: "90ms" }}>
-              <div className="flex flex-col gap-1.5 border border-white/20 bg-black/55 p-2 shadow-[0_12px_40px_rgba(0,0,0,0.4)] backdrop-blur-md sm:flex-row sm:items-stretch sm:gap-2 sm:bg-black/55 sm:p-2 sm:shadow-none">
+              <div className="flex flex-col gap-1 border border-white/20 bg-black/55 p-1.5 shadow-[0_10px_32px_rgba(0,0,0,0.4)] backdrop-blur-md sm:flex-row sm:items-stretch sm:gap-2 sm:bg-black/55 sm:p-2 sm:shadow-none">
                 <input
                   type="search"
                   placeholder={t("searchPlaceholder")}
                   value={searchQ}
                   onChange={(e) => setSearchQ(e.target.value)}
-                  className="hero-search-field min-w-0 w-full flex-1 border-0 bg-transparent px-3 text-center text-white placeholder:text-white/45 focus:outline-none sm:text-left"
+                  className="hero-search-field min-h-10 min-w-0 w-full flex-1 border-0 bg-transparent px-2.5 text-center text-white placeholder:text-white/45 focus:outline-none sm:min-h-11 sm:px-3 sm:text-left"
                 />
-                <div className="flex gap-1.5 sm:contents">
+                <div className="flex gap-1 sm:contents">
                   <select
                     value={searchMake}
                     onChange={(e) => setSearchMake(e.target.value)}
                     aria-label={t("shopByMake")}
-                    className="hero-search-field min-w-0 flex-1 border border-white/20 bg-black/55 px-2.5 text-center text-white sm:w-[150px] sm:flex-none sm:bg-black/75 sm:text-left focus:outline-none"
+                    className="hero-search-field min-h-10 min-w-0 flex-1 border border-white/20 bg-black/55 px-2 text-center text-white sm:min-h-11 sm:w-[150px] sm:flex-none sm:bg-black/75 sm:px-2.5 sm:text-left focus:outline-none"
                   >
                     <option value="">{t("shopByMake")}</option>
                     {searchMakes.map((m) => (
@@ -248,7 +248,7 @@ export default function HomePage() {
                   </select>
                   <button
                     type="submit"
-                    className="hero-search-field shrink-0 bg-[var(--accent)] px-5 font-semibold text-black transition hover:bg-[var(--accent-hover)]"
+                    className="hero-search-field min-h-10 shrink-0 bg-[var(--accent)] px-4 text-[13px] font-semibold text-black transition hover:bg-[var(--accent-hover)] sm:min-h-11 sm:px-5 sm:text-sm"
                   >
                     {t("searchAction")}
                   </button>
@@ -260,15 +260,15 @@ export default function HomePage() {
       </section>
 
       {/* New offers */}
-      <section className="min-w-0 shrink-0 bg-black pt-5 pb-7 sm:pt-7 sm:pb-10" aria-busy={featuredLoading}>
+      <section className="min-w-0 shrink-0 bg-black pt-4 pb-5 sm:pt-7 sm:pb-10" aria-busy={featuredLoading}>
         <div className="mx-auto w-full min-w-0 max-w-[1400px] px-4 sm:px-5 lg:px-6">
-          <div className="mb-3.5 flex items-end justify-between gap-3 sm:mb-4">
-            <h2 className="text-lg font-semibold tracking-tight text-white sm:text-2xl">
+          <div className="mb-2.5 flex items-end justify-between gap-3 sm:mb-4">
+            <h2 className="text-base font-semibold tracking-tight text-white sm:text-2xl">
               {t("featuredCars")}
             </h2>
             <Link
               href="/cars"
-              className="inline-flex min-h-10 shrink-0 items-center text-[13px] font-medium text-[var(--accent)] hover:underline sm:text-sm"
+              className="inline-flex min-h-9 shrink-0 items-center text-[12px] font-medium text-[var(--accent)] hover:underline sm:min-h-10 sm:text-sm"
             >
               {t("viewAllListings")}
             </Link>
@@ -284,11 +284,11 @@ export default function HomePage() {
       </section>
 
       {/* Merged trust strip: how it works + contact */}
-      <section className="shrink-0 border-t border-white/10 bg-black py-8 sm:py-10">
+      <section className="shrink-0 border-t border-white/10 bg-black py-6 sm:py-10">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <div className="grid gap-9 lg:grid-cols-[1.4fr_1fr] lg:gap-12">
+          <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr] lg:gap-12">
             <div>
-              <h2 className="mb-5 text-lg font-semibold tracking-tight text-white sm:text-xl">
+              <h2 className="mb-3 text-base font-semibold tracking-tight text-white sm:mb-5 sm:text-xl">
                 {t("howItWorks")}
               </h2>
               <FadeInSection stagger className="grid gap-0 sm:grid-cols-3">
@@ -299,17 +299,17 @@ export default function HomePage() {
                 ].map((step) => (
                   <div
                     key={step.n}
-                    className="border-t border-white/10 px-0 py-4 sm:border-t-0 sm:border-l sm:px-4 sm:py-0 first:sm:border-l-0 first:sm:pl-0"
+                    className="border-t border-white/10 px-0 py-3 sm:border-t-0 sm:border-l sm:px-4 sm:py-0 first:sm:border-l-0 first:sm:pl-0"
                   >
-                    <p className="text-[11px] tracking-[0.2em] text-[var(--accent)]">{step.n}</p>
-                    <h3 className="mt-1.5 text-[0.9375rem] font-semibold text-white sm:text-sm">
+                    <p className="text-[10px] tracking-[0.2em] text-[var(--accent)] sm:text-[11px]">{step.n}</p>
+                    <h3 className="mt-1 text-[0.875rem] font-semibold text-white sm:mt-1.5 sm:text-sm">
                       {step.title}
                     </h3>
-                    <p className="mt-1.5 text-xs leading-relaxed text-white/55">{step.desc}</p>
+                    <p className="mt-1 text-[11px] leading-relaxed text-white/55 sm:mt-1.5 sm:text-xs">{step.desc}</p>
                   </div>
                 ))}
               </FadeInSection>
-              <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <div className="mt-4 grid grid-cols-2 gap-2.5 sm:mt-6 sm:grid-cols-4 sm:gap-3">
                 {[
                   t("browseFree"),
                   t("listEasily"),
@@ -318,7 +318,7 @@ export default function HomePage() {
                 ].map((label) => (
                   <p
                     key={label}
-                    className="border-t border-[var(--accent)]/40 pt-2.5 text-xs font-medium text-white/80"
+                    className="border-t border-[var(--accent)]/40 pt-2 text-[11px] font-medium text-white/80 sm:pt-2.5 sm:text-xs"
                   >
                     {label}
                   </p>
@@ -327,51 +327,51 @@ export default function HomePage() {
             </div>
 
             <div>
-              <h2 className="mb-4 text-lg font-semibold tracking-tight text-white sm:text-xl">
+              <h2 className="mb-2.5 text-base font-semibold tracking-tight text-white sm:mb-4 sm:text-xl">
                 {t("findUsTitle")}
               </h2>
-              <p className="mb-4 text-xs text-white/50 sm:text-[13px]">{t("findUsSubtitle")}</p>
-              <FadeInSection stagger className="grid gap-2.5">
+              <p className="mb-3 text-[11px] text-white/50 sm:mb-4 sm:text-[13px]">{t("findUsSubtitle")}</p>
+              <FadeInSection stagger className="grid gap-2">
                 <a
                   href={SUPPORT_MAILTO}
-                  className="flex min-h-[3.25rem] items-center gap-3 border border-[var(--accent)]/35 bg-[#0c0c0e] px-3.5 py-3.5 transition hover:border-[var(--accent)]"
+                  className="flex min-h-[2.85rem] items-center gap-2.5 border border-[var(--accent)]/35 bg-[#0c0c0e] px-3 py-2.5 transition hover:border-[var(--accent)] sm:min-h-[3.25rem] sm:gap-3 sm:px-3.5 sm:py-3.5"
                 >
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center border border-[var(--accent)]/30 text-[var(--accent)]" aria-hidden>
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center border border-[var(--accent)]/30 text-[var(--accent)] sm:h-10 sm:w-10" aria-hidden>
                     @
                   </span>
                   <span>
-                    <span className="block text-[11px] uppercase tracking-[0.12em] text-[var(--accent)]">
+                    <span className="block text-[10px] uppercase tracking-[0.12em] text-[var(--accent)] sm:text-[11px]">
                       {t("email")}
                     </span>
-                    <span className="text-[13px] text-white/75">{SUPPORT_EMAIL}</span>
+                    <span className="text-[12px] text-white/75 sm:text-[13px]">{SUPPORT_EMAIL}</span>
                   </span>
                 </a>
                 <Link
                   href="/faq"
-                  className="flex min-h-[3.25rem] items-center gap-3 border border-[var(--accent)]/35 bg-[#0c0c0e] px-3.5 py-3.5 transition hover:border-[var(--accent)]"
+                  className="flex min-h-[2.85rem] items-center gap-2.5 border border-[var(--accent)]/35 bg-[#0c0c0e] px-3 py-2.5 transition hover:border-[var(--accent)] sm:min-h-[3.25rem] sm:gap-3 sm:px-3.5 sm:py-3.5"
                 >
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center border border-[var(--accent)]/30 text-[var(--accent)]" aria-hidden>
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center border border-[var(--accent)]/30 text-[var(--accent)] sm:h-10 sm:w-10" aria-hidden>
                     ?
                   </span>
                   <span>
-                    <span className="block text-[11px] uppercase tracking-[0.12em] text-[var(--accent)]">
+                    <span className="block text-[10px] uppercase tracking-[0.12em] text-[var(--accent)] sm:text-[11px]">
                       FAQ
                     </span>
-                    <span className="text-[13px] text-white/75">{t("faq")}</span>
+                    <span className="text-[12px] text-white/75 sm:text-[13px]">{t("faq")}</span>
                   </span>
                 </Link>
                 <Link
                   href="/dashboard/cars/new"
-                  className="flex min-h-[3.25rem] items-center gap-3 border border-[var(--accent)]/35 bg-[#0c0c0e] px-3.5 py-3.5 transition hover:border-[var(--accent)]"
+                  className="flex min-h-[2.85rem] items-center gap-2.5 border border-[var(--accent)]/35 bg-[#0c0c0e] px-3 py-2.5 transition hover:border-[var(--accent)] sm:min-h-[3.25rem] sm:gap-3 sm:px-3.5 sm:py-3.5"
                 >
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center border border-[var(--accent)]/30 text-[var(--accent)]" aria-hidden>
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center border border-[var(--accent)]/30 text-[var(--accent)] sm:h-10 sm:w-10" aria-hidden>
                     +
                   </span>
                   <span>
-                    <span className="block text-[11px] uppercase tracking-[0.12em] text-[var(--accent)]">
+                    <span className="block text-[10px] uppercase tracking-[0.12em] text-[var(--accent)] sm:text-[11px]">
                       {t("listYourCar")}
                     </span>
-                    <span className="text-[13px] text-white/75">{t("listEasilyDesc")}</span>
+                    <span className="text-[12px] text-white/75 sm:text-[13px]">{t("listEasilyDesc")}</span>
                   </span>
                 </Link>
               </FadeInSection>
@@ -381,12 +381,12 @@ export default function HomePage() {
       </section>
 
       {recent.length > 0 && (
-        <section className="shrink-0 border-t border-white/10 bg-black py-7 sm:py-9">
+        <section className="shrink-0 border-t border-white/10 bg-black py-5 sm:py-9">
           <div className="mx-auto max-w-7xl px-4 sm:px-6">
-            <h2 className="mb-4 text-lg font-semibold tracking-tight text-white">
+            <h2 className="mb-3 text-base font-semibold tracking-tight text-white sm:mb-4 sm:text-lg">
               {t("recentlyViewed")}
             </h2>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-3 lg:grid-cols-6">
+            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 lg:grid-cols-6">
               {recent.map((car) => (
                 <BuyerCarCard key={car.id} car={car} compact />
               ))}
