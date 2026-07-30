@@ -184,38 +184,39 @@ export default function HomePage() {
       </nav>
 
       {/*
-        Hero: full-bleed photo with copy overlaid (mobile + desktop).
-        Mobile gets a taller stage + stronger bottom veil so the car stays visible above actions.
+        Hero: full-bleed photo with copy overlaid.
+        Mobile: centered brand + actions on dark premium still.
+        Desktop: bottom-anchored cinematic overlay (unchanged).
       */}
       <section className="relative min-w-0 overflow-hidden bg-black" aria-label={t("siteName")}>
         <div className="absolute inset-0">
           <HomeHeroCarousel />
         </div>
 
-        <div className="relative z-10 mx-auto flex min-h-[min(88svh,760px)] w-full max-w-7xl flex-col justify-end px-4 pb-7 pt-16 sm:min-h-[54vh] sm:px-6 sm:pb-7 sm:pt-14 md:min-h-[60vh] md:pb-8">
-          <div className="pointer-events-auto">
-            <div className="mb-4 flex flex-col gap-3.5 sm:mb-5 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
+        <div className="relative z-10 mx-auto flex min-h-[min(88svh,760px)] w-full max-w-7xl flex-col justify-center px-4 py-10 sm:min-h-[54vh] sm:justify-end sm:px-6 sm:pb-7 sm:pt-14 md:min-h-[60vh] md:pb-8">
+          <div className="pointer-events-auto mx-auto w-full max-w-md text-center sm:mx-0 sm:max-w-none sm:text-left">
+            <div className="mb-5 flex flex-col items-center gap-4 sm:mb-5 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
               <div className="max-w-xl animate-fade-up">
-                <p className="font-logo text-[1.05rem] tracking-[0.22em] text-[var(--accent)] drop-shadow-[0_1px_12px_rgba(0,0,0,0.55)] sm:text-xl md:text-2xl">
+                <p className="font-logo text-[1.15rem] tracking-[0.24em] text-[var(--accent)] drop-shadow-[0_1px_14px_rgba(0,0,0,0.65)] sm:text-xl md:text-2xl">
                   {t("siteName")}
                 </p>
-                <h1 className="mt-2 max-w-[19.5rem] text-[0.95rem] font-medium leading-snug tracking-tight text-white/95 drop-shadow-[0_1px_10px_rgba(0,0,0,0.5)] sm:mt-1.5 sm:max-w-lg sm:text-base md:text-lg">
+                <h1 className="mx-auto mt-2.5 max-w-[18.5rem] text-[0.95rem] font-medium leading-snug tracking-tight text-white/95 drop-shadow-[0_1px_12px_rgba(0,0,0,0.55)] sm:mx-0 sm:mt-1.5 sm:max-w-lg sm:text-base md:text-lg">
                   {t("trustedIn")}
                 </h1>
               </div>
               <div
-                className="flex w-full flex-row gap-2 animate-fade-up sm:w-auto sm:justify-end"
+                className="flex w-full max-w-sm flex-row gap-2 animate-fade-up sm:w-auto sm:max-w-none sm:justify-end"
                 style={{ animationDelay: "50ms" }}
               >
                 <Link
                   href="/cars"
-                  className="btn-accent min-h-11 flex-1 px-4 py-2.5 text-sm shadow-[0_8px_28px_rgba(0,0,0,0.35)] sm:flex-none sm:px-5 sm:py-3 sm:shadow-none"
+                  className="btn-accent min-h-11 flex-1 px-4 py-2.5 text-sm shadow-[0_8px_28px_rgba(0,0,0,0.4)] sm:flex-none sm:px-5 sm:py-3 sm:shadow-none"
                 >
                   {t("browseCars")}
                 </Link>
                 <Link
                   href="/rent"
-                  className="inline-flex min-h-11 flex-1 items-center justify-center border border-white/30 bg-black/45 px-4 py-2.5 text-sm font-medium text-white/95 backdrop-blur-md transition hover:border-[var(--accent)]/60 hover:text-[var(--accent)] sm:flex-none sm:bg-black/40 sm:px-5 sm:py-3"
+                  className="inline-flex min-h-11 flex-1 items-center justify-center border border-white/30 bg-black/50 px-4 py-2.5 text-sm font-medium text-white/95 backdrop-blur-md transition hover:border-[var(--accent)]/60 hover:text-[var(--accent)] sm:flex-none sm:bg-black/40 sm:px-5 sm:py-3"
                 >
                   {t("rentCars")}
                 </Link>
@@ -223,20 +224,20 @@ export default function HomePage() {
             </div>
 
             <form onSubmit={handleSearch} className="animate-fade-up" style={{ animationDelay: "90ms" }}>
-              <div className="flex flex-col gap-1.5 border border-white/20 bg-black/50 p-2 shadow-[0_12px_40px_rgba(0,0,0,0.35)] backdrop-blur-md sm:flex-row sm:items-stretch sm:gap-2 sm:bg-black/55 sm:p-2 sm:shadow-none">
+              <div className="flex flex-col gap-1.5 border border-white/20 bg-black/55 p-2 shadow-[0_12px_40px_rgba(0,0,0,0.4)] backdrop-blur-md sm:flex-row sm:items-stretch sm:gap-2 sm:bg-black/55 sm:p-2 sm:shadow-none">
                 <input
                   type="search"
                   placeholder={t("searchPlaceholder")}
                   value={searchQ}
                   onChange={(e) => setSearchQ(e.target.value)}
-                  className="hero-search-field min-w-0 w-full flex-1 border-0 bg-transparent px-3 text-white placeholder:text-white/45 focus:outline-none"
+                  className="hero-search-field min-w-0 w-full flex-1 border-0 bg-transparent px-3 text-center text-white placeholder:text-white/45 focus:outline-none sm:text-left"
                 />
                 <div className="flex gap-1.5 sm:contents">
                   <select
                     value={searchMake}
                     onChange={(e) => setSearchMake(e.target.value)}
                     aria-label={t("shopByMake")}
-                    className="hero-search-field min-w-0 flex-1 border border-white/20 bg-black/55 px-2.5 text-white sm:w-[150px] sm:flex-none sm:bg-black/75 focus:outline-none"
+                    className="hero-search-field min-w-0 flex-1 border border-white/20 bg-black/55 px-2.5 text-center text-white sm:w-[150px] sm:flex-none sm:bg-black/75 sm:text-left focus:outline-none"
                   >
                     <option value="">{t("shopByMake")}</option>
                     {searchMakes.map((m) => (

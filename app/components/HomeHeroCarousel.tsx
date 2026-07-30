@@ -4,10 +4,8 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 
 /**
- * Mobile: one static hero — no dots, no auto-rotate (avoids “gallery” confusion).
+ * Mobile: one static dark premium G-Wagon — no dots, no auto-rotate.
  * Desktop: quiet ambient crossfade for atmosphere only (no controls).
- *
- * Cars sit in the lower third of each photo.
  */
 const HERO_SLIDES = [
   {
@@ -18,8 +16,7 @@ const HERO_SLIDES = [
   {
     src: "/hero/hero-gwagon-v9.jpg",
     alt: "Mercedes-Benz G-Wagon",
-    /* Mobile overlay: keep the car in the upper/mid frame above CTAs */
-    position: "object-[center_58%] sm:object-[center_72%]",
+    position: "object-[center_78%] sm:object-[center_72%]",
   },
   {
     src: "/hero/hero-toyota-v3.jpg",
@@ -28,8 +25,12 @@ const HERO_SLIDES = [
   },
 ];
 
-/** Strongest single frame for mobile first viewport */
-const MOBILE_HERO = HERO_SLIDES[1];
+/** Darker premium frame for mobile overlay only */
+const MOBILE_HERO = {
+  src: "/hero/hero-gwagon-mobile-dark.jpg",
+  alt: "Mercedes-Benz G-Wagon",
+  position: "object-[center_52%]",
+};
 
 type Props = {
   className?: string;
@@ -104,9 +105,9 @@ export default function HomeHeroCarousel({ className = "" }: Props) {
         ))}
       </div>
 
-      {/* Mobile: soft top + deep bottom veil for overlaid copy; desktop cinematic depth */}
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/40 via-black/5 to-transparent sm:from-black/45 sm:via-black/10 sm:to-black/85" />
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[58%] bg-gradient-to-t from-black via-black/75 to-transparent sm:hidden" />
+      {/* Mobile: soft vignette + readable veil; desktop cinematic depth */}
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/55 via-black/25 to-black/70 sm:from-black/45 sm:via-black/10 sm:to-black/85" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_20%,rgba(0,0,0,0.55)_100%)] sm:hidden" />
     </div>
   );
 }
