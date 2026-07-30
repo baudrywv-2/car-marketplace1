@@ -18,7 +18,8 @@ const HERO_SLIDES = [
   {
     src: "/hero/hero-gwagon-v9.jpg",
     alt: "Mercedes-Benz G-Wagon",
-    position: "object-[center_78%] sm:object-[center_72%]",
+    /* Mobile overlay: keep the car in the upper/mid frame above CTAs */
+    position: "object-[center_58%] sm:object-[center_72%]",
   },
   {
     src: "/hero/hero-toyota-v3.jpg",
@@ -103,8 +104,9 @@ export default function HomeHeroCarousel({ className = "" }: Props) {
         ))}
       </div>
 
-      {/* Lighter mobile gradient — cars readable; desktop keeps depth */}
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/35 via-transparent to-black/50 sm:from-black/45 sm:via-black/10 sm:to-black/85" />
+      {/* Mobile: soft top + deep bottom veil for overlaid copy; desktop cinematic depth */}
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/40 via-black/5 to-transparent sm:from-black/45 sm:via-black/10 sm:to-black/85" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[58%] bg-gradient-to-t from-black via-black/75 to-transparent sm:hidden" />
     </div>
   );
 }

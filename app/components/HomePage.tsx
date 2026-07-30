@@ -184,80 +184,76 @@ export default function HomePage() {
       </nav>
 
       {/*
-        Hero: mobile = image stage (cars visible) + copy below.
-        Desktop = cinematic overlay on the photo (unchanged).
+        Hero: full-bleed photo with copy overlaid (mobile + desktop).
+        Mobile gets a taller stage + stronger bottom veil so the car stays visible above actions.
       */}
       <section className="relative min-w-0 overflow-hidden bg-black" aria-label={t("siteName")}>
-        {/* Image stage — cars only on mobile; full-bleed under overlay on desktop */}
-        <div className="relative h-[46svh] min-h-[280px] w-full sm:absolute sm:inset-0 sm:h-auto sm:min-h-[54vh] md:min-h-[60vh]">
+        <div className="absolute inset-0">
           <HomeHeroCarousel />
         </div>
-        {/* Reserve height on desktop so absolute image has a box */}
-        <div className="pointer-events-none hidden sm:block sm:min-h-[54vh] md:min-h-[60vh]" aria-hidden />
 
-        {/* Copy / CTAs / search — below image on mobile; overlay on desktop */}
-        <div className="relative z-10 mx-auto w-full max-w-7xl px-4 pb-6 pt-5 sm:absolute sm:inset-0 sm:flex sm:min-h-0 sm:flex-col sm:justify-end sm:px-6 sm:pb-7 sm:pt-14 sm:pointer-events-none md:pb-8">
-          <div className="sm:pointer-events-auto">
-          <div className="mb-3.5 flex flex-col gap-3 sm:mb-5 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
-            <div className="max-w-xl animate-fade-up">
-              <p className="font-logo text-base tracking-[0.2em] text-[var(--accent)] sm:text-xl md:text-2xl">
-                {t("siteName")}
-              </p>
-              <h1 className="mt-1.5 max-w-[20rem] text-sm font-medium leading-snug tracking-tight text-white/90 sm:max-w-lg sm:text-base md:text-lg">
-                {t("trustedIn")}
-              </h1>
-            </div>
-            <div
-              className="flex w-full flex-row gap-2 animate-fade-up sm:w-auto sm:justify-end"
-              style={{ animationDelay: "50ms" }}
-            >
-              <Link
-                href="/cars"
-                className="btn-accent min-h-11 flex-1 px-4 py-2.5 text-sm sm:flex-none sm:px-5 sm:py-3"
+        <div className="relative z-10 mx-auto flex min-h-[min(88svh,760px)] w-full max-w-7xl flex-col justify-end px-4 pb-7 pt-16 sm:min-h-[54vh] sm:px-6 sm:pb-7 sm:pt-14 md:min-h-[60vh] md:pb-8">
+          <div className="pointer-events-auto">
+            <div className="mb-4 flex flex-col gap-3.5 sm:mb-5 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
+              <div className="max-w-xl animate-fade-up">
+                <p className="font-logo text-[1.05rem] tracking-[0.22em] text-[var(--accent)] drop-shadow-[0_1px_12px_rgba(0,0,0,0.55)] sm:text-xl md:text-2xl">
+                  {t("siteName")}
+                </p>
+                <h1 className="mt-2 max-w-[19.5rem] text-[0.95rem] font-medium leading-snug tracking-tight text-white/95 drop-shadow-[0_1px_10px_rgba(0,0,0,0.5)] sm:mt-1.5 sm:max-w-lg sm:text-base md:text-lg">
+                  {t("trustedIn")}
+                </h1>
+              </div>
+              <div
+                className="flex w-full flex-row gap-2 animate-fade-up sm:w-auto sm:justify-end"
+                style={{ animationDelay: "50ms" }}
               >
-                {t("browseCars")}
-              </Link>
-              <Link
-                href="/rent"
-                className="inline-flex min-h-11 flex-1 items-center justify-center border border-white/25 bg-[#111] px-4 py-2.5 text-sm font-medium text-white/90 transition hover:border-[var(--accent)]/60 hover:text-[var(--accent)] sm:flex-none sm:bg-black/40 sm:backdrop-blur-sm sm:px-5 sm:py-3"
-              >
-                {t("rentCars")}
-              </Link>
-            </div>
-          </div>
-
-          <form onSubmit={handleSearch} className="animate-fade-up" style={{ animationDelay: "90ms" }}>
-            <div className="flex flex-col gap-1.5 border border-white/15 bg-[#0a0a0a] p-1.5 sm:flex-row sm:items-stretch sm:gap-2 sm:bg-black/55 sm:p-2 sm:backdrop-blur-md">
-              <input
-                type="search"
-                placeholder={t("searchPlaceholder")}
-                value={searchQ}
-                onChange={(e) => setSearchQ(e.target.value)}
-                className="hero-search-field min-w-0 w-full flex-1 border-0 bg-transparent px-3 text-white placeholder:text-white/40 focus:outline-none"
-              />
-              <div className="flex gap-1.5 sm:contents">
-                <select
-                  value={searchMake}
-                  onChange={(e) => setSearchMake(e.target.value)}
-                  aria-label={t("shopByMake")}
-                  className="hero-search-field min-w-0 flex-1 border border-white/15 bg-black/75 px-2.5 text-white sm:w-[150px] sm:flex-none focus:outline-none"
+                <Link
+                  href="/cars"
+                  className="btn-accent min-h-11 flex-1 px-4 py-2.5 text-sm shadow-[0_8px_28px_rgba(0,0,0,0.35)] sm:flex-none sm:px-5 sm:py-3 sm:shadow-none"
                 >
-                  <option value="">{t("shopByMake")}</option>
-                  {searchMakes.map((m) => (
-                    <option key={m} value={m}>
-                      {m}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  type="submit"
-                  className="hero-search-field shrink-0 bg-[var(--accent)] px-5 font-semibold text-black transition hover:bg-[var(--accent-hover)]"
+                  {t("browseCars")}
+                </Link>
+                <Link
+                  href="/rent"
+                  className="inline-flex min-h-11 flex-1 items-center justify-center border border-white/30 bg-black/45 px-4 py-2.5 text-sm font-medium text-white/95 backdrop-blur-md transition hover:border-[var(--accent)]/60 hover:text-[var(--accent)] sm:flex-none sm:bg-black/40 sm:px-5 sm:py-3"
                 >
-                  {t("searchAction")}
-                </button>
+                  {t("rentCars")}
+                </Link>
               </div>
             </div>
-          </form>
+
+            <form onSubmit={handleSearch} className="animate-fade-up" style={{ animationDelay: "90ms" }}>
+              <div className="flex flex-col gap-1.5 border border-white/20 bg-black/50 p-2 shadow-[0_12px_40px_rgba(0,0,0,0.35)] backdrop-blur-md sm:flex-row sm:items-stretch sm:gap-2 sm:bg-black/55 sm:p-2 sm:shadow-none">
+                <input
+                  type="search"
+                  placeholder={t("searchPlaceholder")}
+                  value={searchQ}
+                  onChange={(e) => setSearchQ(e.target.value)}
+                  className="hero-search-field min-w-0 w-full flex-1 border-0 bg-transparent px-3 text-white placeholder:text-white/45 focus:outline-none"
+                />
+                <div className="flex gap-1.5 sm:contents">
+                  <select
+                    value={searchMake}
+                    onChange={(e) => setSearchMake(e.target.value)}
+                    aria-label={t("shopByMake")}
+                    className="hero-search-field min-w-0 flex-1 border border-white/20 bg-black/55 px-2.5 text-white sm:w-[150px] sm:flex-none sm:bg-black/75 focus:outline-none"
+                  >
+                    <option value="">{t("shopByMake")}</option>
+                    {searchMakes.map((m) => (
+                      <option key={m} value={m}>
+                        {m}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="submit"
+                    className="hero-search-field shrink-0 bg-[var(--accent)] px-5 font-semibold text-black transition hover:bg-[var(--accent-hover)]"
+                  >
+                    {t("searchAction")}
+                  </button>
+                </div>
+              </div>
+            </form>
           </div>
         </div>
       </section>
