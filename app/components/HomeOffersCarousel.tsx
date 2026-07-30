@@ -13,7 +13,7 @@ type Props = {
 };
 
 const CARD_W =
-  "w-[min(68vw,196px)] shrink-0 snap-start sm:w-[180px] md:w-[190px] lg:w-[200px] xl:w-[210px]";
+  "w-[min(54vw,168px)] shrink-0 snap-start sm:w-[180px] md:w-[190px] lg:w-[200px] xl:w-[210px]";
 
 export default function HomeOffersCarousel({ cars, loading, autoPlay = true }: Props) {
   const { t } = useLocale();
@@ -21,7 +21,7 @@ export default function HomeOffersCarousel({ cars, loading, autoPlay = true }: P
 
   if (loading) {
     return (
-      <div className="flex gap-3 overflow-hidden" aria-label={t("featuredLoading")}>
+      <div className="flex gap-2.5 overflow-hidden sm:gap-3" aria-label={t("featuredLoading")}>
         {Array.from({ length: 6 }).map((_, i) => (
           <div key={i} className={CARD_W}>
             <CarCardSkeleton compact />
@@ -49,11 +49,11 @@ export default function HomeOffersCarousel({ cars, loading, autoPlay = true }: P
         autoPlayMs={autoPlay && cars.length > 1 ? 5000 : undefined}
         paused={paused}
         onUserScroll={() => setPaused(true)}
-        className="snap-x snap-mandatory gap-3 pb-1 px-2 sm:px-3"
+        className="snap-x snap-mandatory gap-2.5 pb-1 px-1.5 sm:gap-3 sm:px-3"
       >
         {cars.map((car) => (
           <div key={car.id} className={CARD_W}>
-            <BuyerCarCard car={car} />
+            <BuyerCarCard car={car} compact />
           </div>
         ))}
       </SubtleScrollRail>

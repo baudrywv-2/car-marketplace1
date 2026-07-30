@@ -136,18 +136,18 @@ export default function BuyerCarCard({
         className="flex min-h-0 flex-1 flex-col"
         onClick={onNavigate}
       >
-        <div className={`relative bg-[#1a1a1c] ${compact ? "aspect-[5/4]" : "aspect-[4/3]"}`}>
+        <div className={`relative bg-[#1a1a1c] ${compact ? "aspect-[3/2] sm:aspect-[5/4]" : "aspect-[4/3]"}`}>
           {img ? (
             <OptimizedCarImage
               src={img}
               alt={car.title}
-              sizes={compact ? "(max-width: 640px) 50vw, 16vw" : "(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"}
+              sizes={compact ? "(max-width: 640px) 54vw, 16vw" : "(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"}
             />
           ) : (
-            <CarImagePlaceholder className={`h-full ${compact ? "min-h-[60px]" : "min-h-[80px]"}`} />
+            <CarImagePlaceholder className={`h-full ${compact ? "min-h-[48px]" : "min-h-[80px]"}`} />
           )}
           {(car.is_sold || rentBadge || discount) && (
-            <div className="absolute left-2 top-2 z-[1] flex flex-wrap gap-1">
+            <div className="absolute left-1.5 top-1.5 z-[1] flex flex-wrap gap-1 sm:left-2 sm:top-2">
               {car.is_sold && (
                 <span className="rounded-sm bg-slate-900/90 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white">
                   {t("sold")}
@@ -168,25 +168,33 @@ export default function BuyerCarCard({
         </div>
         <div className="h-px w-full bg-[var(--accent)]/40" aria-hidden />
 
-        <div className={`flex flex-1 flex-col bg-black px-2.5 pb-2.5 pt-2 ${onCompareToggle ? "pb-9" : ""}`}>
+        <div
+          className={`flex flex-1 flex-col bg-black ${
+            compact ? "px-2 pb-2 pt-1.5 sm:px-2.5 sm:pb-2.5 sm:pt-2" : "px-2.5 pb-2.5 pt-2"
+          } ${onCompareToggle ? "pb-9" : ""}`}
+        >
           {make && (
-            <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-[var(--accent)]">
+            <p
+              className={`font-medium uppercase tracking-[0.12em] text-[var(--accent)] ${
+                compact ? "text-[10px] sm:text-[11px]" : "text-[11px]"
+              }`}
+            >
               {make}
             </p>
           )}
           <p
             className={`mt-0.5 font-semibold uppercase leading-snug tracking-wide text-white line-clamp-2 ${
-              compact ? "text-[13px]" : "text-sm"
+              compact ? "text-[12px] sm:text-[13px]" : "text-sm"
             } ${car.is_sold ? "opacity-70" : ""}`}
           >
             {model || car.title}
           </p>
 
-          <div className="mt-1.5">
+          <div className={compact ? "mt-1 sm:mt-1.5" : "mt-1.5"}>
             {secondaryPrice && <p className="mb-0.5">{secondaryPrice}</p>}
             <p
               className={`font-semibold tabular-nums text-[var(--accent)] ${
-                compact ? "text-[14px]" : "text-[15px]"
+                compact ? "text-[13px] sm:text-[14px]" : "text-[15px]"
               }`}
             >
               {priceNode}
@@ -194,14 +202,24 @@ export default function BuyerCarCard({
           </div>
 
           {shownSpecs.length > 0 && (
-            <dl className="mt-2 border-t border-white/10">
+            <dl className={`border-t border-white/10 ${compact ? "mt-1.5 sm:mt-2" : "mt-2"}`}>
               {shownSpecs.map((row) => (
                 <div
                   key={row.label}
-                  className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] gap-2 border-b border-white/10 last:border-b-0"
+                  className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] gap-1.5 border-b border-white/10 last:border-b-0 sm:gap-2"
                 >
-                  <dt className="py-2 text-[10px] leading-snug text-[var(--accent)]/80">{row.label}</dt>
-                  <dd className="py-2 text-right text-[10px] font-medium leading-snug text-white/90 line-clamp-2">
+                  <dt
+                    className={`text-[10px] leading-snug text-[var(--accent)]/80 ${
+                      compact ? "py-1 sm:py-2" : "py-2"
+                    }`}
+                  >
+                    {row.label}
+                  </dt>
+                  <dd
+                    className={`text-right text-[10px] font-medium leading-snug text-white/90 line-clamp-2 ${
+                      compact ? "py-1 sm:py-2" : "py-2"
+                    }`}
+                  >
                     {row.value}
                   </dd>
                 </div>
