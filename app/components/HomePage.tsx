@@ -11,6 +11,7 @@ import BuyerCarCard, { type BuyerCarCardData } from "@/app/components/BuyerCarCa
 import HomeOffersCarousel from "@/app/components/HomeOffersCarousel";
 import HomeShowcasePlaceholders from "@/app/components/HomeShowcasePlaceholders";
 import HomeHeroCarousel from "@/app/components/HomeHeroCarousel";
+import SubtleScrollRail from "@/app/components/SubtleScrollRail";
 
 type RecentCar = BuyerCarCardData;
 
@@ -162,108 +163,115 @@ export default function HomePage() {
   }
 
   return (
-    <div className="flex flex-col bg-black">
+    <div className="flex min-w-0 flex-col bg-black">
       {/* Make strip — top, under header */}
       <nav
-        className="relative shrink-0 border-y border-[var(--accent)]/25 bg-black"
+        className="relative w-full min-w-0 shrink-0 border-y border-[var(--accent)]/25 bg-black"
         aria-label={t("shopByMake")}
       >
-        <div className="pointer-events-none absolute inset-y-0 right-0 z-[1] w-10 bg-gradient-to-l from-black to-transparent sm:w-14" aria-hidden />
-        <div className="flex overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <SubtleScrollRail variant="strip" stepRatio={0.55} className="items-stretch px-7">
           {makeStrip.map((m) => (
             <Link
               key={m}
               href={stripHref(m)}
-              className="touch-target group flex shrink-0 items-center gap-1.5 px-3.5 py-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-[var(--accent)] transition hover:bg-[var(--accent)]/10 sm:px-4 sm:text-xs"
+              className="group flex shrink-0 items-center gap-1.5 px-3 py-2.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-[var(--accent)] transition hover:bg-[var(--accent)]/10 sm:px-4 sm:py-3 sm:text-xs"
             >
               <span className="inline-block h-1 w-1 rounded-full bg-[var(--accent)]" aria-hidden />
               {stripLabel(m)}
             </Link>
           ))}
-        </div>
+        </SubtleScrollRail>
       </nav>
 
-      {/* Cinematic hero */}
-      <section className="relative overflow-hidden" aria-label={t("siteName")}>
-        <div className="relative min-h-[72svh] sm:min-h-[54vh] md:min-h-[60vh]">
+      {/*
+        Hero: mobile = image stage (cars visible) + copy below.
+        Desktop = cinematic overlay on the photo (unchanged).
+      */}
+      <section className="relative min-w-0 overflow-hidden bg-black" aria-label={t("siteName")}>
+        {/* Image stage — cars only on mobile; full-bleed under overlay on desktop */}
+        <div className="relative h-[46svh] min-h-[280px] w-full sm:absolute sm:inset-0 sm:h-auto sm:min-h-[54vh] md:min-h-[60vh]">
           <HomeHeroCarousel />
+        </div>
+        {/* Reserve height on desktop so absolute image has a box */}
+        <div className="pointer-events-none hidden sm:block sm:min-h-[54vh] md:min-h-[60vh]" aria-hidden />
 
-          <div className="relative z-10 mx-auto flex min-h-[72svh] max-w-7xl flex-col justify-end px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-14 sm:min-h-[54vh] sm:px-6 sm:pb-7 md:min-h-[60vh] md:pb-8">
-            <div className="mb-4 flex flex-col gap-3.5 sm:mb-5 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
-              <div className="max-w-xl animate-fade-up">
-                <p className="font-logo text-lg tracking-[0.2em] text-[var(--accent)] sm:text-xl md:text-2xl">
-                  {t("siteName")}
-                </p>
-                <h1 className="mt-1.5 max-w-[18.5rem] text-[0.9375rem] font-medium leading-snug tracking-tight text-white/90 sm:max-w-lg sm:text-base md:text-lg">
-                  {t("trustedIn")}
-                </h1>
-              </div>
-              <div
-                className="flex w-full flex-row gap-2 animate-fade-up sm:w-auto sm:justify-end"
-                style={{ animationDelay: "50ms" }}
+        {/* Copy / CTAs / search — below image on mobile; overlay on desktop */}
+        <div className="relative z-10 mx-auto w-full max-w-7xl px-4 pb-6 pt-5 sm:absolute sm:inset-0 sm:flex sm:min-h-0 sm:flex-col sm:justify-end sm:px-6 sm:pb-7 sm:pt-14 sm:pointer-events-none md:pb-8">
+          <div className="sm:pointer-events-auto">
+          <div className="mb-3.5 flex flex-col gap-3 sm:mb-5 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
+            <div className="max-w-xl animate-fade-up">
+              <p className="font-logo text-base tracking-[0.2em] text-[var(--accent)] sm:text-xl md:text-2xl">
+                {t("siteName")}
+              </p>
+              <h1 className="mt-1.5 max-w-[20rem] text-sm font-medium leading-snug tracking-tight text-white/90 sm:max-w-lg sm:text-base md:text-lg">
+                {t("trustedIn")}
+              </h1>
+            </div>
+            <div
+              className="flex w-full flex-row gap-2 animate-fade-up sm:w-auto sm:justify-end"
+              style={{ animationDelay: "50ms" }}
+            >
+              <Link
+                href="/cars"
+                className="btn-accent min-h-11 flex-1 px-4 py-2.5 text-sm sm:flex-none sm:px-5 sm:py-3"
               >
-                <Link
-                  href="/cars"
-                  className="btn-accent min-h-11 flex-1 px-5 py-3 text-sm sm:flex-none"
+                {t("browseCars")}
+              </Link>
+              <Link
+                href="/rent"
+                className="inline-flex min-h-11 flex-1 items-center justify-center border border-white/25 bg-[#111] px-4 py-2.5 text-sm font-medium text-white/90 transition hover:border-[var(--accent)]/60 hover:text-[var(--accent)] sm:flex-none sm:bg-black/40 sm:backdrop-blur-sm sm:px-5 sm:py-3"
+              >
+                {t("rentCars")}
+              </Link>
+            </div>
+          </div>
+
+          <form onSubmit={handleSearch} className="animate-fade-up" style={{ animationDelay: "90ms" }}>
+            <div className="flex flex-col gap-1.5 border border-white/15 bg-[#0a0a0a] p-1.5 sm:flex-row sm:items-stretch sm:gap-2 sm:bg-black/55 sm:p-2 sm:backdrop-blur-md">
+              <input
+                type="search"
+                placeholder={t("searchPlaceholder")}
+                value={searchQ}
+                onChange={(e) => setSearchQ(e.target.value)}
+                className="hero-search-field min-w-0 w-full flex-1 border-0 bg-transparent px-3 text-white placeholder:text-white/40 focus:outline-none"
+              />
+              <div className="flex gap-1.5 sm:contents">
+                <select
+                  value={searchMake}
+                  onChange={(e) => setSearchMake(e.target.value)}
+                  aria-label={t("shopByMake")}
+                  className="hero-search-field min-w-0 flex-1 border border-white/15 bg-black/75 px-2.5 text-white sm:w-[150px] sm:flex-none focus:outline-none"
                 >
-                  {t("browseCars")}
-                </Link>
-                <Link
-                  href="/rent"
-                  className="inline-flex min-h-11 flex-1 items-center justify-center border border-white/25 bg-black/40 px-5 py-3 text-sm font-medium text-white/90 backdrop-blur-sm transition hover:border-[var(--accent)]/60 hover:text-[var(--accent)] sm:flex-none"
+                  <option value="">{t("shopByMake")}</option>
+                  {searchMakes.map((m) => (
+                    <option key={m} value={m}>
+                      {m}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="submit"
+                  className="hero-search-field shrink-0 bg-[var(--accent)] px-5 font-semibold text-black transition hover:bg-[var(--accent-hover)]"
                 >
-                  {t("rentCars")}
-                </Link>
+                  {t("searchAction")}
+                </button>
               </div>
             </div>
-
-            {/* Search: keyword full-width; make + submit share a second row on phones */}
-            <form onSubmit={handleSearch} className="animate-fade-up" style={{ animationDelay: "90ms" }}>
-              <div className="flex flex-col gap-1.5 border border-white/15 bg-black/55 p-1.5 backdrop-blur-md sm:flex-row sm:items-stretch sm:gap-2 sm:p-2">
-                <input
-                  type="search"
-                  placeholder={t("searchPlaceholder")}
-                  value={searchQ}
-                  onChange={(e) => setSearchQ(e.target.value)}
-                  className="hero-search-field min-w-0 w-full flex-1 border-0 bg-transparent px-3 text-white placeholder:text-white/40 focus:outline-none"
-                />
-                <div className="flex gap-1.5 sm:contents">
-                  <select
-                    value={searchMake}
-                    onChange={(e) => setSearchMake(e.target.value)}
-                    aria-label={t("shopByMake")}
-                    className="hero-search-field min-w-0 flex-1 border border-white/15 bg-black/75 px-2.5 text-white sm:w-[150px] sm:flex-none focus:outline-none"
-                  >
-                    <option value="">{t("shopByMake")}</option>
-                    {searchMakes.map((m) => (
-                      <option key={m} value={m}>
-                        {m}
-                      </option>
-                    ))}
-                  </select>
-                  <button
-                    type="submit"
-                    className="hero-search-field shrink-0 bg-[var(--accent)] px-5 font-semibold text-black transition hover:bg-[var(--accent-hover)]"
-                  >
-                    {t("searchAction")}
-                  </button>
-                </div>
-              </div>
-            </form>
+          </form>
           </div>
         </div>
       </section>
 
       {/* New offers */}
-      <section className="shrink-0 bg-black pt-6 pb-8 sm:pt-7 sm:pb-10" aria-busy={featuredLoading}>
-        <div className="mx-auto max-w-[1400px] px-4 sm:px-5 lg:px-6">
-          <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-            <h2 className="text-xl font-semibold tracking-tight text-white sm:text-2xl">
+      <section className="min-w-0 shrink-0 bg-black pt-5 pb-7 sm:pt-7 sm:pb-10" aria-busy={featuredLoading}>
+        <div className="mx-auto w-full min-w-0 max-w-[1400px] px-4 sm:px-5 lg:px-6">
+          <div className="mb-3.5 flex items-end justify-between gap-3 sm:mb-4">
+            <h2 className="text-lg font-semibold tracking-tight text-white sm:text-2xl">
               {t("featuredCars")}
             </h2>
             <Link
               href="/cars"
-              className="inline-flex min-h-10 items-center text-sm font-medium text-[var(--accent)] hover:underline"
+              className="inline-flex min-h-10 shrink-0 items-center text-[13px] font-medium text-[var(--accent)] hover:underline sm:text-sm"
             >
               {t("viewAllListings")}
             </Link>

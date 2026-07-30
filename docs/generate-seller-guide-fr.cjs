@@ -184,10 +184,10 @@ function cover(doc) {
   doc.moveDown(1.2);
   tip(
     doc,
-    "Conseil : gardez ce PDF à portée de main lors de votre première session. Site : https://drccars.com — compte vendeur via Inscription → « Vendre des véhicules »."
+    "Conseil : gardez ce PDF à portée de main lors de votre première session. Site : https://drccars.com — compte vendeur via Inscription → « Vendre des véhicules ». Support : support@drccars.com."
   );
   doc.moveDown(2);
-  doc.fillColor(MUTED).font("Body").fontSize(9).text("Version guide · Français · Parcours produit actuel");
+  doc.fillColor(MUTED).font("Body").fontSize(9).text("Version guide · Français · Parcours produit actuel (vente, achat, location · mobile & desktop)");
 }
 
 function writeGuide(doc) {
@@ -197,7 +197,7 @@ function writeGuide(doc) {
   h1(doc, "1. Vue d’ensemble du parcours");
   p(
     doc,
-    "Sur DRCCARS, un vendeur crée un compte, confirme son email, complète ses coordonnées, publie une ou plusieurs annonces, puis suit l’intérêt des acheteurs (vues, favoris, rendez-vous) depuis son tableau de bord. Les annonces ne sont visibles au public qu’après validation par l’équipe DRCCARS."
+    "Sur DRCCARS, un vendeur crée un compte, confirme son email, complète ses coordonnées, publie une ou plusieurs annonces (vente, location, ou les deux), puis suit l’intérêt des acheteurs (vues, favoris, rendez-vous) depuis son tableau de bord. L’accueil public met en avant la confiance pour vendre, acheter et louer en RDC et au-delà. Les annonces ne sont visibles au public qu’après validation par l’équipe DRCCARS — elles apparaissent alors dans la recherche, les filtres (marques, électriques & hybrides, autres) et la section « Nouvelles offres »."
   );
   tip(
     doc,
@@ -265,14 +265,15 @@ function writeGuide(doc) {
   ]);
   stepBox(doc, 2, "Renseigner le véhicule", [
     "Titre accrocheur (obligatoire).",
-    "Marque et modèle (obligatoires), année, kilométrage, type, boîte, carburant, options.",
+    "Marque et modèle (obligatoires), année, kilométrage, type, boîte, carburant (Essence / Diesel / Électrique / Hybride), options.",
     "État (neuf / occasion), devise, prix de vente si vente.",
     "Si location : au moins un tarif (heure / jour / semaine / mois) + éventuels types d’événements.",
+    "Électrique ou hybride : choisissez le bon carburant pour apparaître dans le filtre « Électriques & hybrides ».",
   ]);
   stepBox(doc, 3, "Lieu, contact et photos", [
     "Ville / province (obligatoire pour la publication).",
     "Téléphone (prérempli depuis le profil si déjà saisi).",
-    "Jusqu’à 4 photos (environ 3 Mo chacune) — photos nettes, plusieurs angles.",
+    "Jusqu’à 4 photos (environ 3 Mo chacune) — photos nettes, plusieurs angles ; la 1re photo est celle de la carte (surtout sur mobile).",
     "Description et adresse (facultatives).",
   ]);
   stepBox(doc, 4, "Enregistrer ou soumettre", [
@@ -283,7 +284,7 @@ function writeGuide(doc) {
 
   tip(
     doc,
-    "Une annonce n’apparaît dans « Voir les véhicules » qu’après approbation admin. Le statut « En attente d’approbation » est normal juste après l’envoi."
+    "Une annonce n’apparaît dans « Voir les véhicules » et sur l’accueil qu’après approbation admin. Le statut « En attente d’approbation » est normal juste après l’envoi. Pensez mobile : beaucoup d’acheteurs scrollent d’abord les cartes photo + prix."
   );
 
   doc.addPage();
@@ -365,18 +366,19 @@ function writeGuide(doc) {
     "Mot de passe oublié : page Connexion → procédure de réinitialisation email.",
     "Email de confirmation absent : dossier spam + « Renvoyer l’email ».",
     "Annonce bloquée en attente : vérifiez photos, prix, champs obligatoires ; contactez le support si le délai est long.",
-    "Ne partagez pas votre mot de passe ; DRCCARS ne vend pas les véhicules à votre place — la plateforme met en relation.",
+    "Ne partagez pas votre mot de passe ; DRCCARS ne vend pas les véhicules à votre place — la plateforme met en relation pour vendre, acheter et louer.",
     "Respectez la loi et la transparence (état du véhicule, documents, prix).",
+    "Support : support@drccars.com.",
   ]);
 
   doc.moveDown(1);
   tip(
     doc,
-    "Support / FAQ : https://drccars.com/faq — Conditions : https://drccars.com/terms — Confidentialité : https://drccars.com/privacy"
+    "Support / FAQ : https://drccars.com/faq — Conditions : https://drccars.com/terms — Confidentialité : https://drccars.com/privacy — Guide PDF : tableau de bord vendeur → Télécharger le guide vendeur."
   );
   doc.moveDown(1.2);
   doc.fillColor(INK).font("Bold").fontSize(11).text("Bonnes ventes sur DRCCARS.");
-  doc.fillColor(MUTED).font("Body").fontSize(9).text("Marketplace automobile — République Démocratique du Congo.");
+  doc.fillColor(MUTED).font("Body").fontSize(9).text("Marketplace automobile — République Démocratique du Congo · Vendre · Acheter · Louer");
 }
 
 async function main() {

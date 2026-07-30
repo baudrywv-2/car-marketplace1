@@ -153,8 +153,9 @@ function page1(doc) {
     p(
       doc,
       "Parcours complet : compte → email → profil → annonce → validation → contacts / RDV → vente & partage. " +
+        "L’accueil DRCCARS met en avant : vendre, acheter et louer en RDC (et au-delà). " +
         SITE +
-        "  ·  App : FR / EN / LN / SW.",
+        "  ·  App : FR / EN / LN / SW · mobile & ordinateur.",
       M,
       y,
       W,
@@ -167,7 +168,7 @@ function page1(doc) {
       M,
       y,
       W,
-      "Gratuit : pas de commission DRCCARS. Publier et gérer vos annonces est gratuit. Paiement & contrat hors plateforme entre vous et l’acheteur."
+      "Gratuit : pas de commission DRCCARS. Publier et gérer vos annonces est gratuit. Paiement & contrat hors plateforme entre vous et l’acheteur / locataire."
     ) + 6;
 
   // Two-col: signup + login screenshots
@@ -246,14 +247,14 @@ function page1(doc) {
   yR =
     p(
       doc,
-      "Ajouter un véhicule → vente / location / les deux. Titre, marque, modèle, année, ville, prix, devise, contact.",
+      "Ajouter un véhicule → vente / location / les deux. Titre, marque, modèle, année, ville, prix, devise, contact. Carburant : Essence, Diesel, Électrique ou Hybride (visible dans les filtres « Électriques & hybrides »).",
       right,
       yR,
       colW,
       8.5
     ) + 2;
   yR = bullets(doc, right, yR, colW, [
-    "Max. 4 photos (≤ 3 Mo chacune).",
+    "Max. 4 photos (≤ 3 Mo chacune) — la 1re = carte mobile.",
     "Brouillon = privé ; Soumettre = attente admin.",
     "Public seulement si statut « En ligne ».",
   ]);
@@ -270,12 +271,13 @@ function page2(doc) {
   const left = M;
   const right = M + colW + gap;
 
-  let yL = numTitle(doc, left, y, 6, "Photos qui convertissent", colW);
+  let yL = numTitle(doc, left, y, 6, "Photos qui convertissent (surtout mobile)", colW);
   yL = bullets(doc, left, yL, colW, [
     "Jour / lumière naturelle ; voiture propre.",
     "3/4 avant, profil, arrière, intérieur / compteur.",
+    "Cadrez le véhicule entier — les acheteurs voient d’abord une petite carte sur téléphone.",
     "Évitez flou, doigts, filtres, logos parasites.",
-    "La 1re photo = image principale de la carte.",
+    "La 1re photo = image principale (accueil « Nouvelles offres » + liste).",
   ]);
   yL += 5;
 
@@ -283,7 +285,7 @@ function page2(doc) {
   yL =
     p(
       doc,
-      "Prix réaliste pour votre marché (Kinshasa, Lubumbashi, Goma…). Devise affichée. Location : tarifs jour / semaine / mois si proposés. « Les deux » = vente + location sur la même fiche.",
+      "Prix réaliste pour votre marché (Kinshasa, Lubumbashi, Goma…). Devise affichée. Location : tarifs jour / semaine / mois si proposés. « Les deux » = vente + location sur la même fiche. Les acheteurs filtrent aussi par marque, carburant (dont électriques & hybrides) et « Autres ».",
       left,
       yL,
       colW,
@@ -294,7 +296,7 @@ function page2(doc) {
   yL =
     p(
       doc,
-      "Après soumission, l’annonce n’est pas publique. DRCCARS vérifie contenu, photos et contact. Délai habituel : souvent le jour même ou sous 24–48 h. « En ligne » = visible. Si refus → corrigez et renvoyez.",
+      "Après soumission, l’annonce n’est pas publique. DRCCARS vérifie contenu, photos et contact. Délai habituel : souvent le jour même ou sous 24–48 h. « En ligne » = visible sur le marketplace (accueil, recherche, filtres). Si refus → corrigez et renvoyez.",
       left,
       yL,
       colW,
@@ -416,15 +418,16 @@ function page3(doc) {
       M,
       y,
       W,
-      "Annonce claire + photos nettes + WhatsApp réactif = plus de RDV sérieux."
+      "Annonce claire + photos nettes (lisibles sur mobile) + WhatsApp réactif = plus de RDV sérieux. Les acheteurs voient d’abord votre photo, marque, modèle, prix et infos clés (année, état, carburant / transmission / ville)."
     ) + 7;
 
   y = numTitle(doc, M, y, 14, "Frais & rôle de DRCCARS", W);
   y = bullets(doc, M, y, W, [
     "Pas de commission sur la vente ou la location.",
     "Pas de paiement obligatoire pour publier.",
-    "DRCCARS ne garde pas l’argent et n’est pas partie au contrat de vente.",
+    "DRCCARS ne garde pas l’argent et n’est pas partie au contrat de vente / location.",
     "La validation admin sert à la qualité du catalogue, pas à garantir le véhicule.",
+    "L’accueil et les filtres (marques, électriques & hybrides, autres) aident les acheteurs à vous trouver.",
   ]);
   y += 7;
 
@@ -436,7 +439,7 @@ function page3(doc) {
         SITE +
         "/faq   ·   Support : " +
         SUPPORT +
-        "   ·   Dans l’app : tableau de bord → Comment ça marche, ou retéléchargez ce PDF.",
+        "   ·   Dans l’app : tableau de bord → Comment ça marche, ou retéléchargez ce PDF (Guide vendeur).",
       M,
       y,
       W,
@@ -449,7 +452,7 @@ function page3(doc) {
       M,
       y,
       W,
-      "Ordre recommandé : Inscription vendeur → Confirmer email → Profil (tél. + WhatsApp + photo) → Annonce (3–4 bonnes photos) → Attendre « En ligne » → Surveiller Aperçu, contacts & RDV → Partager la vitrine → Marquer vendu une fois conclu."
+      "Ordre recommandé : Inscription vendeur → Confirmer email → Profil (tél. + WhatsApp + photo) → Annonce (3–4 bonnes photos, carburant exact) → Attendre « En ligne » → Surveiller Aperçu, contacts & RDV → Partager la vitrine → Marquer vendu une fois conclu."
     ) + 8;
 
   // Fill remaining page with two smaller screenshots side by side

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useLocale } from "@/app/contexts/LocaleContext";
+import SubtleScrollRail from "@/app/components/SubtleScrollRail";
 
 /** Local showcase photos — labels match the actual cars in each file. */
 const SHOWCASE = [
@@ -96,7 +97,7 @@ const SHOWCASE = [
 ];
 
 const cardWidth =
-  "w-[min(72vw,210px)] shrink-0 overflow-hidden bg-black sm:w-[180px] md:w-[190px] lg:w-[200px] xl:w-[210px]";
+  "w-[min(72vw,210px)] shrink-0 overflow-hidden bg-black snap-start sm:w-[180px] md:w-[190px] lg:w-[200px] xl:w-[210px]";
 
 /** Visual stand-ins when the marketplace has no approved listings yet */
 export default function HomeShowcasePlaceholders() {
@@ -113,7 +114,7 @@ export default function HomeShowcasePlaceholders() {
           {t("listYourCar")}
         </Link>
       </p>
-      <div className="flex gap-3 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <SubtleScrollRail variant="cards" stepRatio={0.78} className="snap-x snap-mandatory gap-3 pb-1 px-2 sm:px-3">
         {SHOWCASE.map((item) => (
           <Link key={`${item.make}-${item.model}`} href="/dashboard/cars/new" className={cardWidth}>
             <div className="relative aspect-[4/3] overflow-hidden bg-[#111]">
@@ -155,7 +156,7 @@ export default function HomeShowcasePlaceholders() {
             </div>
           </Link>
         ))}
-      </div>
+      </SubtleScrollRail>
     </div>
   );
 }
