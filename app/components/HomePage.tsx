@@ -200,7 +200,7 @@ export default function HomePage() {
                 <p className="font-logo text-[1.05rem] tracking-[0.22em] text-[var(--accent)] drop-shadow-[0_1px_14px_rgba(0,0,0,0.65)] sm:text-xl md:text-2xl">
                   {t("siteName")}
                 </p>
-                <h1 className="mx-auto mt-1.5 max-w-[17.5rem] text-[0.9375rem] font-medium leading-snug tracking-tight text-white/92 drop-shadow-[0_1px_12px_rgba(0,0,0,0.55)] sm:mx-0 sm:mt-1.5 sm:max-w-lg sm:text-base md:text-lg">
+                <h1 className="mx-auto mt-1.5 max-w-[19rem] text-[1.0625rem] font-medium leading-snug tracking-tight text-white/92 drop-shadow-[0_1px_12px_rgba(0,0,0,0.55)] sm:mx-0 sm:mt-1.5 sm:max-w-lg sm:text-base md:text-lg">
                   {t("trustedIn")}
                 </h1>
               </div>
