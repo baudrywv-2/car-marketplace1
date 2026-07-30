@@ -2,13 +2,13 @@
 
 /* DRCCARS – editorial luxury: bold, cinematic, premium */
 :root {
-  --background: #09090b;
+  --background: #000000;
   --foreground: #fafafa;
   --muted: #71717a;
   --muted-foreground: #a1a1aa;
-  --card: #18181b;
+  --card: #0c0c0e;
   --card-foreground: #fafafa;
-  --header-bg: rgba(9, 9, 11, 0.8);
+  --header-bg: rgba(0, 0, 0, 0.92);
   --border: #27272a;
   --border-strong: #3f3f46;
   --radius: 0.25rem;
@@ -153,9 +153,30 @@ body {
 }
 
 @media (pointer: coarse) {
-  button, a[role="button"], input[type="submit"], input[type="button"], select, .clickable {
+  button,
+  a[role="button"],
+  a.btn-accent,
+  a.btn-secondary,
+  input[type="submit"],
+  input[type="button"],
+  select,
+  .clickable,
+  .touch-target {
     min-height: 44px;
     min-width: 44px;
+  }
+}
+
+/* Hero search — 16px avoids iOS zoom; tall enough for thumbs */
+.hero-search-field {
+  min-height: 44px;
+  font-size: 16px;
+  line-height: 1.25;
+}
+
+@media (min-width: 640px) {
+  .hero-search-field {
+    font-size: 0.875rem;
   }
 }
 
@@ -163,28 +184,29 @@ body {
 .card-premium {
   background: var(--card);
   color: var(--card-foreground);
-  border-radius: var(--radius-xl);
-  border: 1px solid var(--border);
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--accent) 25%, var(--border));
   overflow: hidden;
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 .card-premium:hover {
-  border-color: var(--border-strong);
-  box-shadow: var(--shadow-lg);
-  transform: translateY(-4px);
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 12%, transparent);
+  transform: none;
 }
 
 .card-compact {
   background: var(--card);
   color: var(--card-foreground);
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--border);
-  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border));
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .card-compact:hover {
-  box-shadow: var(--shadow-md);
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--border));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 10%, transparent);
 }
 
 /* Buttons – refined */

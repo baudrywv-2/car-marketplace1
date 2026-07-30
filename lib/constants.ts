@@ -31,11 +31,73 @@ export const FUEL_TYPES = [
 ] as const;
 export type FuelType = (typeof FUEL_TYPES)[number]["value"];
 
-/** Common makes for browse filters (top sellers) */
+/** Common makes for browse filters */
 export const COMMON_MAKES = [
-  "Toyota", "Mercedes-Benz", "BMW", "Nissan", "Hyundai", "Honda", "Land Rover", "Ford",
+  "BMW",
+  "Mercedes-Benz",
+  "Porsche",
+  "Audi",
+  "Toyota",
+  "Nissan",
+  "Mitsubishi",
+  "Suzuki",
+  "Hyundai",
+  "Kia",
 ];
 export const OTHER_MAKE = "Other";
+
+/**
+ * Make strip order:
+ * German premium → Japanese → Korean → other Europe → Chinese / rest.
+ */
+export const DRC_PRIORITY_MAKES = [
+  // German / premium European
+  "BMW",
+  "Mercedes-Benz",
+  "Porsche",
+  "Audi",
+  "Volkswagen",
+  "Volvo",
+  "Mini",
+  // Japanese
+  "Toyota",
+  "Nissan",
+  "Mitsubishi",
+  "Suzuki",
+  "Honda",
+  "Mazda",
+  "Lexus",
+  "Isuzu",
+  "Subaru",
+  // Korean
+  "Hyundai",
+  "Kia",
+  // Other Europe / US
+  "Land Rover",
+  "Ford",
+  "Peugeot",
+  "Renault",
+  "Jeep",
+  "Chevrolet",
+  "Fiat",
+  "Citroën",
+  "Dacia",
+  // India / China / other
+  "Mahindra",
+  "MG",
+  "Haval",
+  "BYD",
+  "Chery",
+  "Geely",
+  "Changan",
+  "BAIC",
+  "Dongfeng",
+  "Faw",
+  "Foton",
+  "GAC",
+  "JAC",
+  "Other",
+] as const;
 
 /** Pre-established list of car makes for add/edit forms (alphabetically sorted) */
 export const CAR_MAKES = [
@@ -43,10 +105,83 @@ export const CAR_MAKES = [
   "Dacia", "Dongfeng", "Faw", "Fiat", "Ford", "Foton", "Geely", "GAC",
   "Haval", "Honda", "Hyundai", "Isuzu", "JAC", "Jeep", "Kia", "Land Rover",
   "Lexus", "Mahindra", "Mazda", "Mercedes-Benz", "MG", "Mini", "Mitsubishi",
-  "Nissan", "Peugeot", "Renault", "SsangYong", "Subaru", "Suzuki", "Toyota",
+  "Nissan", "Peugeot", "Porsche", "Renault", "Subaru", "Suzuki", "Toyota",
   "Volkswagen", "Volvo", "Other",
 ] as const;
 export type CarMake = (typeof CAR_MAKES)[number];
+
+/** Home make-strip sentinel (not a real make) — filters electric + hybrid */
+export const ELECTRIC_HYBRID_STRIP = "Electric & hybrids";
+
+/** Makes shown in the home strip — Electric & hybrids replaces former SsangYong slot */
+export const MAKE_STRIP_PRIORITY = [
+  // German / premium European
+  "BMW",
+  "Mercedes-Benz",
+  "Porsche",
+  "Audi",
+  "Volkswagen",
+  "Volvo",
+  "Mini",
+  // Japanese
+  "Toyota",
+  "Nissan",
+  "Mitsubishi",
+  "Suzuki",
+  "Honda",
+  "Mazda",
+  "Lexus",
+  "Isuzu",
+  "Subaru",
+  // Korean + EV group (replaces SsangYong)
+  "Hyundai",
+  "Kia",
+  ELECTRIC_HYBRID_STRIP,
+  // Other Europe / US
+  "Land Rover",
+  "Ford",
+  "Peugeot",
+  "Renault",
+  "Jeep",
+  "Chevrolet",
+  "Fiat",
+  "Citroën",
+  "Dacia",
+  // India / China / other
+  "Mahindra",
+  "MG",
+  "Haval",
+  "BYD",
+  "Chery",
+  "Geely",
+  "Changan",
+  "BAIC",
+  "Dongfeng",
+  "Faw",
+  "Foton",
+  "GAC",
+  "JAC",
+  "Other",
+] as const;
+
+/** Sort makes for DRC UI: priority market order, then stock count, then name */
+export function sortMakesForDrc(
+  makes: string[],
+  counts?: Record<string, number>
+): string[] {
+  const priority = new Map<string, number>(
+    DRC_PRIORITY_MAKES.map((name, i) => [name, i])
+  );
+  return [...makes].sort((a, b) => {
+    const pa = priority.get(a) ?? 900;
+    const pb = priority.get(b) ?? 900;
+    if (pa !== pb) return pa - pb;
+    const ca = counts?.[a] ?? 0;
+    const cb = counts?.[b] ?? 0;
+    if (ca !== cb) return cb - ca;
+    return a.localeCompare(b);
+  });
+}
 
 /** Main cities/provinces for location filter (matches home page) */
 export const DRC_LOCATIONS = [

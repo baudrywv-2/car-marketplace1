@@ -1,26 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useLocale } from "@/app/contexts/LocaleContext";
-import { COMMON_MAKES, OTHER_MAKE } from "@/lib/constants";
+import { CAR_MAKES, COMMON_MAKES, OTHER_MAKE, ELECTRIC_HYBRID_STRIP, MAKE_STRIP_PRIORITY, SUPPORT_EMAIL, SUPPORT_MAILTO, sortMakesForDrc } from "@/lib/constants";
 import FadeInSection from "@/app/components/FadeInSection";
 import BuyerCarCard, { type BuyerCarCardData } from "@/app/components/BuyerCarCard";
-import CarCardSkeleton from "@/app/components/CarCardSkeleton";
+import HomeOffersCarousel from "@/app/components/HomeOffersCarousel";
+import HomeShowcasePlaceholders from "@/app/components/HomeShowcasePlaceholders";
+import HomeHeroCarousel from "@/app/components/HomeHeroCarousel";
 
 type RecentCar = BuyerCarCardData;
 
-const POPULAR_MAKES = [...COMMON_MAKES, OTHER_MAKE];
-
-function buildSearchUrl(params: { q?: string; make?: string; minPrice?: string; maxPrice?: string }) {
+function buildSearchUrl(params: { q?: string; make?: string }) {
   const searchParams = new URLSearchParams();
   if (params.q?.trim()) searchParams.set("q", params.q.trim());
   if (params.make) searchParams.set("make", params.make);
-  if (params.minPrice) searchParams.set("minPrice", params.minPrice);
-  if (params.maxPrice) searchParams.set("maxPrice", params.maxPrice);
   const qs = searchParams.toString();
   return qs ? `/cars?${qs}` : "/cars";
 }
@@ -31,38 +28,51 @@ export default function HomePage() {
   const [recent, setRecent] = useState<RecentCar[]>([]);
   const [featured, setFeatured] = useState<BuyerCarCardData[]>([]);
   const [featuredLoading, setFeaturedLoading] = useState(true);
-  const [popularMakes, setPopularMakes] = useState<string[]>([]);
+  const [makeCounts, setMakeCounts] = useState<{ name: string; count: number }[]>([]);
   const [searchQ, setSearchQ] = useState("");
   const [searchMake, setSearchMake] = useState("");
-  const [searchMinPrice, setSearchMinPrice] = useState("");
-  const [searchMaxPrice, setSearchMaxPrice] = useState("");
 
   useEffect(() => {
     (async () => {
       setFeaturedLoading(true);
-      const [{ data: metaData }, { data: featuredData }] = await Promise.all([
-        supabase.from("cars").select("make").eq("is_approved", true).eq("is_draft", false).limit(500),
+      const [{ data: featuredData }, { data: metaData }] = await Promise.all([
         supabase
           .from("cars")
-          .select("id, title, price, make, model, year, condition, currency, images, is_sold, listing_type, discount_percent, province, city")
+          .select(
+            "id, title, price, make, model, year, condition, currency, images, is_sold, listing_type, discount_percent, province, city, mileage, fuel_type, transmission, boost_score, created_at"
+          )
           .eq("is_approved", true)
           .eq("is_draft", false)
           .eq("is_sold", false)
+          .order("boost_score", { ascending: false, nullsFirst: false })
           .order("created_at", { ascending: false })
-          .limit(8),
+          .limit(18),
+        supabase
+          .from("cars")
+          .select("make")
+          .eq("is_approved", true)
+          .eq("is_draft", false)
+          .eq("is_sold", false)
+          .limit(800),
       ]);
-      const meta = (metaData ?? []) as { make: string | null }[];
-      const makeCounts: Record<string, number> = {};
-      meta.forEach((r) => {
-        if (r.make) makeCounts[r.make] = (makeCounts[r.make] ?? 0) + 1;
-      });
-      const otherCount = meta.filter((r) => !r.make || !COMMON_MAKES.includes(r.make)).length;
-      const topMakes = Object.entries(makeCounts)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 8)
-        .map(([m]) => m);
-      setPopularMakes([...topMakes, ...(otherCount > 0 ? [OTHER_MAKE] : [])]);
+
       setFeatured((featuredData ?? []) as BuyerCarCardData[]);
+
+      const counts: Record<string, number> = {};
+      for (const row of (metaData ?? []) as { make: string | null }[]) {
+        const m = row.make?.trim();
+        if (m) counts[m] = (counts[m] ?? 0) + 1;
+      }
+      const ranked = Object.entries(counts)
+        .map(([name, count]) => ({ name, count }))
+        .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+
+      if (ranked.length > 0) {
+        setMakeCounts(ranked);
+      } else {
+        setMakeCounts([...CAR_MAKES].map((name) => ({ name, count: 0 })));
+      }
+
       setFeaturedLoading(false);
     })();
   }, []);
@@ -84,7 +94,9 @@ export default function HomePage() {
         if (ids.length === 0) return;
         const { data } = await supabase
           .from("cars")
-          .select("id, title, price, make, model, year, condition, currency, images, is_sold, listing_type, discount_percent, province, city")
+          .select(
+            "id, title, price, make, model, year, condition, currency, images, is_sold, listing_type, discount_percent, province, city, mileage, fuel_type, transmission"
+          )
           .eq("is_approved", true)
           .eq("is_draft", false)
           .in("id", ids);
@@ -106,15 +118,37 @@ export default function HomePage() {
     })();
   }, []);
 
-  const makesToShow = popularMakes.length > 0 ? popularMakes : POPULAR_MAKES;
+  const makeStrip = useMemo(() => {
+    // Fixed premium strip order; SsangYong removed, EV group + Others at end of list
+    return [...MAKE_STRIP_PRIORITY];
+  }, []);
+
+  function stripLabel(m: string) {
+    if (m === ELECTRIC_HYBRID_STRIP) return t("electricHybrids");
+    if (m === OTHER_MAKE) return t("others");
+    return m;
+  }
+
+  function stripHref(m: string) {
+    if (m === ELECTRIC_HYBRID_STRIP) return "/cars?fuelType=electric-hybrid";
+    return `/cars?make=${encodeURIComponent(m)}`;
+  }
+
+  const searchMakes = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const m of makeCounts) counts[m.name] = m.count;
+    const ranked = sortMakesForDrc(
+      makeCounts.length > 0 ? makeCounts.map((m) => m.name) : [...COMMON_MAKES],
+      counts
+    ).slice(0, 12);
+    return [...ranked, OTHER_MAKE].filter((v, i, a) => a.indexOf(v) === i);
+  }, [makeCounts]);
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
     const url = buildSearchUrl({
       q: searchQ || undefined,
       make: searchMake || undefined,
-      minPrice: searchMinPrice || undefined,
-      maxPrice: searchMaxPrice || undefined,
     });
     fetch("/api/analytics/search", {
       method: "POST",
@@ -122,105 +156,75 @@ export default function HomePage() {
       body: JSON.stringify({
         keyword: searchQ?.trim() || null,
         make: searchMake || null,
-        minPrice: searchMinPrice ? parseFloat(String(searchMinPrice).replace(/,/g, "")) : null,
-        maxPrice: searchMaxPrice ? parseFloat(String(searchMaxPrice).replace(/,/g, "")) : null,
       }),
     }).catch(() => {});
     router.push(url);
   }
 
   return (
-    <div className="flex flex-col bg-[var(--background)] md:flex-1">
-      <section className="relative flex min-h-[50vh] flex-col overflow-hidden border-b border-[var(--border)] md:min-h-0 md:flex-1">
-        <div className="absolute inset-0" aria-hidden>
-          <Image
-            src="https://unsplash.com/photos/ZZlWF_nRyz0/download?force=true&w=1600&q=85"
-            alt=""
-            fill
-            className="animate-hero-zoom object-cover object-center md:object-[center_35%]"
-            sizes="100vw"
-            priority
-            fetchPriority="high"
-          />
-          <div
-            className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/55 to-[var(--background)] md:from-black/75 md:via-black/45 md:to-[var(--background)]"
-            aria-hidden
-          />
-        </div>
+    <div className="flex flex-col bg-black">
+      {/* Cinematic hero — first fold is brand + image */}
+      <section className="relative overflow-hidden" aria-label={t("siteName")}>
+        <div className="relative min-h-[72svh] sm:min-h-[54vh] md:min-h-[60vh]">
+          <HomeHeroCarousel />
 
-        <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-1 flex-col justify-center px-4 py-8 sm:px-6 sm:py-10 md:py-12 lg:py-14">
-          <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between lg:gap-16">
-            <div className="max-w-xl animate-fade-up md:max-w-2xl lg:max-w-3xl">
-              <Link
-                href="/"
-                className="mb-2 inline-flex items-center font-logo text-sm tracking-wide text-[var(--accent)] transition-opacity hover:opacity-90 md:mb-3 md:text-base lg:text-lg"
-                aria-label={t("backToHome")}
+          <div className="relative z-10 mx-auto flex min-h-[72svh] max-w-7xl flex-col justify-end px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-14 sm:min-h-[54vh] sm:px-6 sm:pb-7 md:min-h-[60vh] md:pb-8">
+            <div className="mb-4 flex flex-col gap-3.5 sm:mb-5 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
+              <div className="max-w-xl animate-fade-up">
+                <p className="font-logo text-lg tracking-[0.2em] text-[var(--accent)] sm:text-xl md:text-2xl">
+                  {t("siteName")}
+                </p>
+                <h1 className="mt-1.5 max-w-[18.5rem] text-[0.9375rem] font-medium leading-snug tracking-tight text-white/90 sm:max-w-lg sm:text-base md:text-lg">
+                  {t("trustedIn")}
+                </h1>
+              </div>
+              <div
+                className="flex w-full flex-row gap-2 animate-fade-up sm:w-auto sm:justify-end"
+                style={{ animationDelay: "50ms" }}
               >
-                <span className="opacity-60">&gt;</span> {t("siteName")}
-              </Link>
-              <h1 className="font-mono text-[1.35rem] font-bold leading-[1.15] tracking-[-0.06em] text-white sm:text-[1.5rem] md:text-[2.35rem] lg:text-[2.75rem] xl:text-[3rem]">
-                {t("homeTitle")}
-              </h1>
-              <p className="mt-3 font-mono text-xs leading-relaxed text-white/70 md:mt-4 md:text-sm lg:text-base">
-                {t("trustedIn")}
-              </p>
-              <p className="mt-2 max-w-lg font-mono text-[11px] leading-relaxed text-white/55 md:text-xs">
-                {t("homeSubtitle")}
-              </p>
-              <div className="mt-5 flex flex-wrap gap-2 md:mt-7 md:gap-3">
-                <Link href="/cars" className="btn-accent shrink-0 px-4 py-2 text-sm md:px-5 md:py-2.5 md:text-base">
+                <Link
+                  href="/cars"
+                  className="btn-accent min-h-11 flex-1 px-5 py-3 text-sm sm:flex-none"
+                >
                   {t("browseCars")}
                 </Link>
-                <Link href="/rent" className="btn-rent shrink-0 px-4 py-2 text-sm md:px-5 md:py-2.5 md:text-base">
+                <Link
+                  href="/rent"
+                  className="inline-flex min-h-11 flex-1 items-center justify-center border border-white/25 bg-black/40 px-5 py-3 text-sm font-medium text-white/90 backdrop-blur-sm transition hover:border-[var(--accent)]/60 hover:text-[var(--accent)] sm:flex-none"
+                >
                   {t("rentCars")}
                 </Link>
               </div>
-              <p className="mt-3 text-[11px] text-white/45">
-                <Link href="/dashboard/cars/new" className="underline-offset-2 hover:text-white/80 hover:underline">
-                  {t("listYourCar")}
-                </Link>
-              </p>
             </div>
 
-            <form onSubmit={handleSearch} className="w-full animate-fade-up lg:max-w-sm lg:shrink-0" style={{ animationDelay: "80ms" }}>
-              <div className="rounded border border-white/10 bg-black/40 p-4 font-mono backdrop-blur-sm md:p-5">
-                <div className="flex flex-col gap-3">
-                  <input
-                    type="text"
-                    placeholder={t("searchPlaceholder")}
-                    value={searchQ}
-                    onChange={(e) => setSearchQ(e.target.value)}
-                    className="input-premium min-h-[40px] w-full border-white/10 bg-white/5 text-sm text-white placeholder:text-white/40"
-                  />
+            {/* Search: keyword full-width; make + submit share a second row on phones */}
+            <form onSubmit={handleSearch} className="animate-fade-up" style={{ animationDelay: "90ms" }}>
+              <div className="flex flex-col gap-1.5 border border-white/15 bg-black/55 p-1.5 backdrop-blur-md sm:flex-row sm:items-stretch sm:gap-2 sm:p-2">
+                <input
+                  type="search"
+                  placeholder={t("searchPlaceholder")}
+                  value={searchQ}
+                  onChange={(e) => setSearchQ(e.target.value)}
+                  className="hero-search-field min-w-0 w-full flex-1 border-0 bg-transparent px-3 text-white placeholder:text-white/40 focus:outline-none"
+                />
+                <div className="flex gap-1.5 sm:contents">
                   <select
                     value={searchMake}
                     onChange={(e) => setSearchMake(e.target.value)}
-                    className="input-premium min-h-[40px] w-full border-white/10 bg-white/5 text-sm text-white"
+                    aria-label={t("shopByMake")}
+                    className="hero-search-field min-w-0 flex-1 border border-white/15 bg-black/75 px-2.5 text-white sm:w-[150px] sm:flex-none focus:outline-none"
                   >
                     <option value="">{t("shopByMake")}</option>
-                    {makesToShow.map((m) => (
-                      <option key={m} value={m} className="text-[var(--foreground)]">
+                    {searchMakes.map((m) => (
+                      <option key={m} value={m}>
                         {m}
                       </option>
                     ))}
                   </select>
-                  <div className="grid grid-cols-2 gap-2">
-                    <input
-                      type="number"
-                      placeholder={t("minPrice")}
-                      value={searchMinPrice}
-                      onChange={(e) => setSearchMinPrice(e.target.value)}
-                      className="input-premium min-h-[40px] w-full border-white/10 bg-white/5 px-3 text-sm text-white placeholder:text-white/40"
-                    />
-                    <input
-                      type="number"
-                      placeholder={t("maxPrice")}
-                      value={searchMaxPrice}
-                      onChange={(e) => setSearchMaxPrice(e.target.value)}
-                      className="input-premium min-h-[40px] w-full border-white/10 bg-white/5 px-3 text-sm text-white placeholder:text-white/40"
-                    />
-                  </div>
-                  <button type="submit" className="btn-accent min-h-[40px] w-full px-5 text-sm">
+                  <button
+                    type="submit"
+                    className="hero-search-field shrink-0 bg-[var(--accent)] px-5 font-semibold text-black transition hover:bg-[var(--accent-hover)]"
+                  >
                     {t("searchAction")}
                   </button>
                 </div>
@@ -230,122 +234,158 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="shrink-0 border-b border-[var(--border)] py-4 sm:py-5 md:py-6">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between md:gap-6">
-            <h2 className="text-subheading shrink-0 font-mono text-[var(--foreground)]">
-              <span className="text-[var(--accent)] opacity-80">&gt;</span> {t("shopByMake")}
+      {/* Make strip — below hero so the first fold stays cinematic */}
+      <nav
+        className="relative shrink-0 border-y border-[var(--accent)]/25 bg-black"
+        aria-label={t("shopByMake")}
+      >
+        <div className="pointer-events-none absolute inset-y-0 right-0 z-[1] w-10 bg-gradient-to-l from-black to-transparent sm:w-14" aria-hidden />
+        <div className="flex overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {makeStrip.map((m) => (
+            <Link
+              key={m}
+              href={stripHref(m)}
+              className="touch-target group flex shrink-0 items-center gap-1.5 px-3.5 py-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-[var(--accent)] transition hover:bg-[var(--accent)]/10 sm:px-4 sm:text-xs"
+            >
+              <span className="inline-block h-1 w-1 rounded-full bg-[var(--accent)]" aria-hidden />
+              {stripLabel(m)}
+            </Link>
+          ))}
+        </div>
+      </nav>
+
+      {/* New offers */}
+      <section className="shrink-0 bg-black pt-6 pb-8 sm:pt-7 sm:pb-10" aria-busy={featuredLoading}>
+        <div className="mx-auto max-w-[1400px] px-4 sm:px-5 lg:px-6">
+          <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+            <h2 className="text-xl font-semibold tracking-tight text-white sm:text-2xl">
+              {t("featuredCars")}
             </h2>
-            <div className="flex flex-wrap gap-2 md:justify-end">
-              {makesToShow.map((m) => (
-                <Link
-                  key={m}
-                  href={`/cars?make=${encodeURIComponent(m)}`}
-                  className="rounded border border-[var(--border)] bg-[var(--card)] px-3 py-2 text-xs font-mono text-[var(--foreground)] transition hover:border-[var(--accent)]/60 hover:text-[var(--accent)]"
+            <Link
+              href="/cars"
+              className="inline-flex min-h-10 items-center text-sm font-medium text-[var(--accent)] hover:underline"
+            >
+              {t("viewAllListings")}
+            </Link>
+          </div>
+          {featuredLoading ? (
+            <HomeOffersCarousel cars={[]} loading />
+          ) : featured.length > 0 ? (
+            <HomeOffersCarousel cars={featured} autoPlay />
+          ) : (
+            <HomeShowcasePlaceholders />
+          )}
+        </div>
+      </section>
+
+      {/* Merged trust strip: how it works + contact */}
+      <section className="shrink-0 border-t border-white/10 bg-black py-8 sm:py-10">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+          <div className="grid gap-9 lg:grid-cols-[1.4fr_1fr] lg:gap-12">
+            <div>
+              <h2 className="mb-5 text-lg font-semibold tracking-tight text-white sm:text-xl">
+                {t("howItWorks")}
+              </h2>
+              <FadeInSection stagger className="grid gap-0 sm:grid-cols-3">
+                {[
+                  { title: t("step1Title"), desc: t("step1Desc"), n: "01" },
+                  { title: t("step2Title"), desc: t("step2Desc"), n: "02" },
+                  { title: t("step3Title"), desc: t("step3Desc"), n: "03" },
+                ].map((step) => (
+                  <div
+                    key={step.n}
+                    className="border-t border-white/10 px-0 py-4 sm:border-t-0 sm:border-l sm:px-4 sm:py-0 first:sm:border-l-0 first:sm:pl-0"
+                  >
+                    <p className="text-[11px] tracking-[0.2em] text-[var(--accent)]">{step.n}</p>
+                    <h3 className="mt-1.5 text-[0.9375rem] font-semibold text-white sm:text-sm">
+                      {step.title}
+                    </h3>
+                    <p className="mt-1.5 text-xs leading-relaxed text-white/55">{step.desc}</p>
+                  </div>
+                ))}
+              </FadeInSection>
+              <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                {[
+                  t("browseFree"),
+                  t("listEasily"),
+                  t("meetSellers"),
+                  t("noPlatformFees"),
+                ].map((label) => (
+                  <p
+                    key={label}
+                    className="border-t border-[var(--accent)]/40 pt-2.5 text-xs font-medium text-white/80"
+                  >
+                    {label}
+                  </p>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <h2 className="mb-4 text-lg font-semibold tracking-tight text-white sm:text-xl">
+                {t("findUsTitle")}
+              </h2>
+              <p className="mb-4 text-xs text-white/50 sm:text-[13px]">{t("findUsSubtitle")}</p>
+              <FadeInSection stagger className="grid gap-2.5">
+                <a
+                  href={SUPPORT_MAILTO}
+                  className="flex min-h-[3.25rem] items-center gap-3 border border-[var(--accent)]/35 bg-[#0c0c0e] px-3.5 py-3.5 transition hover:border-[var(--accent)]"
                 >
-                  {m}
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center border border-[var(--accent)]/30 text-[var(--accent)]" aria-hidden>
+                    @
+                  </span>
+                  <span>
+                    <span className="block text-[11px] uppercase tracking-[0.12em] text-[var(--accent)]">
+                      {t("email")}
+                    </span>
+                    <span className="text-[13px] text-white/75">{SUPPORT_EMAIL}</span>
+                  </span>
+                </a>
+                <Link
+                  href="/faq"
+                  className="flex min-h-[3.25rem] items-center gap-3 border border-[var(--accent)]/35 bg-[#0c0c0e] px-3.5 py-3.5 transition hover:border-[var(--accent)]"
+                >
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center border border-[var(--accent)]/30 text-[var(--accent)]" aria-hidden>
+                    ?
+                  </span>
+                  <span>
+                    <span className="block text-[11px] uppercase tracking-[0.12em] text-[var(--accent)]">
+                      FAQ
+                    </span>
+                    <span className="text-[13px] text-white/75">{t("faq")}</span>
+                  </span>
                 </Link>
-              ))}
-              <Link
-                href="/cars"
-                className="rounded border border-[var(--accent)]/40 bg-[var(--accent-muted)] px-3 py-2 text-xs font-mono text-[var(--accent)] transition hover:border-[var(--accent)]"
-              >
-                {t("browseCars")}
-              </Link>
+                <Link
+                  href="/dashboard/cars/new"
+                  className="flex min-h-[3.25rem] items-center gap-3 border border-[var(--accent)]/35 bg-[#0c0c0e] px-3.5 py-3.5 transition hover:border-[var(--accent)]"
+                >
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center border border-[var(--accent)]/30 text-[var(--accent)]" aria-hidden>
+                    +
+                  </span>
+                  <span>
+                    <span className="block text-[11px] uppercase tracking-[0.12em] text-[var(--accent)]">
+                      {t("listYourCar")}
+                    </span>
+                    <span className="text-[13px] text-white/75">{t("listEasilyDesc")}</span>
+                  </span>
+                </Link>
+              </FadeInSection>
             </div>
           </div>
         </div>
       </section>
 
-      {(featuredLoading || featured.length > 0) && (
-        <section className="shrink-0 border-b border-[var(--border)] py-6 sm:py-8 md:py-10" aria-busy={featuredLoading}>
-          <div className="mx-auto max-w-6xl px-4 sm:px-6">
-            <FadeInSection>
-              <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-                <h2 className="text-subheading font-mono text-[var(--foreground)]">
-                  <span className="text-[var(--accent)] opacity-80">&gt;</span> {t("featuredCars")}
-                </h2>
-                <Link href="/cars" className="text-[12px] font-medium text-[var(--accent)] hover:underline">
-                  {t("viewAllListings")}
-                </Link>
-              </div>
-            </FadeInSection>
-            {featuredLoading ? (
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 sm:gap-4" aria-label={t("featuredLoading")}>
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <CarCardSkeleton key={i} compact />
-                ))}
-              </div>
-            ) : (
-              <FadeInSection stagger delay={80} className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 sm:gap-4">
-                {featured.map((car) => (
-                  <BuyerCarCard key={car.id} car={car} />
-                ))}
-              </FadeInSection>
-            )}
-          </div>
-        </section>
-      )}
-
-      <section className="shrink-0 border-b border-[var(--border)] py-6 sm:py-8 md:py-10">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <FadeInSection>
-            <h2 className="text-subheading mb-5 font-mono text-[var(--foreground)]">
-              <span className="text-[var(--accent)] opacity-80">&gt;</span> {t("howItWorks")}
-            </h2>
-          </FadeInSection>
-          <FadeInSection stagger delay={60} className="grid gap-4 sm:grid-cols-3">
-            {[
-              { title: t("step1Title"), desc: t("step1Desc"), n: "01" },
-              { title: t("step2Title"), desc: t("step2Desc"), n: "02" },
-              { title: t("step3Title"), desc: t("step3Desc"), n: "03" },
-            ].map((step) => (
-              <div key={step.n} className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4 sm:p-5">
-                <p className="font-mono text-[11px] text-[var(--accent)]">{step.n}</p>
-                <h3 className="mt-2 font-mono text-sm font-semibold text-[var(--foreground)]">{step.title}</h3>
-                <p className="mt-1.5 text-[12px] leading-relaxed text-[var(--muted-foreground)]">{step.desc}</p>
-              </div>
-            ))}
-          </FadeInSection>
-        </div>
-      </section>
-
-      <section className="shrink-0 border-b border-[var(--border)] py-6 sm:py-8">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <FadeInSection>
-            <h2 className="text-subheading mb-4 font-mono text-[var(--foreground)]">
-              <span className="text-[var(--accent)] opacity-80">&gt;</span> {t("whyUseUs")}
-            </h2>
-          </FadeInSection>
-          <FadeInSection stagger delay={60} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {[
-              { title: t("browseFree"), desc: t("browseFreeDesc") },
-              { title: t("listEasily"), desc: t("listEasilyDesc") },
-              { title: t("meetSellers"), desc: t("meetSellersDesc") },
-              { title: t("noPlatformFees"), desc: t("noPlatformFeesDesc") },
-            ].map((item) => (
-              <div key={item.title} className="rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-3.5">
-                <p className="text-[12px] font-semibold text-[var(--foreground)]">{item.title}</p>
-                <p className="mt-1 text-[11px] leading-relaxed text-[var(--muted-foreground)]">{item.desc}</p>
-              </div>
-            ))}
-          </FadeInSection>
-        </div>
-      </section>
-
       {recent.length > 0 && (
-        <section className="shrink-0 border-b border-[var(--border)] py-4 sm:py-6 md:py-8">
-          <div className="mx-auto max-w-6xl px-4 sm:px-6">
-            <FadeInSection>
-              <h2 className="text-subheading mb-3 font-mono text-[var(--foreground)]">
-                <span className="text-[var(--accent)] opacity-80">&gt;</span> {t("recentlyViewed")}
-              </h2>
-            </FadeInSection>
-            <FadeInSection stagger delay={60} className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+        <section className="shrink-0 border-t border-white/10 bg-black py-7 sm:py-9">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6">
+            <h2 className="mb-4 text-lg font-semibold tracking-tight text-white">
+              {t("recentlyViewed")}
+            </h2>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-3 lg:grid-cols-6">
               {recent.map((car) => (
                 <BuyerCarCard key={car.id} car={car} compact />
               ))}
-            </FadeInSection>
+            </div>
           </div>
         </section>
       )}

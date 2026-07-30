@@ -1,24 +1,20 @@
 "use client";
 
 import { Suspense, useEffect, useState, useMemo } from "react";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useLocale } from "@/app/contexts/LocaleContext";
 import { COMMON_MAKES, OTHER_MAKE, DRC_LOCATIONS, LISTING_TYPE_TRANSLATION_KEYS } from "@/lib/constants";
-import { formatPrice, getBestRentalPrice, getRentalTiers } from "@/lib/format-utils";
+import { getBestRentalPrice } from "@/lib/format-utils";
 import { readGuestFavorites, GUEST_FAVORITES_KEY } from "@/lib/guest-favorites";
 import AdPlacement from "@/app/components/AdPlacement";
-import FavoriteButton from "@/app/components/FavoriteButton";
 import CarCardSkeleton from "@/app/components/CarCardSkeleton";
-import OptimizedCarImage from "@/app/components/OptimizedCarImage";
-import CarImagePlaceholder from "@/app/components/CarImagePlaceholder";
 import VerifiedSellerBadge from "@/app/components/VerifiedSellerBadge";
 import LoadingFallback from "@/app/components/LoadingFallback";
 import CompareBar from "@/app/components/CompareBar";
 import FadeInSection from "@/app/components/FadeInSection";
 import EmptyState from "@/app/components/EmptyState";
-import { formatListedDate } from "@/lib/date-utils";
+import BuyerCarCard from "@/app/components/BuyerCarCard";
 
 type Car = {
   id: string;
@@ -37,6 +33,7 @@ type Car = {
   discount_percent?: number | null;
   transmission?: string | null;
   fuel_type?: string | null;
+  mileage?: number | null;
   owner_id?: string;
   created_at?: string | null;
   listing_type?: string | null;
@@ -83,7 +80,7 @@ function FilterBlock({
 
 function CarsPageContent() {
   const router = useRouter();
-  const { t, currency } = useLocale();
+  const { t } = useLocale();
   const searchParams = useSearchParams();
   const [allCars, setAllCars] = useState<Car[]>([]);
   const [profiles, setProfiles] = useState<Record<string, Profile>>({});
@@ -92,12 +89,13 @@ function CarsPageContent() {
   const [keyword, setKeyword] = useState(() => searchParams.get("q") ?? "");
   const [debouncedKeyword, setDebouncedKeyword] = useState(() => searchParams.get("q") ?? "");
   const [make, setMake] = useState(() => searchParams.get("make") ?? "");
+  const [modelFilter, setModelFilter] = useState(() => searchParams.get("model") ?? "");
   const [province, setProvince] = useState(() => searchParams.get("province") ?? "");
   const [type, setType] = useState("");
   const [priceRange, setPriceRange] = useState("");
   const [discountRange, setDiscountRange] = useState("");
   const [transmission, setTransmission] = useState("");
-  const [fuelType, setFuelType] = useState("");
+  const [fuelType, setFuelType] = useState(() => searchParams.get("fuelType") ?? "");
   const [minPrice, setMinPrice] = useState(() => searchParams.get("minPrice") ?? "");
   const [maxPrice, setMaxPrice] = useState(() => searchParams.get("maxPrice") ?? "");
   const [density, setDensity] = useState<"compact" | "spacious">("compact");
@@ -209,6 +207,7 @@ function CarsPageContent() {
     setKeyword(q ?? "");
     setDebouncedKeyword(q ?? "");
     setMake(makeParam ?? "");
+    setModelFilter(searchParams.get("model") ?? "");
     setProvince(provinceParam ?? "");
     setMinPrice(minParam ?? "");
     setMaxPrice(maxParam ?? "");
@@ -217,6 +216,7 @@ function CarsPageContent() {
         ? listingTypeParam
         : ""
     );
+    setFuelType(searchParams.get("fuelType") ?? "");
   }, [searchParams]);
 
   useEffect(() => {
@@ -229,10 +229,12 @@ function CarsPageContent() {
     const values = {
       q: debouncedKeyword.trim(),
       make,
+      model: modelFilter,
       province,
       minPrice,
       maxPrice,
       listingType,
+      fuelType,
     };
     Object.entries(values).forEach(([key, value]) => {
       if (value) params.set(key, value);
@@ -242,7 +244,7 @@ function CarsPageContent() {
     if (next !== searchParams.toString()) {
       router.replace(next ? `/cars?${next}` : "/cars", { scroll: false });
     }
-  }, [debouncedKeyword, make, province, minPrice, maxPrice, listingType, router, searchParams]);
+  }, [debouncedKeyword, make, modelFilter, province, minPrice, maxPrice, listingType, fuelType, router, searchParams]);
 
   function setDensityAndSave(value: "compact" | "spacious") {
     setDensity(value);
@@ -254,7 +256,7 @@ function CarsPageContent() {
       setLoading(true);
       let query = supabase
         .from("cars")
-        .select("id, title, price, make, model, year, type, province, city, images, currency, condition, discount_percent, transmission, fuel_type, owner_id, created_at, listing_type, rental_price_per_hour, rental_price_per_day, rental_price_per_week, rental_price_per_month, rental_currency, rental_event_type, is_sold, boost_score")
+        .select("id, title, price, make, model, year, type, province, city, images, currency, condition, discount_percent, transmission, fuel_type, mileage, owner_id, created_at, listing_type, rental_price_per_hour, rental_price_per_day, rental_price_per_week, rental_price_per_month, rental_currency, rental_event_type, is_sold, boost_score")
         .eq("is_approved", true)
         .eq("is_draft", false);
 
@@ -292,7 +294,11 @@ function CarsPageContent() {
         if (d) query = query.gte("discount_percent", d.min);
       }
       if (transmission) query = query.eq("transmission", transmission);
-      if (fuelType) query = query.eq("fuel_type", fuelType);
+      if (fuelType === "electric-hybrid") {
+        query = query.in("fuel_type", ["electric", "hybrid"]);
+      } else if (fuelType) {
+        query = query.eq("fuel_type", fuelType);
+      }
 
       const { data: carsData, error } = await query
         .order("boost_score", { ascending: false, nullsFirst: false })
@@ -338,7 +344,20 @@ function CarsPageContent() {
     load();
   }, [debouncedKeyword, make, province, type, priceRange, discountRange, transmission, fuelType, minPrice, maxPrice, listingType]);
 
-  const cars = allCars;
+  const cars = modelFilter
+    ? allCars.filter((c) => (c.model || "").toLowerCase() === modelFilter.toLowerCase())
+    : allCars;
+  const modelOptions = useMemo(() => {
+    if (!make || make === OTHER_MAKE) return [] as { name: string; count: number }[];
+    const counts: Record<string, number> = {};
+    allCars.forEach((c) => {
+      const m = (c.model || "").trim();
+      if (m) counts[m] = (counts[m] ?? 0) + 1;
+    });
+    return Object.entries(counts)
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+      .map(([name, count]) => ({ name, count }));
+  }, [allCars, make]);
   const newArrivals = [...cars].sort((a, b) => {
     const aBoost = a.boost_score ?? 0;
     const bBoost = b.boost_score ?? 0;
@@ -368,44 +387,6 @@ function CarsPageContent() {
   const ownerCounts: Record<string, number> = {};
   allCars.forEach((c) => { if (c.owner_id) ownerCounts[c.owner_id] = (ownerCounts[c.owner_id] ?? 0) + 1; });
 
-  function getCarPriceLabel(car: Car): { text: string; original?: string; discounted?: string } {
-    const lt = car.listing_type ?? "sale";
-    if (lt === "rent") {
-      const cur = car.rental_currency ?? "USD";
-      const tiers = getRentalTiers(car);
-      if (tiers.length > 0) {
-        const suffix: Record<string, string> = { hour: "hr", day: "day", week: "wk", month: "mo" };
-        const text = tiers.map((t) => `${formatPrice(t.price, currency, cur)}/${suffix[t.period]}`).join(" · ");
-        return { text };
-      }
-    }
-    const pct = car.discount_percent ?? 0;
-    if (pct > 0 && lt !== "rent") {
-      const orig = car.price;
-      const disc = orig * (1 - pct / 100);
-      return {
-        text: formatPrice(disc, currency, car.currency ?? null),
-        original: formatPrice(orig, currency, car.currency ?? null),
-        discounted: formatPrice(disc, currency, car.currency ?? null),
-      };
-    }
-    return { text: formatPrice(car.price, currency, car.currency ?? null) };
-  }
-
-  function getListingTypeBadge(car: Car): string | null {
-    const lt = car.listing_type ?? "sale";
-    if (lt === "both") return t("saleAndRent");
-    if (lt === "rent") return t("forRent");
-    return null;
-  }
-
-  function getDiscountBadge(car: Car): string | null {
-    const pct = car.discount_percent ?? 0;
-    if (pct > 0 && (car.listing_type === "sale" || car.listing_type === "both" || !car.listing_type)) {
-      return t("discountOffLabel").replace("{n}", String(Math.round(pct)));
-    }
-    return null;
-  }
   const topSellers = Object.entries(ownerCounts)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 8)
@@ -434,6 +415,7 @@ function CarsPageContent() {
   function clearAllFilters() {
     setKeyword("");
     setMake("");
+    setModelFilter("");
     setProvince("");
     setType("");
     setPriceRange("");
@@ -449,13 +431,23 @@ function CarsPageContent() {
   function getActiveFilterPills(): { key: string; label: string; onRemove: () => void }[] {
     const pills: { key: string; label: string; onRemove: () => void }[] = [];
     if (keyword) pills.push({ key: "q", label: keyword, onRemove: () => setKeyword("") });
-    if (make) pills.push({ key: "make", label: make === OTHER_MAKE ? t("other") : make, onRemove: () => setMake("") });
+    if (make) pills.push({ key: "make", label: make === OTHER_MAKE ? t("other") : make, onRemove: () => { setMake(""); setModelFilter(""); } });
+    if (modelFilter) pills.push({ key: "model", label: modelFilter, onRemove: () => setModelFilter("") });
     if (province) pills.push({ key: "province", label: province, onRemove: () => setProvince("") });
     if (type) pills.push({ key: "type", label: type, onRemove: () => setType("") });
     if (priceRange) pills.push({ key: "priceRange", label: t(priceRange as "priceUnder1000" | "price1000to5000" | "price5000to10000" | "priceOver10000"), onRemove: () => setPriceRange("") });
     if (discountRange) pills.push({ key: "discountRange", label: t(discountRange as "discount10" | "discount20" | "discount30"), onRemove: () => setDiscountRange("") });
     if (transmission) pills.push({ key: "transmission", label: t(transmission as "automatic" | "manual"), onRemove: () => setTransmission("") });
-    if (fuelType) pills.push({ key: "fuelType", label: t(fuelType as "essence" | "diesel" | "electric" | "hybrid"), onRemove: () => setFuelType("") });
+    if (fuelType) {
+      pills.push({
+        key: "fuelType",
+        label:
+          fuelType === "electric-hybrid"
+            ? t("electricHybrids")
+            : t(fuelType as "essence" | "diesel" | "electric" | "hybrid"),
+        onRemove: () => setFuelType(""),
+      });
+    }
     if (minPrice) pills.push({ key: "minPrice", label: `≥ ${minPrice}`, onRemove: () => setMinPrice("") });
     if (maxPrice) pills.push({ key: "maxPrice", label: `≤ ${maxPrice}`, onRemove: () => setMaxPrice("") });
     if (listingType) pills.push({ key: "listingType", label: t(LISTING_TYPE_TRANSLATION_KEYS[listingType as "sale" | "rent" | "both"] as Parameters<typeof t>[0]), onRemove: () => setListingType("") });
@@ -608,7 +600,10 @@ function CarsPageContent() {
             <li key={m}>
               <button
                 type="button"
-                onClick={() => setMake(m === make ? "" : m)}
+                onClick={() => {
+                  setMake(m === make ? "" : m);
+                  setModelFilter("");
+                }}
                 className={`block w-full rounded-[var(--radius)] py-2 text-left ${make === m ? "font-semibold text-[var(--foreground)]" : "text-[var(--muted-foreground)]"}`}
               >
                 {m === OTHER_MAKE ? t("other") : m} ({makeCounts[m] ?? 0})
@@ -864,6 +859,19 @@ function CarsPageContent() {
             )}
           </div>
 
+          {make && modelOptions.length > 0 && (
+            <div className="mb-5 flex flex-wrap items-center gap-2">
+              <button type="button" onClick={() => setModelFilter("")} className={`rounded-full border px-3 py-1.5 text-[11px] font-medium transition ${!modelFilter ? "border-[var(--accent)] bg-[var(--accent-muted)] text-[var(--accent)]" : "border-[var(--border)] text-[var(--muted-foreground)] hover:border-[var(--accent)]/40"}`}>
+                {t("all")}
+              </button>
+              {modelOptions.map(({ name, count }) => (
+                <button key={name} type="button" onClick={() => setModelFilter(modelFilter === name ? "" : name)} className={`rounded-full border px-3 py-1.5 text-[11px] font-medium transition ${modelFilter === name ? "border-[var(--accent)] bg-[var(--accent-muted)] text-[var(--accent)]" : "border-[var(--border)] text-[var(--muted-foreground)] hover:border-[var(--accent)]/40"}`}>
+                  {name} <span className="font-mono opacity-70">{count}</span>
+                </button>
+              ))}
+            </div>
+          )}
+
           <h2 className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">{t("newArrivals")}</h2>
           <FadeInSection
             stagger
@@ -874,95 +882,18 @@ function CarsPageContent() {
             }
           >
             {newArrivals.map((car) => (
-              <div
+              <BuyerCarCard
                 key={car.id}
-                className={`card-hover-lift card-img-zoom relative ${density === "compact" ? "card-compact overflow-hidden" : "card-premium overflow-hidden"}`}
-              >
-                <Link
-                  href={`/cars/${car.id}`}
-                  onClick={() => { try { sessionStorage.setItem("cars-back-url", window.location.href); } catch {} }}
-                  className="block"
-                >
-                <div className="relative">
-                  <div className={`relative ${density === "compact" ? "aspect-[4/3] bg-[var(--border)]" : "aspect-video bg-[var(--border)]"}`}>
-                    {car.images?.[0] ? (
-                      <OptimizedCarImage
-                        src={car.images[0]}
-                        alt={car.title}
-                        sizes={density === "compact" ? "(max-width: 640px) 50vw, 20vw" : "(max-width: 640px) 50vw, 33vw"}
-                      />
-                    ) : (
-                      <CarImagePlaceholder className="h-full min-h-[80px]" />
-                    )}
-                    {car.is_sold && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-[1]" aria-hidden>
-                        <span className="rounded-md border-2 border-white/90 bg-slate-800/95 px-3 py-1.5 text-sm font-bold uppercase tracking-widest text-white shadow-lg">
-                          {t("sold")}
-                        </span>
-                      </div>
-                    )}
-                    {(getListingTypeBadge(car) || getDiscountBadge(car) || car.is_sold) && (
-                      <div className="absolute left-2 top-2 flex flex-wrap gap-1 z-[2]">
-                        {car.is_sold && (
-                          <span className="rounded bg-slate-700 px-2 py-0.5 text-[10px] font-semibold text-white">
-                            {t("sold")}
-                          </span>
-                        )}
-                        {getListingTypeBadge(car) && (
-                          <span className="rounded bg-[var(--accent)] px-2 py-0.5 text-[10px] font-semibold text-white">
-                            {getListingTypeBadge(car)}
-                          </span>
-                        )}
-                        {getDiscountBadge(car) && (
-                          <span className="rounded bg-green-600 px-2 py-0.5 text-[10px] font-semibold text-white">
-                            {getDiscountBadge(car)}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                  <FavoriteButton
-                    carId={car.id}
-                    isFav={favoriteIds.has(car.id)}
-                    onToggle={(next) => setFavoriteIds((prev) => { const s = new Set(prev); if (next) s.add(car.id); else s.delete(car.id); return s; })}
-                    loggedIn={!!user}
-                    variant="icon"
-                  />
-                </div>
-                <div className={density === "compact" ? "p-2.5 pb-8" : "p-4 pb-9"}>
-                  <p className={`${density === "compact" ? "truncate text-[12px]" : "text-[13px]"} font-semibold text-[var(--foreground)] ${car.is_sold ? "opacity-75" : ""}`}>{car.title}</p>
-                  <p className={density === "compact" ? "mt-0.5 truncate text-[11px] text-[var(--muted-foreground)]" : "text-[11px] mt-1 text-[var(--muted-foreground)]"}>
-                    {car.condition === "new" ? t("new") : t("used")} ·{" "}
-                    {(() => {
-                      const lbl = getCarPriceLabel(car);
-                      if (lbl.original && lbl.discounted) {
-                        return (
-                          <>
-                            <span className="line-through text-[var(--muted-foreground)]">{lbl.original}</span>{" "}
-                            <span className="font-semibold text-[var(--accent)]">{lbl.discounted}</span>
-                          </>
-                        );
-                      }
-                      return <span className="font-semibold text-[var(--accent)]">{lbl.text}</span>;
-                    })()}
-                  </p>
-                  {car.created_at && (
-                    <p className={density === "compact" ? "mt-0.5 text-[11px] text-[var(--muted-foreground)]" : "mt-0.5 text-[11px] text-[var(--muted-foreground)]"}>
-                      {formatListedDate(car.created_at, (k) => t(k as "listedToday" | "listedYesterday" | "listedDaysAgo"))}
-                    </p>
-                  )}
-                </div>
-                </Link>
-                <label className="absolute bottom-2 right-2 flex items-center gap-1 text-[11px] text-[var(--muted-foreground)]">
-                  <input
-                    type="checkbox"
-                    checked={compareIds.includes(car.id)}
-                    onChange={() => toggleCompare(car.id)}
-                    aria-label={t("compare")}
-                  />
-                  {t("compare")}
-                </label>
-              </div>
+                car={car}
+                compact={density === "compact"}
+                showFavorite
+                isFav={favoriteIds.has(car.id)}
+                loggedIn={!!user}
+                onFavToggle={(next) => setFavoriteIds((prev) => { const s = new Set(prev); if (next) s.add(car.id); else s.delete(car.id); return s; })}
+                compareChecked={compareIds.includes(car.id)}
+                onCompareToggle={() => toggleCompare(car.id)}
+                onNavigate={() => { try { sessionStorage.setItem("cars-back-url", window.location.href); } catch {} }}
+              />
             ))}
           </FadeInSection>
 
@@ -1045,113 +976,18 @@ function CarsPageContent() {
                 }
               >
                 {visibleCars.map((car) => (
-                  <div
+                  <BuyerCarCard
                     key={car.id}
-                    className={`card-hover-lift card-img-zoom relative ${density === "compact" ? "card-compact overflow-hidden" : "card-premium overflow-hidden"}`}
-                  >
-                    <Link
-                      href={`/cars/${car.id}`}
-                      onClick={() => { try { sessionStorage.setItem("cars-back-url", window.location.href); } catch {} }}
-                      className="block"
-                    >
-                    <div className="relative">
-                      <div className={`relative ${density === "compact" ? "aspect-[4/3] bg-[var(--border)]" : "aspect-video bg-[var(--border)]"}`}>
-                        {car.images?.[0] ? (
-                          <OptimizedCarImage
-                            src={car.images[0]}
-                            alt={car.title}
-                            sizes={density === "compact" ? "(max-width: 640px) 50vw, 25vw" : "(max-width: 640px) 50vw, 33vw"}
-                          />
-                        ) : (
-                          <CarImagePlaceholder className="h-full min-h-[80px]" />
-                        )}
-                        {car.is_sold && (
-                          <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-[1]" aria-hidden>
-                            <span className="rounded-md border-2 border-white/90 bg-slate-800/95 px-3 py-1.5 text-sm font-bold uppercase tracking-widest text-white shadow-lg">
-                              {t("sold")}
-                            </span>
-                          </div>
-                        )}
-                        {(getListingTypeBadge(car) || getDiscountBadge(car) || car.is_sold) && (
-                          <div className="absolute left-2 top-2 flex flex-wrap gap-1 z-[2]">
-                            {car.is_sold && (
-                              <span className="rounded bg-slate-700 px-2 py-0.5 text-[10px] font-semibold text-white">
-                                {t("sold")}
-                              </span>
-                            )}
-                            {getListingTypeBadge(car) && (
-                              <span className="rounded bg-[var(--accent)] px-2 py-0.5 text-[10px] font-semibold text-white">
-                                {getListingTypeBadge(car)}
-                              </span>
-                            )}
-                            {getDiscountBadge(car) && (
-                              <span className="rounded bg-green-600 px-2 py-0.5 text-[10px] font-semibold text-white">
-                                {getDiscountBadge(car)}
-                              </span>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                      <FavoriteButton
-                        carId={car.id}
-                        isFav={favoriteIds.has(car.id)}
-                        onToggle={(next) => setFavoriteIds((prev) => { const s = new Set(prev); if (next) s.add(car.id); else s.delete(car.id); return s; })}
-                        loggedIn={!!user}
-                        variant="icon"
-                      />
-                    </div>
-                    <div className={density === "compact" ? "p-2.5 pb-8" : "p-4 pb-9"}>
-                      <p className={`${density === "compact" ? "truncate text-[12px]" : "text-[13px]"} font-semibold text-[var(--foreground)] ${car.is_sold ? "opacity-75" : ""}`}>{car.title}</p>
-                      <p className={density === "compact" ? "mt-0.5 text-[11px] text-[var(--muted-foreground)]" : "text-[11px] mt-0.5 text-[var(--muted-foreground)]"}>
-                        {car.condition === "new" ? t("new") : t("used")}
-                        {car.year != null && ` · ${car.year}`}
-                      </p>
-                      {density === "spacious" && (
-                        <p className="mt-0.5 text-[11px] text-[var(--muted-foreground)]">
-                          {car.make} {car.model}
-                          {(car.province || car.city) && ` · ${[car.province, car.city].filter(Boolean).join(", ")}`}
-                          {car.owner_id && profiles[car.owner_id] && (
-                            <span className="ml-1 inline">
-                              <VerifiedSellerBadge
-                                phoneVerified={profiles[car.owner_id]?.phone_verified}
-                                idVerified={profiles[car.owner_id]?.id_verified}
-                                dealerVerified={profiles[car.owner_id]?.dealer_verified}
-                              />
-                            </span>
-                          )}
-                        </p>
-                      )}
-                      {car.created_at && (
-                        <p className={density === "compact" ? "mt-0.5 text-[11px] text-[var(--muted-foreground)]" : "mt-0.5 text-[11px] text-[var(--muted-foreground)]"}>
-                          {formatListedDate(car.created_at, (k) => t(k as "listedToday" | "listedYesterday" | "listedDaysAgo"))}
-                        </p>
-                      )}
-                      <p className="mt-1 text-[11px] font-semibold text-[var(--accent)]">
-                        {(() => {
-                          const lbl = getCarPriceLabel(car);
-                          if (lbl.original && lbl.discounted) {
-                            return (
-                              <>
-                                <span className="line-through text-[var(--muted-foreground)]">{lbl.original}</span>{" "}
-                                {lbl.discounted}
-                              </>
-                            );
-                          }
-                          return lbl.text;
-                        })()}
-                      </p>
-                    </div>
-                    </Link>
-                    <label className="absolute bottom-2 right-2 flex items-center gap-1 text-[11px] text-[var(--muted-foreground)]">
-                      <input
-                        type="checkbox"
-                        checked={compareIds.includes(car.id)}
-                        onChange={() => toggleCompare(car.id)}
-                        aria-label={t("compare")}
-                      />
-                      {t("compare")}
-                    </label>
-                  </div>
+                    car={car}
+                    compact={density === "compact"}
+                    showFavorite
+                    isFav={favoriteIds.has(car.id)}
+                    loggedIn={!!user}
+                    onFavToggle={(next) => setFavoriteIds((prev) => { const s = new Set(prev); if (next) s.add(car.id); else s.delete(car.id); return s; })}
+                    compareChecked={compareIds.includes(car.id)}
+                    onCompareToggle={() => toggleCompare(car.id)}
+                    onNavigate={() => { try { sessionStorage.setItem("cars-back-url", window.location.href); } catch {} }}
+                  />
                 ))}
               </div>
               {cars.length > visibleCount && (

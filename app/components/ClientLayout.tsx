@@ -140,27 +140,27 @@ function Header() {
   ) : null;
 
   return (
-    <header className="sticky top-0 z-40 border-b border-[var(--border)] bg-[var(--header-bg)] backdrop-blur-xl safe-area-top">
-      <div className="mx-auto flex h-12 min-h-[44px] max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
+    <header className="sticky top-0 z-40 border-b border-white/10 bg-black/95 backdrop-blur-xl safe-area-top">
+      <div className="mx-auto flex h-14 min-h-[48px] max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
         <Logo showTagline={false} size="md" />
 
         {/* Desktop nav */}
-        <div className="hidden items-center gap-4 md:flex">
+        <div className="hidden items-center gap-5 md:flex">
           <Link
             href="/cars"
-            className="text-[11px] font-medium text-[var(--foreground)] hover:text-[var(--accent)] transition-colors"
+            className="text-[11px] font-medium tracking-wide text-white/85 hover:text-[var(--accent)] transition-colors"
           >
             {t("browseCars")}
           </Link>
           <Link
             href="/compare"
-            className="text-[11px] font-medium text-[var(--foreground)] hover:text-[var(--accent)] transition-colors"
+            className="text-[11px] font-medium tracking-wide text-white/85 hover:text-[var(--accent)] transition-colors"
           >
             {t("compare")}
           </Link>
           <Link
             href="/rent"
-            className="btn-rent px-3 py-1.5 text-[11px] font-medium"
+            className="text-[11px] font-medium tracking-wide text-white/85 hover:text-[var(--accent)] transition-colors"
           >
             {t("rentCars")}
           </Link>
@@ -174,7 +174,7 @@ function Header() {
         <button
           type="button"
           onClick={() => setMobileOpen(true)}
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius)] text-[var(--foreground)] hover:bg-[var(--border)] md:hidden transition-colors"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[var(--radius)] text-[var(--foreground)] hover:bg-[var(--border)] md:hidden transition-colors"
           aria-label={t("openMenu")}
           aria-expanded={mobileOpen}
         >
@@ -193,62 +193,62 @@ function Header() {
 function Footer() {
   const { t } = useLocale();
   return (
-    <footer className="mt-0 border-t border-[var(--border)] bg-[var(--background)] safe-area-bottom text-[9px] sm:text-[10px]">
-      <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-        <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
-          <div className="flex flex-col gap-0.5">
+    <footer className="mt-0 border-t border-[var(--border)] bg-[var(--background)] safe-area-bottom text-xs sm:text-[11px]">
+      <div className="mx-auto max-w-6xl px-4 py-7 sm:px-6 sm:py-9">
+        <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex flex-col gap-1">
             <Logo showTagline size="sm" className="scale-95 origin-left [&_.font-logo]:text-[13px] [&_.font-mono]:text-[10px]" />
-            <a href={SUPPORT_MAILTO} className="mt-2 link-accent font-mono text-[10px]">
+            <a href={SUPPORT_MAILTO} className="mt-2 inline-flex min-h-10 items-center link-accent font-mono text-[11px]">
               {SUPPORT_EMAIL}
             </a>
           </div>
-          <nav className="flex flex-wrap gap-x-5 gap-y-0.5 sm:flex-nowrap sm:gap-5">
-            <div className="flex flex-col gap-0.5">
-              <span className="text-[8px] font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">
+          <nav className="flex flex-wrap gap-x-6 gap-y-4 sm:flex-nowrap sm:gap-8">
+            <div className="flex min-w-[7rem] flex-col gap-1">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">
                 {t("marketplace")}
               </span>
-              <Link href="/cars" className="link-accent">
+              <Link href="/cars" className="inline-flex min-h-9 items-center link-accent">
                 {t("browseCars")}
               </Link>
-              <Link href="/rent" className="link-accent">
+              <Link href="/rent" className="inline-flex min-h-9 items-center link-accent">
                 {t("rentCars")}
               </Link>
-              <Link href="/dashboard/cars/new" className="link-accent">
+              <Link href="/dashboard/cars/new" className="inline-flex min-h-9 items-center link-accent">
                 {t("listYourCar")}
               </Link>
             </div>
-            <div className="flex flex-col gap-0.5">
-              <span className="text-[8px] font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">
+            <div className="flex min-w-[7rem] flex-col gap-1">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">
                 {t("legal")}
               </span>
-              <Link href="/terms" className="link-accent">
+              <Link href="/terms" className="inline-flex min-h-9 items-center link-accent">
                 {t("termsConditions")}
               </Link>
-              <Link href="/privacy" className="link-accent">
+              <Link href="/privacy" className="inline-flex min-h-9 items-center link-accent">
                 {t("privacyPolicy")}
               </Link>
-              <Link href="/disclaimer" className="link-accent">
+              <Link href="/disclaimer" className="inline-flex min-h-9 items-center link-accent">
                 {t("disclaimer")}
               </Link>
             </div>
-            <div className="flex flex-col gap-0.5">
-              <span className="text-[8px] font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">
+            <div className="flex min-w-[7rem] flex-col gap-1">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">
                 {t("help")}
               </span>
-              <Link href="/faq" className="link-accent">
+              <Link href="/faq" className="inline-flex min-h-9 items-center link-accent">
                 {t("faq")}
               </Link>
-              <a href={SUPPORT_MAILTO} className="link-accent">
+              <a href={SUPPORT_MAILTO} className="inline-flex min-h-9 items-center link-accent">
                 {t("contactSupport")}
               </a>
-              <Link href="/site-map" className="link-accent">
+              <Link href="/site-map" className="inline-flex min-h-9 items-center link-accent">
                 {t("siteMap")}
               </Link>
             </div>
           </nav>
         </div>
-        <div className="mt-5 border-t border-[var(--border)] pt-3">
-          <p className="text-center text-[9px] text-[var(--muted-foreground)]">
+        <div className="mt-6 border-t border-[var(--border)] pt-4">
+          <p className="text-center text-[11px] text-[var(--muted-foreground)]">
             © {new Date().getFullYear()} {t("siteName")}. {t("allRightsReserved")}
           </p>
         </div>

@@ -6,38 +6,21 @@ import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useLocale } from "@/app/contexts/LocaleContext";
 import { DRC_LOCATIONS, RENTAL_EVENT_TYPES, RENTAL_EVENT_TRANSLATION_KEYS } from "@/lib/constants";
-import { formatPrice, getBestRentalPrice, getRentalTiers } from "@/lib/format-utils";
+import { getBestRentalPrice } from "@/lib/format-utils";
 import { readGuestFavorites, GUEST_FAVORITES_KEY } from "@/lib/guest-favorites";
-import FavoriteButton from "@/app/components/FavoriteButton";
+import BuyerCarCard, { type BuyerCarCardData } from "@/app/components/BuyerCarCard";
 import CarCardSkeleton from "@/app/components/CarCardSkeleton";
-import OptimizedCarImage from "@/app/components/OptimizedCarImage";
-import CarImagePlaceholder from "@/app/components/CarImagePlaceholder";
 import LoadingFallback from "@/app/components/LoadingFallback";
-import { formatListedDate } from "@/lib/date-utils";
 
-type RentalCar = {
-  id: string;
-  title: string;
-  make: string;
-  model: string;
-  year: number | null;
-  type: string | null;
-  province: string | null;
-  city: string | null;
-  images: string[];
-  listing_type: string | null;
-  rental_price_per_hour: number | null;
-  rental_price_per_day: number | null;
-  rental_price_per_week: number | null;
-  rental_price_per_month: number | null;
-  rental_currency: string | null;
-  rental_event_type: string[] | null;
-  created_at: string | null;
+type RentalCar = BuyerCarCardData & {
+  type?: string | null;
+  rental_event_type?: string[] | null;
+  created_at?: string | null;
 };
 
 function RentPageContent() {
   const searchParams = useSearchParams();
-  const { t, currency } = useLocale();
+  const { t } = useLocale();
   const [cars, setCars] = useState<RentalCar[]>([]);
   const [loading, setLoading] = useState(true);
   const [eventType, setEventType] = useState<string>("");
@@ -91,7 +74,7 @@ function RentPageContent() {
       setLoading(true);
       let query = supabase
         .from("cars")
-        .select("id, title, make, model, year, type, province, city, images, listing_type, rental_price_per_hour, rental_price_per_day, rental_price_per_week, rental_price_per_month, rental_currency, rental_event_type, created_at")
+        .select("id, title, price, make, model, year, condition, type, province, city, images, listing_type, mileage, fuel_type, transmission, rental_price_per_hour, rental_price_per_day, rental_price_per_week, rental_price_per_month, rental_currency, rental_event_type, created_at")
         .eq("is_approved", true)
         .eq("is_draft", false)
         .or("listing_type.eq.rent,listing_type.eq.both");
@@ -142,14 +125,6 @@ function RentPageContent() {
     return bT - aT;
   });
   const visibleCars = sortedCars.slice(0, visibleCount);
-
-  function formatRentalPrice(car: RentalCar): string {
-    const cur = car.rental_currency ?? "USD";
-    const tiers = getRentalTiers(car);
-    if (tiers.length === 0) return "";
-    const suffix: Record<string, string> = { hour: "hr", day: "day", week: "wk", month: "mo" };
-    return tiers.map((tier) => `${formatPrice(tier.price, currency as "USD" | "CDF", cur)}/${suffix[tier.period]}`).join(" · ");
-  }
 
   if (loading) {
     return (
@@ -247,54 +222,16 @@ function RentPageContent() {
           </p>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
             {visibleCars.map((car) => (
-              <Link
+              <BuyerCarCard
                 key={car.id}
-                href={`/cars/${car.id}`}
-                onClick={() => { try { sessionStorage.setItem("cars-back-url", window.location.href); } catch {} }}
-                className="card-compact card-hover-lift card-img-zoom overflow-hidden"
-              >
-                <div className="relative">
-                  <div className="relative aspect-[4/3] bg-[var(--border)]">
-                    {car.images?.[0] ? (
-                      <OptimizedCarImage src={car.images[0]} alt={car.title} sizes="(max-width: 640px) 50vw, 25vw" />
-                    ) : (
-                      <CarImagePlaceholder className="h-full min-h-[80px]" />
-                    )}
-                  </div>
-                  <span className="absolute left-2 top-2 rounded bg-[var(--accent)] px-2 py-0.5 text-[10px] font-semibold text-white">
-                    {t("forRent")}
-                  </span>
-                  <FavoriteButton
-                    carId={car.id}
-                    isFav={favoriteIds.has(car.id)}
-                    onToggle={(next) => setFavoriteIds((prev) => { const s = new Set(prev); if (next) s.add(car.id); else s.delete(car.id); return s; })}
-                    loggedIn={!!user}
-                    variant="icon"
-                  />
-                </div>
-                <div className="p-2.5">
-                  <p className="truncate text-[12px] font-semibold text-[var(--foreground)]">{car.title}</p>
-                  <p className="mt-0.5 truncate text-[11px] text-[var(--muted-foreground)]">
-                    {car.year != null && `${car.year} · `}
-                    {car.province || car.city || ""}
-                  </p>
-                  {car.rental_event_type && car.rental_event_type.length > 0 && (
-                    <p className="mt-0.5 flex flex-wrap gap-1 text-[11px] text-[var(--muted-foreground)]">
-                      {car.rental_event_type.slice(0, 2).map((ev) => (
-                        <span key={ev} className="rounded bg-[var(--border)] px-1">{t(RENTAL_EVENT_TRANSLATION_KEYS[ev as keyof typeof RENTAL_EVENT_TRANSLATION_KEYS] as Parameters<typeof t>[0])}</span>
-                      ))}
-                    </p>
-                  )}
-                  <p className="mt-0.5 text-[12px] font-semibold text-[var(--accent)]">
-                    {formatRentalPrice(car) || t("priceFrom")}
-                  </p>
-                  {car.created_at && (
-                    <p className="mt-0.5 text-[11px] text-[var(--muted-foreground)]">
-                      {formatListedDate(car.created_at, (k) => t(k as "listedToday" | "listedYesterday" | "listedDaysAgo"))}
-                    </p>
-                  )}
-                </div>
-              </Link>
+                car={car}
+                compact
+                showFavorite
+                isFav={favoriteIds.has(car.id)}
+                loggedIn={!!user}
+                onFavToggle={(next) => setFavoriteIds((prev) => { const s = new Set(prev); if (next) s.add(car.id); else s.delete(car.id); return s; })}
+                onNavigate={() => { try { sessionStorage.setItem("cars-back-url", window.location.href); } catch {} }}
+              />
             ))}
           </div>
           {cars.length > visibleCount && (

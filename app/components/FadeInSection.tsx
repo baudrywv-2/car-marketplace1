@@ -24,6 +24,16 @@ export default function FadeInSection({ children, className = "", delay = 0, sta
       setVisible(true);
       return;
     }
+
+    const alreadyInView = () => {
+      const rect = el.getBoundingClientRect();
+      return rect.top < window.innerHeight + 120 && rect.bottom > -80;
+    };
+    if (alreadyInView()) {
+      setVisible(true);
+      return;
+    }
+
     const obs = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
@@ -31,7 +41,7 @@ export default function FadeInSection({ children, className = "", delay = 0, sta
           obs.disconnect();
         }
       },
-      { threshold: 0.08, rootMargin: "0px 0px -32px 0px" }
+      { threshold: 0.01, rootMargin: "80px 0px 80px 0px" }
     );
     obs.observe(el);
     return () => obs.disconnect();
@@ -53,7 +63,7 @@ export default function FadeInSection({ children, className = "", delay = 0, sta
     <div
       ref={ref}
       className={`transition-all duration-700 ease-out ${
-        visible ? "translate-y-0 opacity-100" : "translate-y-5 opacity-0"
+        visible ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0"
       } ${className}`}
       style={{ transitionDelay: visible ? `${delay}ms` : "0ms" }}
     >
