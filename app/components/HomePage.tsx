@@ -163,7 +163,27 @@ export default function HomePage() {
 
   return (
     <div className="flex flex-col bg-black">
-      {/* Cinematic hero — first fold is brand + image */}
+      {/* Make strip — top, under header */}
+      <nav
+        className="relative shrink-0 border-y border-[var(--accent)]/25 bg-black"
+        aria-label={t("shopByMake")}
+      >
+        <div className="pointer-events-none absolute inset-y-0 right-0 z-[1] w-10 bg-gradient-to-l from-black to-transparent sm:w-14" aria-hidden />
+        <div className="flex overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {makeStrip.map((m) => (
+            <Link
+              key={m}
+              href={stripHref(m)}
+              className="touch-target group flex shrink-0 items-center gap-1.5 px-3.5 py-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-[var(--accent)] transition hover:bg-[var(--accent)]/10 sm:px-4 sm:text-xs"
+            >
+              <span className="inline-block h-1 w-1 rounded-full bg-[var(--accent)]" aria-hidden />
+              {stripLabel(m)}
+            </Link>
+          ))}
+        </div>
+      </nav>
+
+      {/* Cinematic hero */}
       <section className="relative overflow-hidden" aria-label={t("siteName")}>
         <div className="relative min-h-[72svh] sm:min-h-[54vh] md:min-h-[60vh]">
           <HomeHeroCarousel />
@@ -233,26 +253,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
-      {/* Make strip — below hero so the first fold stays cinematic */}
-      <nav
-        className="relative shrink-0 border-y border-[var(--accent)]/25 bg-black"
-        aria-label={t("shopByMake")}
-      >
-        <div className="pointer-events-none absolute inset-y-0 right-0 z-[1] w-10 bg-gradient-to-l from-black to-transparent sm:w-14" aria-hidden />
-        <div className="flex overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {makeStrip.map((m) => (
-            <Link
-              key={m}
-              href={stripHref(m)}
-              className="touch-target group flex shrink-0 items-center gap-1.5 px-3.5 py-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-[var(--accent)] transition hover:bg-[var(--accent)]/10 sm:px-4 sm:text-xs"
-            >
-              <span className="inline-block h-1 w-1 rounded-full bg-[var(--accent)]" aria-hidden />
-              {stripLabel(m)}
-            </Link>
-          ))}
-        </div>
-      </nav>
 
       {/* New offers */}
       <section className="shrink-0 bg-black pt-6 pb-8 sm:pt-7 sm:pb-10" aria-busy={featuredLoading}>
