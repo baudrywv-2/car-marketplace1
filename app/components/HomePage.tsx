@@ -200,7 +200,7 @@ export default function HomePage() {
                 <p className="font-logo text-[1.05rem] tracking-[0.22em] text-[var(--accent)] drop-shadow-[0_1px_14px_rgba(0,0,0,0.65)] sm:text-xl md:text-2xl">
                   {t("siteName")}
                 </p>
-                <h1 className="mx-auto mt-1.5 max-w-[17.5rem] text-[0.8125rem] font-medium leading-snug tracking-tight text-white/92 drop-shadow-[0_1px_12px_rgba(0,0,0,0.55)] sm:mx-0 sm:mt-1.5 sm:max-w-lg sm:text-base md:text-lg">
+                <h1 className="mx-auto mt-1.5 max-w-[17.5rem] text-[0.9375rem] font-medium leading-snug tracking-tight text-white/92 drop-shadow-[0_1px_12px_rgba(0,0,0,0.55)] sm:mx-0 sm:mt-1.5 sm:max-w-lg sm:text-base md:text-lg">
                   {t("trustedIn")}
                 </h1>
               </div>
@@ -248,7 +248,7 @@ export default function HomePage() {
                   </select>
                   <button
                     type="submit"
-                    className="hero-search-field min-h-10 shrink-0 bg-[var(--accent)] px-4 text-[13px] font-semibold text-black transition hover:bg-[var(--accent-hover)] sm:min-h-11 sm:px-5 sm:text-sm"
+                    className="hero-search-field min-h-10 shrink-0 bg-red-600 px-4 text-[13px] font-semibold text-white transition hover:bg-red-500 sm:min-h-11 sm:bg-[var(--accent)] sm:px-5 sm:text-sm sm:text-black sm:hover:bg-[var(--accent-hover)]"
                   >
                     {t("searchAction")}
                   </button>
