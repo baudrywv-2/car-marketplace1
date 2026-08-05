@@ -120,7 +120,7 @@ export default function FavoritesPage() {
               <div className="relative">
                 <div className="aspect-video bg-[var(--border)]">
                   {car.images?.[0] ? (
-                    <OptimizedCarImage src={car.images[0]} alt={car.title} sizes="(max-width: 640px) 50vw, 33vw" />
+                    <OptimizedCarImage src={car.images[0]} alt={car.title} sizes="(max-width: 640px) 50vw, 33vw" thumbWidth={480} quality={72} />
                   ) : (
                     <CarImagePlaceholder className="h-full min-h-[80px]" />
                   )}

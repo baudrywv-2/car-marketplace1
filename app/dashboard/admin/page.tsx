@@ -1484,7 +1484,7 @@ export default function AdminPage() {
                         )}
                         {thumb && (
                           <div className="relative h-16 w-24 shrink-0 overflow-hidden rounded-md border border-[var(--border)] bg-[var(--background)]">
-                            <OptimizedCarImage src={thumb} alt={car.title} sizes="96px" />
+                            <OptimizedCarImage src={thumb} alt={car.title} sizes="96px" thumbWidth={192} quality={70} />
                           </div>
                         )}
                         <div className="min-w-0 flex-1">

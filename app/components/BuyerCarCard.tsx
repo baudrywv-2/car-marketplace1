@@ -145,6 +145,8 @@ export default function BuyerCarCard({
             <OptimizedCarImage
               src={img}
               alt={car.title}
+              thumbWidth={compact ? 480 : 640}
+              quality={72}
               sizes={compact ? "(max-width: 640px) 50vw, 16vw" : "(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"}
             />
           ) : (

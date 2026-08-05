@@ -64,7 +64,7 @@ type Profile = { id: string; full_name: string | null; phone_verified?: boolean;
 
 const PAGE_SIZE_OPTIONS = [24, 48, 96] as const;
 /** Cap catalog payload so browse stays fast as inventory grows */
-const CARS_FETCH_LIMIT = 120;
+const CARS_FETCH_LIMIT = 60;
 
 function FilterBlock({
   title,

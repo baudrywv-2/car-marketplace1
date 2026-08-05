@@ -127,7 +127,7 @@ function CompareInner() {
                   <Link href={`/cars/${car.id}`} className="block">
                     <div className="relative aspect-[4/3] overflow-hidden rounded-[var(--radius)] bg-[var(--border)]">
                       {car.images?.[0] ? (
-                        <OptimizedCarImage src={car.images[0]} alt={car.title} sizes="(max-width: 640px) 140px, 160px" />
+                        <OptimizedCarImage src={car.images[0]} alt={car.title} sizes="(max-width: 640px) 140px, 160px" thumbWidth={320} quality={72} />
                       ) : (
                         <CarImagePlaceholder className="h-full min-h-[80px]" />
                       )}

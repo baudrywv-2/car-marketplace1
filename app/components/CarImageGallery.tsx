@@ -25,7 +25,10 @@ export default function CarImageGallery({ images, title }: Props) {
         <OptimizedCarImage
           src={list[active]}
           alt={`${title} – image ${active + 1}`}
+          thumbWidth={1200}
+          quality={80}
           sizes="(max-width: 768px) 100vw, 50vw"
+          priority
         />
         {list.length > 1 && (
           <>
@@ -68,7 +71,7 @@ export default function CarImageGallery({ images, title }: Props) {
               aria-label={`${title} – ${i + 1}`}
               aria-current={i === active ? "true" : undefined}
             >
-              <OptimizedCarImage src={src} alt="" sizes="80px" />
+              <OptimizedCarImage src={src} alt="" sizes="80px" thumbWidth={160} quality={70} />
             </button>
           ))}
         </div>
