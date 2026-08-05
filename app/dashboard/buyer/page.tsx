@@ -8,6 +8,7 @@ import { useLocale } from "@/app/contexts/LocaleContext";
 import { LISTING_TYPE_TRANSLATION_KEYS } from "@/lib/constants";
 import FirstVisitTips, { type TourStep } from "@/app/components/FirstVisitTips";
 import EmptyState from "@/app/components/EmptyState";
+import PlatformMessagesInbox from "@/app/components/PlatformMessagesInbox";
 
 type RdvRequest = {
   id: string;
@@ -121,9 +122,8 @@ export default function BuyerDashboardPage() {
         supabase
           .from("admin_messages")
           .select("id, subject, body, created_at")
-          .eq("target_audience", "buyers")
           .order("created_at", { ascending: false })
-          .limit(5),
+          .limit(20),
         supabase
           .from("user_notifications")
           .select("id, type, car_id, title, body, read_at, created_at")
@@ -228,35 +228,12 @@ export default function BuyerDashboardPage() {
       )}
 
       {visibleAdminMessages.length > 0 && (
-        <div className="mb-6 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--card)] p-4">
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-[11px] font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">{t("messagesFromAdmin")}</h2>
-            <button
-              type="button"
-              onClick={clearAllAdminMessages}
-              className="text-[10px] font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
-            >
-              {t("clearAll")}
-            </button>
-          </div>
-          <ul className="space-y-3">
-            {visibleAdminMessages.map((m) => (
-              <li key={m.id} className="flex items-start justify-between gap-2 rounded-[var(--radius)] border border-[var(--border)] bg-[var(--background)] p-3">
-                <div className="min-w-0 flex-1">
-                  <p className="font-semibold text-[var(--foreground)]">{m.subject}</p>
-                  <p className="mt-1 whitespace-pre-wrap text-[11px] text-[var(--muted-foreground)]">{m.body}</p>
-                  <p className="mt-1 text-[10px] text-[var(--muted-foreground)]">{new Date(m.created_at).toLocaleString()}</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => dismissAdminMessage(m.id)}
-                  className="shrink-0 text-[10px] font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
-                >
-                  {t("dismiss")}
-                </button>
-              </li>
-            ))}
-          </ul>
+        <div className="mb-6">
+          <PlatformMessagesInbox
+            messages={visibleAdminMessages}
+            onDismiss={dismissAdminMessage}
+            onClearAll={clearAllAdminMessages}
+          />
         </div>
       )}
 

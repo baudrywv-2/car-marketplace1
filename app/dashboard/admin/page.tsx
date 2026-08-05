@@ -9,6 +9,7 @@ import { useToast } from "@/app/contexts/ToastContext";
 import { formatPrice } from "@/lib/format-utils";
 import type { translations } from "@/lib/translations";
 import EmptyState from "@/app/components/EmptyState";
+import AdminMessagesPanel from "@/app/components/AdminMessagesPanel";
 import OptimizedCarImage from "@/app/components/OptimizedCarImage";
 
 type Car = {
@@ -148,13 +149,6 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<"listings" | "rdv" | "sellers" | "messages" | "analytics" | "users" | "traffic">("listings");
   const [rejectModal, setRejectModal] = useState<{ carId: string; title: string } | null>(null);
   const [rejectReason, setRejectReason] = useState("");
-  type AdminMsg = { id: string; target_audience: string; subject: string; body: string; created_at: string };
-  const [adminMessages, setAdminMessages] = useState<AdminMsg[]>([]);
-  const [messageTarget, setMessageTarget] = useState<"sellers" | "buyers">("sellers");
-  const [messageSubject, setMessageSubject] = useState("");
-  const [messageBody, setMessageBody] = useState("");
-  const [messageSending, setMessageSending] = useState(false);
-  const [messageError, setMessageError] = useState<string | null>(null);
   type SearchStats = { topKeywords: { term: string; count: number }[]; topMakes: { make: string; count: number }[]; topProvinces: { province: string; count: number }[] };
   const [searchStats, setSearchStats] = useState<SearchStats | null>(null);
   type UserStats = {
@@ -240,12 +234,6 @@ export default function AdminPage() {
         setRdvFetchError(e instanceof Error ? e.message : t("adminNetworkError"));
       }
       setRdvRequests(rdvList);
-
-      const { data: msgData } = await supabase
-        .from("admin_messages")
-        .select("id, target_audience, subject, body, created_at")
-        .order("created_at", { ascending: false });
-      setAdminMessages((msgData ?? []) as AdminMsg[]);
 
       setLoading(false);
     }
@@ -351,33 +339,6 @@ export default function AdminPage() {
       }
     })();
   }, [activeTab, profile, refreshTrigger, t]);
-
-  async function sendAdminMessage(e: React.FormEvent) {
-    e.preventDefault();
-    if (!messageSubject.trim() || !messageBody.trim()) return;
-    setMessageSending(true);
-    setMessageError(null);
-    const { data: { user } } = await supabase.auth.getUser();
-    const { error } = await supabase.from("admin_messages").insert({
-      target_audience: messageTarget,
-      subject: messageSubject.trim(),
-      body: messageBody.trim(),
-      created_by: user?.id ?? null,
-    });
-    if (error) {
-      setMessageError(error.message || t("adminFailedSendMessage"));
-      setMessageSending(false);
-      return;
-    }
-    const { data: msgData } = await supabase
-      .from("admin_messages")
-      .select("id, target_audience, subject, body, created_at")
-      .order("created_at", { ascending: false });
-    setAdminMessages((msgData ?? []) as AdminMsg[]);
-    setMessageSubject("");
-    setMessageBody("");
-    setMessageSending(false);
-  }
 
   async function approveCar(carId: string) {
     const res = await fetch("/api/admin/cars", {
@@ -536,12 +497,6 @@ export default function AdminPage() {
     toast.success(t("adminRemove"));
   }
 
-  async function deleteAdminMessage(msgId: string) {
-    if (!confirm(t("adminDeleteMessageConfirm"))) return;
-    await supabase.from("admin_messages").delete().eq("id", msgId);
-    setAdminMessages((prev) => prev.filter((m) => m.id !== msgId));
-  }
-
   async function updateSellerVerification(
     profileId: string,
     field: "phone_verified" | "id_verified" | "dealer_verified",
@@ -621,7 +576,7 @@ export default function AdminPage() {
     { id: "analytics", label: t("adminTabAnalytics") },
     { id: "users", label: t("adminTabUsers") },
     { id: "traffic", label: t("adminTabTraffic") },
-    { id: "messages", label: t("adminTabMessages"), count: adminMessages.length },
+    { id: "messages", label: t("adminTabMessages") },
   ];
 
   return (
@@ -1089,85 +1044,7 @@ export default function AdminPage() {
           )}
         </div>
       ) : activeTab === "messages" ? (
-        <>
-          <p className="mb-4 text-caption text-[var(--muted-foreground)]">
-            {t("adminMessagesHelp")}
-          </p>
-          <form onSubmit={sendAdminMessage} className="card-premium mb-6 p-4">
-            <div className="mb-4">
-              <label className="mb-2 block text-[11px] font-semibold text-[var(--foreground)]">{t("adminMessageTo")}</label>
-              <select
-                value={messageTarget}
-                onChange={(e) => setMessageTarget(e.target.value as "sellers" | "buyers")}
-                className="input-premium w-full max-w-xs"
-              >
-                <option value="sellers">{t("adminAllSellers")}</option>
-                <option value="buyers">{t("adminAllBuyers")}</option>
-              </select>
-            </div>
-            <div className="mb-4">
-              <label className="mb-2 block text-[11px] font-semibold text-[var(--foreground)]">{t("adminSubject")}</label>
-              <input
-                type="text"
-                value={messageSubject}
-                onChange={(e) => setMessageSubject(e.target.value)}
-                placeholder={t("adminSubjectPlaceholder")}
-                className="input-premium w-full"
-                required
-              />
-            </div>
-            <div className="mb-4">
-              <label className="mb-2 block text-[11px] font-semibold text-[var(--foreground)]">{t("adminMessageBody")}</label>
-              <textarea
-                value={messageBody}
-                onChange={(e) => setMessageBody(e.target.value)}
-                placeholder={t("adminMessagePlaceholder")}
-                className="input-premium w-full min-h-[120px]"
-                rows={5}
-                required
-              />
-            </div>
-            {messageError && (
-              <p className="mb-4 text-[11px] text-red-600 dark:text-red-400">{messageError}</p>
-            )}
-            <button type="submit" disabled={messageSending} className="btn-primary py-2 text-[11px]">
-              {messageSending ? t("sending") : t("adminSendMessage")}
-            </button>
-          </form>
-          {adminMessages.length > 0 && (
-            <div>
-              <h3 className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">{t("adminSentMessages")}</h3>
-              <ul className="space-y-3">
-                {adminMessages.map((m) => (
-                  <li key={m.id} className="card-compact flex flex-wrap items-start justify-between gap-2 p-4">
-                    <div className="min-w-0 flex-1">
-                      <div className="mb-1 flex items-center gap-2">
-                        <span className="rounded bg-[var(--border)] px-2 py-0.5 text-[10px] text-[var(--foreground)]">
-                          {m.target_audience === "sellers" ? t("adminAllSellers") : t("adminAllBuyers")}
-                        </span>
-                        <span className="text-[10px] text-[var(--muted-foreground)]">
-                          {new Date(m.created_at).toLocaleString()}
-                        </span>
-                      </div>
-                      <p className="font-semibold text-[var(--foreground)]">{m.subject}</p>
-                      <p className="mt-1 whitespace-pre-wrap text-[11px] text-[var(--muted-foreground)]">{m.body}</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => deleteAdminMessage(m.id)}
-                      className="shrink-0 rounded border border-red-300 px-2 py-1 text-[10px] font-medium text-red-600 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20"
-                    >
-                      {t("adminRemove")}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-          {adminMessages.length === 0 && (
-            <EmptyState title={t("adminNoMessages")} className="mt-4" />
-          )}
-        </>
+        <AdminMessagesPanel />
       ) : activeTab === "sellers" ? (
         <>
           <p className="mb-4 text-caption text-[var(--muted-foreground)]">
