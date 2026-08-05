@@ -287,7 +287,7 @@ export default function CarDetailClient({ initialCar = null }: Props) {
   }
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-6 pb-32 sm:px-6 sm:py-10 sm:pb-10">
+    <div className="mx-auto w-full min-w-0 max-w-4xl px-4 py-6 pb-32 sm:px-6 sm:py-10 sm:pb-10">
       {!initialCar && <CarProductJsonLd car={car} />}
       {isAdminPreview && (
         <div className="mb-4 rounded-lg border border-amber-500 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800 dark:bg-amber-900/30 dark:text-amber-200">
@@ -324,13 +324,15 @@ export default function CarDetailClient({ initialCar = null }: Props) {
         </div>
       )}
 
-      <div className="card-premium overflow-hidden">
-        <div className="grid gap-4 p-4 sm:grid-cols-2 sm:gap-6 sm:p-6">
-          <CarImageGallery images={car.images ?? []} title={car.title} />
+      <div className="card-premium w-full min-w-0 max-w-full overflow-hidden">
+        <div className="grid min-w-0 gap-4 p-4 sm:grid-cols-2 sm:gap-6 sm:p-6">
+          <div className="min-w-0">
+            <CarImageGallery images={car.images ?? []} title={car.title} />
+          </div>
           <div className="min-w-0 flex flex-col gap-4">
             {/* Header: title + meta */}
-            <div>
-              <h1 className="font-mono text-xl font-bold leading-tight text-[var(--foreground)] sm:text-2xl">
+            <div className="min-w-0">
+              <h1 className="break-words font-mono text-xl font-bold leading-tight text-[var(--foreground)] sm:text-2xl">
                 {car.title.replace(/_/g, " ")}
               </h1>
               <p className="mt-0.5 text-[11px] text-[var(--muted-foreground)]">
@@ -540,13 +542,14 @@ export default function CarDetailClient({ initialCar = null }: Props) {
                   </div>
                 </div>
               </div>
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex min-w-0 flex-wrap items-center gap-2">
                 <FavoriteButton
                   carId={id}
                   isFav={isFav}
                   onToggle={setIsFav}
                   loggedIn={!!user}
                   variant="button"
+                  className="min-w-0 max-w-full"
                 />
                 <ShareButtons path={`/cars/${id}`} title={car.title} />
               </div>
@@ -695,11 +698,11 @@ export default function CarDetailClient({ initialCar = null }: Props) {
       </div>
 
       {similarCars.length > 0 && (
-        <section className="mt-8">
+        <section className="mt-8 min-w-0">
           <FadeInSection>
             <h2 className="text-heading mb-4 text-[var(--foreground)]">{t("similarCars")}</h2>
           </FadeInSection>
-          <FadeInSection stagger delay={80} className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <FadeInSection stagger delay={80} className="grid min-w-0 grid-cols-2 gap-3 sm:grid-cols-4">
             {similarCars.map((similarCar) => (
               <BuyerCarCard key={similarCar.id} car={similarCar} compact />
             ))}

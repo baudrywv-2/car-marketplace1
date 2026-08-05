@@ -106,10 +106,10 @@ export default function FavoriteButton({ carId, isFav, onToggle, loggedIn, class
       type="button"
       onClick={handleClick}
       disabled={loading}
-      className={`btn-secondary inline-flex items-center gap-2 disabled:opacity-50 ${className}`}
+      className={`btn-secondary inline-flex max-w-full items-center gap-2 disabled:opacity-50 ${className}`}
     >
       {icon}
-      <span>{label}</span>
+      <span className="truncate">{label}</span>
     </button>
   );
 }

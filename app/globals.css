@@ -187,6 +187,9 @@ body {
   border-radius: 10px;
   border: 1px solid color-mix(in srgb, var(--accent) 25%, var(--border));
   overflow: hidden;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
 

@@ -20,7 +20,7 @@ export default function CarImageGallery({ images, title }: Props) {
   }
 
   return (
-    <div className="space-y-3">
+    <div className="min-w-0 space-y-3">
       <div className="relative aspect-video overflow-hidden rounded-[var(--radius)] bg-[var(--border)]">
         <OptimizedCarImage
           src={list[active]}
@@ -56,7 +56,7 @@ export default function CarImageGallery({ images, title }: Props) {
         )}
       </div>
       {list.length > 1 && (
-        <div className="flex gap-2 overflow-x-auto pb-1">
+        <div className="flex max-w-full gap-2 overflow-x-auto pb-1 [-webkit-overflow-scrolling:touch]">
           {list.map((src, i) => (
             <button
               key={i}
