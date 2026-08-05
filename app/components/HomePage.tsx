@@ -381,7 +381,7 @@ export default function HomePage() {
       </section>
 
       {recent.length > 0 && (
-        <section className="shrink-0 border-t border-white/10 bg-black py-5 sm:py-9">
+        <section className="hidden shrink-0 border-t border-white/10 bg-black py-5 sm:block sm:py-9">
           <div className="mx-auto max-w-7xl px-4 sm:px-6">
             <h2 className="mb-3 text-base font-semibold tracking-tight text-white sm:mb-4 sm:text-lg">
               {t("recentlyViewed")}
