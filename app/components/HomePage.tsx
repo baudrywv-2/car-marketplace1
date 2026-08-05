@@ -248,7 +248,7 @@ export default function HomePage() {
                   </select>
                   <button
                     type="submit"
-                    className="hero-search-field min-h-10 shrink-0 bg-red-600 px-4 text-[13px] font-semibold text-white transition hover:bg-red-500 sm:min-h-11 sm:bg-[var(--accent)] sm:px-5 sm:text-sm sm:text-black sm:hover:bg-[var(--accent-hover)]"
+                    className="hero-search-field min-h-10 shrink-0 bg-red-600 px-4 text-[13px] font-semibold text-white transition hover:bg-red-500 sm:min-h-11 sm:px-5 sm:text-sm"
                   >
                     {t("searchAction")}
                   </button>
