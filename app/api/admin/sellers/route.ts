@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdminApi } from "@/lib/admin-api";
+import { listAuthEmailMap } from "@/lib/admin-user-emails";
 
 /** All seller profiles for admin ops. */
 export async function GET() {
@@ -11,7 +12,7 @@ export async function GET() {
     const { data: sellers, error } = await admin
       .from("profiles")
       .select(
-        "id, full_name, company_name, phone, whatsapp, city, phone_verified, id_verified, dealer_verified, role, created_at"
+        "id, full_name, company_name, phone, whatsapp, city, phone_verified, id_verified, dealer_verified, role, created_at, last_seen"
       )
       .eq("role", "seller")
       .order("created_at", { ascending: false });
@@ -27,8 +28,14 @@ export async function GET() {
       });
     }
 
+    const emails = await listAuthEmailMap(admin);
+
     return NextResponse.json({
-      sellers: (sellers ?? []).map((s) => ({ ...s, listings_count: listingCounts[s.id] ?? 0 })),
+      sellers: (sellers ?? []).map((s) => ({
+        ...s,
+        email: emails[s.id] ?? null,
+        listings_count: listingCounts[s.id] ?? 0,
+      })),
     });
   } catch (err) {
     return NextResponse.json(

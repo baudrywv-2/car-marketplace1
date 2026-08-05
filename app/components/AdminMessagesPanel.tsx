@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocale } from "@/app/contexts/LocaleContext";
 import { useToast } from "@/app/contexts/ToastContext";
 import EmptyState from "@/app/components/EmptyState";
+import UserPresenceBadge from "@/app/components/UserPresenceBadge";
 
 type MsgStatus = "draft" | "sent" | "archived";
 type MsgTarget = "sellers" | "buyers" | "user";
@@ -26,12 +27,16 @@ type Recipient = {
   company_name: string | null;
   role: string | null;
   city: string | null;
+  last_seen?: string | null;
+  email?: string | null;
 };
 
 type ListFilter = "all" | "sent" | "draft" | "archived";
 
 function recipientLabel(r: Recipient) {
-  return r.company_name || r.full_name || r.id.slice(0, 8);
+  const name = r.company_name || r.full_name;
+  if (name && r.email) return `${name} · ${r.email}`;
+  return name || r.email || r.id.slice(0, 8);
 }
 
 export default function AdminMessagesPanel() {
@@ -79,7 +84,7 @@ export default function AdminMessagesPanel() {
     if (!q) return list.slice(0, 40);
     return list
       .filter((r) => {
-        const hay = `${r.full_name ?? ""} ${r.company_name ?? ""} ${r.city ?? ""} ${r.role ?? ""}`.toLowerCase();
+        const hay = `${r.full_name ?? ""} ${r.company_name ?? ""} ${r.email ?? ""} ${r.city ?? ""} ${r.role ?? ""}`.toLowerCase();
         return hay.includes(q) || r.id.toLowerCase().includes(q);
       })
       .slice(0, 40);
@@ -318,7 +323,15 @@ export default function AdminMessagesPanel() {
                             recipientId === r.id ? "bg-[var(--accent)]/10 text-[var(--accent)]" : "text-[var(--foreground)]"
                           }`}
                         >
-                          <span className="min-w-0 truncate font-medium">{recipientLabel(r)}</span>
+                          <span className="min-w-0">
+                            <span className="block truncate font-medium">
+                              {r.company_name || r.full_name || r.email || r.id.slice(0, 8)}
+                            </span>
+                            {r.email && (r.company_name || r.full_name) && (
+                              <span className="block truncate text-[10px] text-[var(--muted-foreground)]">{r.email}</span>
+                            )}
+                            <UserPresenceBadge lastSeen={r.last_seen} className="mt-0.5" />
+                          </span>
                           <span className="shrink-0 text-[10px] uppercase tracking-wide text-[var(--muted-foreground)]">
                             {r.role || "user"}
                             {r.city ? ` · ${r.city}` : ""}
@@ -490,8 +503,9 @@ export default function AdminMessagesPanel() {
                       disabled={busy}
                       onClick={() => void deleteMessage(m.id)}
                       className="rounded border border-red-500/40 px-2 py-1 text-[10px] font-medium text-red-400 hover:bg-red-500/10"
+                      title={t("adminDeleteMessageConfirm")}
                     >
-                      {t("adminRemove")}
+                      {t("adminDeletePermanently")}
                     </button>
                   </div>
                 </div>

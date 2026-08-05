@@ -10,6 +10,8 @@ import { formatPrice } from "@/lib/format-utils";
 import type { translations } from "@/lib/translations";
 import EmptyState from "@/app/components/EmptyState";
 import AdminMessagesPanel from "@/app/components/AdminMessagesPanel";
+import UserPresenceBadge from "@/app/components/UserPresenceBadge";
+import { sellerDisplayName } from "@/lib/seller-profile";
 import OptimizedCarImage from "@/app/components/OptimizedCarImage";
 
 type Car = {
@@ -41,6 +43,8 @@ type Profile = {
   phone?: string | null;
   whatsapp?: string | null;
   city?: string | null;
+  email?: string | null;
+  last_seen?: string | null;
   listings_count?: number;
   phone_verified?: boolean;
   id_verified?: boolean;
@@ -79,16 +83,16 @@ function StatCard({
   highlight?: boolean;
   onClick?: () => void;
 }) {
-  const className = `card-premium p-3.5 text-left transition ${
+  const className = `card-premium min-w-0 p-2.5 text-left transition sm:p-3 ${
     onClick ? "cursor-pointer hover:border-[var(--accent)]/40" : ""
   } ${highlight ? "border-[var(--accent)]/40 bg-[var(--accent-muted)]" : ""}`;
   const inner = (
     <>
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">{label}</p>
-      <p className={`mt-1 font-mono text-2xl font-bold tabular-nums ${highlight ? "text-[var(--accent)]" : "text-[var(--foreground)]"}`}>
+      <p className="truncate text-[9px] font-semibold uppercase tracking-wider text-[var(--muted-foreground)] sm:text-[10px]">{label}</p>
+      <p className={`mt-1 font-mono text-xl font-bold tabular-nums sm:text-2xl ${highlight ? "text-[var(--accent)]" : "text-[var(--foreground)]"}`}>
         {value}
       </p>
-      {sub && <p className="mt-0.5 text-[11px] text-[var(--muted-foreground)]">{sub}</p>}
+      {sub && <p className="mt-0.5 truncate text-[10px] text-[var(--muted-foreground)] sm:text-[11px]">{sub}</p>}
     </>
   );
   if (onClick) {
@@ -141,7 +145,12 @@ export default function AdminPage() {
   const router = useRouter();
   const { t } = useLocale();
   const toast = useToast();
-  const [profile, setProfile] = useState<{ role: string } | null>(null);
+  const [profile, setProfile] = useState<{
+    role: string;
+    full_name: string | null;
+    email: string | null;
+    last_seen: string | null;
+  } | null>(null);
   const [cars, setCars] = useState<Car[]>([]);
   const [profiles, setProfiles] = useState<Record<string, Profile>>({});
   const [rdvRequests, setRdvRequests] = useState<RdvRequest[]>([]);
@@ -190,12 +199,23 @@ export default function AdminPage() {
         router.replace("/login?next=/dashboard/admin");
         return;
       }
-      const { data: profileData } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("role, full_name, last_seen")
+        .eq("id", user.id)
+        .single();
       if (profileData?.role !== "admin") {
         router.replace("/dashboard");
         return;
       }
-      setProfile(profileData);
+      const metaName =
+        typeof user.user_metadata?.full_name === "string" ? user.user_metadata.full_name.trim() : "";
+      setProfile({
+        role: profileData.role,
+        full_name: (profileData.full_name as string | null) || metaName || null,
+        email: user.email ?? null,
+        last_seen: (profileData.last_seen as string | null) ?? null,
+      });
 
       setAdminListingsError(null);
       let carsList: Car[] = [];
@@ -524,8 +544,8 @@ export default function AdminPage() {
     return (
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
         <div className="mb-6 h-10 w-64 animate-pulse rounded bg-[var(--border)]" />
-        <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-          {Array.from({ length: 6 }).map((_, i) => (
+        <div className="mb-6 grid grid-cols-7 gap-2">
+          {Array.from({ length: 7 }).map((_, i) => (
             <div key={i} className="h-20 animate-pulse rounded-[var(--radius)] border border-[var(--border)] bg-[var(--card)]" />
           ))}
         </div>
@@ -588,24 +608,40 @@ export default function AdminPage() {
               <span className="opacity-60">&gt;</span> {t("adminRole")}
             </p>
             <h1 className="mt-1 font-mono text-2xl font-bold tracking-tight text-[var(--foreground)] sm:text-3xl">
-              {t("adminDashboard")}
+              {profile.full_name || profile.email || t("adminDashboard")}
             </h1>
-            <p className="mt-1.5 max-w-xl text-[12px] text-[var(--muted-foreground)]">{t("adminListingsHelp")}</p>
+            <p className="mt-1.5 max-w-xl text-[12px] text-[var(--muted-foreground)]">
+              {t("adminDashboard")}
+              {profile.email ? ` · ${profile.email}` : ""}
+            </p>
+            <p className="mt-1 max-w-xl text-[12px] text-[var(--muted-foreground)]">{t("adminListingsHelp")}</p>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                setLoading(true);
-                setRefreshTrigger((n) => n + 1);
-              }}
-              className="btn-secondary min-h-10 px-3 text-[12px]"
-            >
-              {t("adminRefresh")}
-            </button>
-            <Link href="/dashboard" className="btn-secondary min-h-10 px-3 text-[12px]">
-              ← {t("backToDashboard")}
-            </Link>
+          <div className="flex flex-col items-stretch gap-2 sm:items-end">
+            <div className="rounded-lg border border-[var(--border)] bg-black/30 px-3 py-2 text-right">
+              <p className="text-[10px] uppercase tracking-wide text-[var(--muted-foreground)]">{t("adminSignedInAs")}</p>
+              <p className="mt-0.5 text-[13px] font-semibold text-[var(--foreground)]">
+                {profile.full_name || profile.email || "—"}
+              </p>
+              {profile.email && profile.full_name && (
+                <p className="truncate text-[11px] text-[var(--muted-foreground)]">{profile.email}</p>
+              )}
+              <UserPresenceBadge lastSeen={profile.last_seen ?? new Date().toISOString()} className="mt-1 justify-end" />
+            </div>
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setLoading(true);
+                  setRefreshTrigger((n) => n + 1);
+                }}
+                className="btn-secondary min-h-10 px-3 text-[12px]"
+              >
+                {t("adminRefresh")}
+              </button>
+              <Link href="/dashboard" className="btn-secondary min-h-10 px-3 text-[12px]">
+                ← {t("backToDashboard")}
+              </Link>
+            </div>
           </div>
         </div>
 
@@ -636,7 +672,7 @@ export default function AdminPage() {
           </div>
         )}
 
-        <div className="grid grid-cols-2 gap-2 p-3 sm:grid-cols-3 lg:grid-cols-6 sm:p-4">
+        <div className="grid grid-cols-7 gap-1.5 overflow-x-auto p-3 sm:gap-2 sm:p-4">
           <StatCard
             label={t("adminTotalListings")}
             value={totalListings}
@@ -1059,10 +1095,16 @@ export default function AdminPage() {
             <ul className="space-y-4">
               {Object.entries(profiles).map(([id, p]) => (
                 <li key={id} className="card-premium flex flex-wrap items-center justify-between gap-4 p-4">
-                  <div>
-                    <p className="font-semibold text-[var(--foreground)]">{p.full_name ?? "—"}</p>
-                    {p.company_name && (
-                      <p className="text-[11px] text-[var(--muted-foreground)]">{p.company_name}</p>
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-semibold text-[var(--foreground)]">{sellerDisplayName(p)}</p>
+                      <UserPresenceBadge lastSeen={p.last_seen} />
+                    </div>
+                    {p.full_name && p.company_name && (
+                      <p className="text-[11px] text-[var(--muted-foreground)]">{p.full_name}</p>
+                    )}
+                    {p.email && (
+                      <p className="truncate text-[11px] text-[var(--muted-foreground)]">{p.email}</p>
                     )}
                     {p.city && (
                       <p className="text-[10px] text-[var(--muted-foreground)]">{p.city}</p>

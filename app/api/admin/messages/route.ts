@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { notifyUser, requireAdminApi } from "@/lib/admin-api";
+import { listAuthEmailMap } from "@/lib/admin-user-emails";
 
 export type AdminMessageRow = {
   id: string;
@@ -43,15 +44,22 @@ export async function GET(req: Request) {
       company_name: string | null;
       role: string | null;
       city: string | null;
+      last_seen: string | null;
+      email: string | null;
     }[] = [];
 
     if (wantRecipients) {
       const { data: profiles } = await admin
         .from("profiles")
-        .select("id, full_name, company_name, role, city")
+        .select("id, full_name, company_name, role, city, last_seen")
         .order("created_at", { ascending: false })
         .limit(400);
-      recipients = profiles ?? [];
+      const emails = await listAuthEmailMap(admin);
+      recipients = (profiles ?? []).map((p) => ({
+        ...p,
+        last_seen: p.last_seen ?? null,
+        email: emails[p.id] ?? null,
+      }));
     }
 
     return NextResponse.json({ messages: data ?? [], recipients });

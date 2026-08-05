@@ -12,6 +12,7 @@ import { SUPPORT_EMAIL, SUPPORT_MAILTO } from "@/lib/constants";
 import AuthNav from "./AuthNav";
 import CookieNotice from "./CookieNotice";
 import LogVisit from "./LogVisit";
+import PresenceHeartbeat from "./PresenceHeartbeat";
 import LocaleSwitcher from "./LocaleSwitcher";
 import Logo from "./Logo";
 
@@ -276,6 +277,7 @@ export default function ClientLayout({
         </div>
         <CookieNotice />
         <LogVisit />
+        <PresenceHeartbeat />
       </ToastProvider>
     </LocaleProvider>
   );
