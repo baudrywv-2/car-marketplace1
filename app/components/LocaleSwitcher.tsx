@@ -6,8 +6,21 @@ import { useLocale } from "@/app/contexts/LocaleContext";
 import { CURRENCIES } from "@/lib/constants";
 import type { Locale } from "@/lib/translations";
 
-const LOCALE_LABELS: Record<Locale, string> = { en: "EN", fr: "FR", ln: "LN", sw: "SW" };
+const LOCALE_OPTIONS: Record<Locale, { flag: string; short: string; name: string }> = {
+  en: { flag: "🇺🇸", short: "EN", name: "English" },
+  fr: { flag: "🇫🇷", short: "FR", name: "Français" },
+  ln: { flag: "🇨🇩", short: "LN", name: "Lingala" },
+  sw: { flag: "🇹🇿", short: "SW", name: "Kiswahili" },
+};
 const LOCALES: Locale[] = ["en", "fr", "ln", "sw"];
+
+function LocaleFlag({ flag }: { flag: string }) {
+  return (
+    <span className="inline-flex shrink-0 text-[14px] leading-none" aria-hidden>
+      {flag}
+    </span>
+  );
+}
 
 type Props = { mobile?: boolean; onNavigate?: () => void; inOverlay?: boolean };
 
@@ -46,29 +59,51 @@ function LangDropdown({ mobile, inOverlay }: { mobile?: boolean; inOverlay?: boo
   useEffect(() => {
     if (open && mobile && btnRef.current && typeof document !== "undefined") {
       const rect = btnRef.current.getBoundingClientRect();
-      setPos({ top: rect.bottom + 4, left: rect.left, width: Math.max(rect.width, 64) });
+      setPos({ top: rect.bottom + 4, left: rect.left, width: Math.max(rect.width, 140) });
     }
   }, [open, mobile]);
+
+  const current = LOCALE_OPTIONS[locale];
+
+  function pick(loc: Locale) {
+    setLocale(loc);
+    setOpen(false);
+  }
+
+  function optionClass(loc: Locale, touch = false) {
+    return `flex w-full items-center gap-2 ${
+      touch ? "min-h-[44px] px-3 py-3 md:min-h-0 md:py-2.5 touch-manipulation" : "px-3 py-2"
+    } text-left text-[10px] font-medium ${
+      locale === loc ? "bg-[var(--accent-vivid)] text-white" : "text-[var(--foreground)] hover:bg-[var(--border)]"
+    }`;
+  }
 
   const dropdownList = open ? (
     <ul
       ref={dropdownRef}
-      className={`fixed min-w-[4rem] rounded-[var(--radius)] border border-[var(--border)] bg-[var(--card)] py-1 shadow-[var(--shadow-lg)] ${inOverlay ? "z-[100000]" : "z-[100]"}`}
+      className={`fixed min-w-[9rem] rounded-[var(--radius)] border border-[var(--border)] bg-[var(--card)] py-1 shadow-[var(--shadow-lg)] ${inOverlay ? "z-[100000]" : "z-[100]"}`}
       style={mobile ? { top: pos.top, left: pos.left, width: pos.width } : undefined}
       role="listbox"
     >
-      {LOCALES.map((loc) => (
-        <li key={loc} role="option" aria-selected={locale === loc}>
-          <button
-            type="button"
-            onClick={() => { setLocale(loc); setOpen(false); }}
-            onPointerDown={(e) => { e.preventDefault(); setLocale(loc); setOpen(false); }}
-            className={`block w-full min-h-[44px] px-3 py-3 text-left text-[10px] font-medium md:min-h-0 md:py-2.5 touch-manipulation ${locale === loc ? "bg-[var(--accent-vivid)] text-white" : "text-[var(--foreground)] hover:bg-[var(--border)]"}`}
-          >
-            {LOCALE_LABELS[loc]}
-          </button>
-        </li>
-      ))}
+      {LOCALES.map((loc) => {
+        const opt = LOCALE_OPTIONS[loc];
+        return (
+          <li key={loc} role="option" aria-selected={locale === loc}>
+            <button
+              type="button"
+              onClick={() => pick(loc)}
+              onPointerDown={(e) => {
+                e.preventDefault();
+                pick(loc);
+              }}
+              className={optionClass(loc, true)}
+            >
+              <LocaleFlag flag={opt.flag} />
+              <span>{opt.name}</span>
+            </button>
+          </li>
+        );
+      })}
     </ul>
   ) : null;
 
@@ -87,29 +122,32 @@ function LangDropdown({ mobile, inOverlay }: { mobile?: boolean; inOverlay?: boo
         aria-haspopup="listbox"
         aria-label={t("language")}
       >
-        <span>{LOCALE_LABELS[locale]}</span>
+        <span className="flex items-center gap-1.5">
+          <LocaleFlag flag={current.flag} />
+          <span>{mobile ? current.name : current.short}</span>
+        </span>
         <svg className="h-4 w-4 shrink-0 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
         </svg>
       </button>
       {mobile && typeof document !== "undefined"
         ? createPortal(dropdownList, document.body)
-        : dropdownList && (
+        : open && (
             <ul
-              className="absolute left-0 top-full z-50 mt-1 min-w-[4rem] rounded-[var(--radius)] border border-[var(--border)] bg-[var(--card)] py-1 shadow-[var(--shadow-lg)]"
+              className="absolute left-0 top-full z-50 mt-1 min-w-[9rem] rounded-[var(--radius)] border border-[var(--border)] bg-[var(--card)] py-1 shadow-[var(--shadow-lg)]"
               role="listbox"
             >
-              {LOCALES.map((loc) => (
-                <li key={loc} role="option" aria-selected={locale === loc}>
-                  <button
-                    type="button"
-                    onClick={() => { setLocale(loc); setOpen(false); }}
-                    className={`block w-full px-3 py-2 text-left text-[10px] font-medium ${locale === loc ? "bg-[var(--accent-vivid)] text-white" : "text-[var(--foreground)] hover:bg-[var(--border)]"}`}
-                  >
-                    {LOCALE_LABELS[loc]}
-                  </button>
-                </li>
-              ))}
+              {LOCALES.map((loc) => {
+                const opt = LOCALE_OPTIONS[loc];
+                return (
+                  <li key={loc} role="option" aria-selected={locale === loc}>
+                    <button type="button" onClick={() => pick(loc)} className={optionClass(loc)}>
+                      <LocaleFlag flag={opt.flag} />
+                      <span>{opt.name}</span>
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           )}
     </div>
@@ -143,8 +181,15 @@ function CurrencyDropdown({ mobile, inOverlay }: { mobile?: boolean; inOverlay?:
         <li key={c} role="option" aria-selected={currency === c}>
           <button
             type="button"
-            onClick={() => { setCurrency(c); setOpen(false); }}
-            onPointerDown={(e) => { e.preventDefault(); setCurrency(c); setOpen(false); }}
+            onClick={() => {
+              setCurrency(c);
+              setOpen(false);
+            }}
+            onPointerDown={(e) => {
+              e.preventDefault();
+              setCurrency(c);
+              setOpen(false);
+            }}
             className={`block w-full min-h-[44px] px-3 py-3 text-left text-[10px] font-medium md:min-h-0 md:py-2.5 touch-manipulation ${currency === c ? "bg-[var(--accent-vivid)] text-white" : "text-[var(--foreground)] hover:bg-[var(--border)]"}`}
           >
             {c}
@@ -185,7 +230,10 @@ function CurrencyDropdown({ mobile, inOverlay }: { mobile?: boolean; inOverlay?:
                 <li key={c} role="option" aria-selected={currency === c}>
                   <button
                     type="button"
-                    onClick={() => { setCurrency(c); setOpen(false); }}
+                    onClick={() => {
+                      setCurrency(c);
+                      setOpen(false);
+                    }}
                     className={`block w-full px-3 py-2 text-left text-[10px] font-medium ${currency === c ? "bg-[var(--accent-vivid)] text-white" : "text-[var(--foreground)] hover:bg-[var(--border)]"}`}
                   >
                     {c}

@@ -52,6 +52,8 @@ type Car = {
   rental_event_type?: string[] | null;
   features?: string[] | null;
   is_sold?: boolean | null;
+  is_approved?: boolean | null;
+  is_draft?: boolean | null;
 };
 
 type SimilarCar = Pick<Car, "id" | "title" | "price" | "currency" | "images" | "year" | "condition" | "is_sold">;
@@ -144,7 +146,7 @@ export default function CarDetailClient({ initialCar = null }: Props) {
       if (!carData) {
         let query = supabase
           .from("cars")
-          .select("id, title, description, price, make, model, year, mileage, type, province, city, country, images, currency, condition, discount_percent, transmission, fuel_type, owner_id, created_at, listing_type, rental_price_per_hour, rental_price_per_day, rental_price_per_week, rental_price_per_month, rental_currency, rental_min_hours, rental_event_type, features, is_sold")
+          .select("id, title, description, price, make, model, year, mileage, type, province, city, country, images, currency, condition, discount_percent, transmission, fuel_type, owner_id, created_at, listing_type, rental_price_per_hour, rental_price_per_day, rental_price_per_week, rental_price_per_month, rental_currency, rental_min_hours, rental_event_type, features, is_sold, is_approved, is_draft")
           .eq("id", id);
 
         if (isPreview) {
@@ -286,13 +288,23 @@ export default function CarDetailClient({ initialCar = null }: Props) {
     );
   }
 
+  const showAdminNotPublicBanner =
+    isAdminPreview && (!!car.is_draft || car.is_approved === false);
+
   return (
     <div className="mx-auto w-full min-w-0 max-w-4xl px-4 py-6 pb-32 sm:px-6 sm:py-10 sm:pb-10">
       {!initialCar && <CarProductJsonLd car={car} />}
-      {isAdminPreview && (
+      {showAdminNotPublicBanner && (
         <div className="mb-4 rounded-lg border border-amber-500 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800 dark:bg-amber-900/30 dark:text-amber-200">
           {t("adminPreviewNote")}{" "}
           <Link href="/dashboard/admin" className="underline">{t("backToAdmin")}</Link>
+        </div>
+      )}
+      {isAdminPreview && !showAdminNotPublicBanner && (
+        <div className="mb-4 text-[12px] text-[var(--muted-foreground)]">
+          <Link href="/dashboard/admin" className="underline hover:text-[var(--foreground)]">
+            ← {t("backToAdmin")}
+          </Link>
         </div>
       )}
       <nav className="mb-6 flex flex-wrap items-center gap-1 text-caption text-[var(--muted-foreground)]" aria-label="Breadcrumb">
