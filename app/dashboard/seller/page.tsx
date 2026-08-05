@@ -47,6 +47,11 @@ type ApprovedRdv = {
   intent?: string | null;
   created_at: string;
   suggested_price: number | null;
+  buyer_name?: string | null;
+  buyer_phone?: string | null;
+  buyer_email?: string | null;
+  preferred_date?: string | null;
+  message?: string | null;
   cars: { title?: string; listing_type?: string } | null;
 };
 
@@ -63,27 +68,52 @@ function formatPhoneDisplay(phone: string | null | undefined) {
   return `+${d}`;
 }
 
+function phoneDigits(phone: string | null | undefined) {
+  const d = (phone ?? "").replace(/\D/g, "");
+  return d.length >= 9 ? d : null;
+}
+
+function whatsappHref(phone: string | null | undefined, text?: string) {
+  const d = phoneDigits(phone);
+  if (!d) return null;
+  const intl = d.startsWith("0") ? `243${d.slice(1)}` : d;
+  const q = text ? `?text=${encodeURIComponent(text)}` : "";
+  return `https://wa.me/${intl}${q}`;
+}
+
 function StatTile({
   label,
   value,
   hint,
   accent,
+  onClick,
 }: {
   label: string;
   value: string | number;
   hint?: string;
   accent?: boolean;
+  onClick?: () => void;
 }) {
+  const className = `rounded-lg border p-3 sm:p-4 transition ${
+    accent
+      ? "border-[var(--accent)]/40 bg-[var(--accent-muted)]"
+      : "border-[var(--border)] bg-[var(--card)]"
+  } ${onClick ? "cursor-pointer hover:border-[var(--accent)]/50" : ""}`;
+  if (onClick) {
+    return (
+      <button type="button" onClick={onClick} className={`${className} w-full text-left`}>
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">{label}</p>
+        <p className={`mt-1.5 font-mono text-xl font-bold tabular-nums sm:text-2xl ${accent ? "text-[var(--accent)]" : "text-[var(--foreground)]"}`}>
+          {value}
+        </p>
+        {hint && <p className="mt-1 text-[10px] text-[var(--muted-foreground)]">{hint}</p>}
+      </button>
+    );
+  }
   return (
-    <div
-      className={`rounded-lg border p-4 transition ${
-        accent
-          ? "border-[var(--accent)]/40 bg-[var(--accent-muted)]"
-          : "border-[var(--border)] bg-[var(--card)]"
-      }`}
-    >
+    <div className={className}>
       <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">{label}</p>
-      <p className={`mt-1.5 font-mono text-2xl font-bold tabular-nums ${accent ? "text-[var(--accent)]" : "text-[var(--foreground)]"}`}>
+      <p className={`mt-1.5 font-mono text-xl font-bold tabular-nums sm:text-2xl ${accent ? "text-[var(--accent)]" : "text-[var(--foreground)]"}`}>
         {value}
       </p>
       {hint && <p className="mt-1 text-[10px] text-[var(--muted-foreground)]">{hint}</p>}
@@ -126,6 +156,8 @@ export default function SellerDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"overview" | "listings" | "rdv">("overview");
   const [listingFilter, setListingFilter] = useState<ListingFilter>("all");
+  const [headerMenuOpen, setHeaderMenuOpen] = useState(false);
+  const [openMoreId, setOpenMoreId] = useState<string | null>(null);
 
   const visibleAdminMessages = adminMessages.filter((m) => !dismissedMsgIds.has(m.id));
   const visibleApprovedRdv = approvedRdv.filter((r) => !dismissedRdvIds.has(r.id));
@@ -220,7 +252,9 @@ export default function SellerDashboardPage() {
         const ids = list.map((c) => c.id);
         const { data: rdvData } = await supabase
           .from("rendezvous_requests")
-          .select("id, car_id, intent, created_at, suggested_price, cars(title, listing_type)")
+          .select(
+            "id, car_id, intent, created_at, suggested_price, buyer_name, buyer_phone, buyer_email, preferred_date, message, cars(title, listing_type)"
+          )
           .eq("status", "approved")
           .in("car_id", ids)
           .order("created_at", { ascending: false });
@@ -276,6 +310,14 @@ export default function SellerDashboardPage() {
           created_at: string;
         }[]
       );
+
+      // Deep-link unread RDV approvals to the RDV tab
+      const hasUnreadRdv = (notifData ?? []).some(
+        (n: { type?: string; read_at?: string | null }) => n.type === "rdv_approved" && !n.read_at
+      );
+      if (hasUnreadRdv) {
+        setActiveTab("rdv");
+      }
 
       setLoading(false);
     }
@@ -418,40 +460,59 @@ export default function SellerDashboardPage() {
                 </div>
               </div>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               {canListCars ? (
-                <Link id="seller-tip-add-car" href="/dashboard/cars/new" className="btn-primary px-4 py-2 text-sm">
+                <Link id="seller-tip-add-car" href="/dashboard/cars/new" className="btn-primary min-h-10 px-4 py-2 text-sm">
                   {t("addCar")}
                 </Link>
               ) : (
-                <Link id="seller-tip-add-car" href="/dashboard/cars/new" className="btn-secondary px-4 py-2 text-sm">
+                <Link id="seller-tip-add-car" href="/dashboard/cars/new" className="btn-secondary min-h-10 px-4 py-2 text-sm">
                   {t("addCarVerifyFirst")}
                 </Link>
               )}
-              <Link href="/dashboard/settings" className="btn-secondary px-4 py-2 text-sm">
-                {t("editProfile")}
-              </Link>
-              <Link
-                href="/dashboard/seller/welcome"
-                className="rounded-lg border border-[var(--border)] px-4 py-2 text-sm text-[var(--muted-foreground)] transition hover:border-[var(--accent)]/40 hover:text-[var(--accent)]"
-              >
-                {t("howItWorks")}
-              </Link>
-              <a
-                href="/DRCCARS-Guide-Vendeur.pdf"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="rounded-lg border border-[var(--border)] px-4 py-2 text-sm text-[var(--muted-foreground)] transition hover:border-[var(--accent)]/40 hover:text-[var(--accent)]"
-              >
-                {t("downloadSellerGuide")}
-              </a>
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setHeaderMenuOpen((o) => !o)}
+                  className="btn-secondary min-h-10 px-3 py-2 text-sm sm:hidden"
+                  aria-expanded={headerMenuOpen}
+                  aria-label={t("sellerMenuMore")}
+                >
+                  {t("sellerMenuMore")}
+                </button>
+                <div className={`flex-wrap gap-2 ${headerMenuOpen ? "mt-2 flex w-full flex-col sm:mt-0 sm:flex sm:w-auto sm:flex-row" : "hidden sm:flex"}`}>
+                  <Link
+                    id="seller-tip-storefront"
+                    href={profile ? `/seller/${profile.id}` : "#"}
+                    className="btn-secondary min-h-10 px-4 py-2 text-sm sm:hidden"
+                  >
+                    {t("viewStorefront")}
+                  </Link>
+                  <Link href="/dashboard/settings" className="btn-secondary min-h-10 px-4 py-2 text-sm">
+                    {t("editProfile")}
+                  </Link>
+                  <Link
+                    href="/dashboard/seller/welcome"
+                    className="rounded-lg border border-[var(--border)] px-4 py-2 text-sm text-[var(--muted-foreground)] transition hover:border-[var(--accent)]/40 hover:text-[var(--accent)]"
+                  >
+                    {t("howItWorks")}
+                  </Link>
+                  <a
+                    href="/DRCCARS-Guide-Vendeur.pdf"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="rounded-lg border border-[var(--border)] px-4 py-2 text-sm text-[var(--muted-foreground)] transition hover:border-[var(--accent)]/40 hover:text-[var(--accent)]"
+                  >
+                    {t("downloadSellerGuide")}
+                  </a>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="grid gap-2 border-b border-[var(--border)] p-3 sm:grid-cols-2 lg:grid-cols-4 sm:p-4">
+        <div className="hidden gap-2 border-b border-[var(--border)] p-3 sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:p-4">
           <Link
-            id="seller-tip-storefront"
             href={profile ? `/seller/${profile.id}` : "#"}
             className="rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-center text-xs font-medium text-[var(--foreground)] transition hover:border-[var(--accent)]/50 hover:text-[var(--accent)]"
           >
@@ -512,6 +573,19 @@ export default function SellerDashboardPage() {
 
       {activeTab === "overview" && (
         <div className="space-y-6">
+          {visibleApprovedRdv.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setActiveTab("rdv")}
+              className="w-full rounded-xl border border-[var(--accent)]/40 bg-[var(--accent-muted)] px-4 py-3 text-left"
+            >
+              <p className="text-sm font-semibold text-[var(--accent)]">{t("rdvBannerTitle")}</p>
+              <p className="mt-0.5 text-[11px] text-[var(--muted-foreground)]">
+                {t("rdvBannerBody").replace("{n}", String(visibleApprovedRdv.length))}
+              </p>
+            </button>
+          )}
+
           {notifications.length > 0 && (
             <section className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4">
               <div className="mb-3 flex items-center justify-between">
@@ -539,7 +613,18 @@ export default function SellerDashboardPage() {
                     }`}
                   >
                     <div className="min-w-0">
-                      {n.car_id ? (
+                      {n.type === "rdv_approved" ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setActiveTab("rdv");
+                            if (!n.read_at) dismissNotification(n.id);
+                          }}
+                          className="text-left font-semibold text-[var(--foreground)] hover:underline"
+                        >
+                          {n.title}
+                        </button>
+                      ) : n.car_id ? (
                         <Link href={`/cars/${n.car_id}`} className="font-semibold text-[var(--foreground)] hover:underline">
                           {n.title}
                         </Link>
@@ -625,10 +710,39 @@ export default function SellerDashboardPage() {
               {t("inventoryOverview")}
             </h2>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <StatTile label={t("liveListings")} value={metrics.live} accent />
-              <StatTile label={t("pendingListings")} value={metrics.pending} />
-              <StatTile label={t("draftListings")} value={metrics.drafts} />
-              <StatTile label={t("soldListings")} value={metrics.sold} />
+              <StatTile
+                label={t("liveListings")}
+                value={metrics.live}
+                accent
+                onClick={() => {
+                  setListingFilter("live");
+                  setActiveTab("listings");
+                }}
+              />
+              <StatTile
+                label={t("pendingListings")}
+                value={metrics.pending}
+                onClick={() => {
+                  setListingFilter("pending");
+                  setActiveTab("listings");
+                }}
+              />
+              <StatTile
+                label={t("draftListings")}
+                value={metrics.drafts}
+                onClick={() => {
+                  setListingFilter("draft");
+                  setActiveTab("listings");
+                }}
+              />
+              <StatTile
+                label={t("soldListings")}
+                value={metrics.sold}
+                onClick={() => {
+                  setListingFilter("sold");
+                  setActiveTab("listings");
+                }}
+              />
             </div>
           </section>
 
@@ -640,7 +754,12 @@ export default function SellerDashboardPage() {
               <StatTile label={t("totalViews")} value={metrics.views} />
               <StatTile label={t("favoritesStat")} value={metrics.favorites} />
               <StatTile label={t("contactUnlocksStat")} value={metrics.unlocks} />
-              <StatTile label={t("approvedRdv")} value={metrics.rdv} />
+              <StatTile
+                label={t("approvedRdv")}
+                value={metrics.rdv}
+                accent={metrics.rdv > 0}
+                onClick={() => setActiveTab("rdv")}
+              />
             </div>
             <p className="mt-2 text-[10px] text-[var(--muted-foreground)]">
               {t("interestScore")}: <span className="font-mono font-semibold text-[var(--foreground)]">{metrics.interest}</span>
@@ -702,39 +821,102 @@ export default function SellerDashboardPage() {
           {visibleApprovedRdv.length === 0 ? (
             <EmptyState title={t("noApprovedRdv")} hint={t("noApprovedRdvHint")} />
           ) : (
-            <ul className="space-y-2">
+            <ul className="space-y-3">
               {visibleApprovedRdv.map((rdv) => {
                 const carObj = rdv.cars && typeof rdv.cars === "object" ? rdv.cars : null;
                 const title = carObj?.title ?? "Car";
+                const carRow = cars.find((c) => c.id === rdv.car_id);
                 const intentLabel =
                   rdv.intent === "rent"
                     ? t(LISTING_TYPE_TRANSLATION_KEYS.rent as Parameters<typeof t>[0])
                     : rdv.intent === "sale"
                       ? t(LISTING_TYPE_TRANSLATION_KEYS.sale as Parameters<typeof t>[0])
                       : null;
+                const phone = phoneDigits(rdv.buyer_phone);
+                const wa = whatsappHref(
+                  rdv.buyer_phone,
+                  t("whatsappBuyerInterest").replace("{title}", title)
+                );
                 return (
-                  <li key={rdv.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--border)] bg-[var(--card)] p-4">
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Link href={`/cars/${rdv.car_id}`} className="text-sm font-medium text-[var(--foreground)] hover:underline">
-                          {title}
-                        </Link>
-                        {intentLabel && (
-                          <span className="rounded bg-[var(--border)] px-2 py-0.5 text-[10px] text-[var(--muted-foreground)]">{intentLabel}</span>
+                  <li key={rdv.id} className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4">
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Link href={`/cars/${rdv.car_id}`} className="text-sm font-semibold text-[var(--foreground)] hover:underline">
+                            {title}
+                          </Link>
+                          {intentLabel && (
+                            <span className="rounded bg-[var(--border)] px-2 py-0.5 text-[10px] text-[var(--muted-foreground)]">{intentLabel}</span>
+                          )}
+                          {carRow?.is_sold && (
+                            <span className="rounded bg-emerald-500/15 px-2 py-0.5 text-[10px] font-medium text-emerald-400">{t("sold")}</span>
+                          )}
+                        </div>
+                        {(rdv.buyer_name || rdv.buyer_email) && (
+                          <p className="mt-1.5 text-[12px] font-medium text-[var(--foreground)]">
+                            {rdv.buyer_name || rdv.buyer_email}
+                          </p>
                         )}
-                      </div>
-                      {rdv.suggested_price != null && rdv.suggested_price > 0 && (
-                        <p className="mt-1 text-[11px] font-medium text-[var(--accent)]">
-                          {t("buyerOffer")} {formatPrice(rdv.suggested_price, "USD", null)}
+                        {rdv.preferred_date && (
+                          <p className="mt-1 text-[11px] text-[var(--muted-foreground)]">
+                            {t("preferredDate")}:{" "}
+                            <span className="font-medium text-[var(--foreground)]">
+                              {new Date(rdv.preferred_date).toLocaleString()}
+                            </span>
+                          </p>
+                        )}
+                        {rdv.suggested_price != null && rdv.suggested_price > 0 && (
+                          <p className="mt-1 text-[11px] font-medium text-[var(--accent)]">
+                            {t("buyerOffer")} {formatPrice(rdv.suggested_price, "USD", null)}
+                          </p>
+                        )}
+                        {rdv.message && (
+                          <p className="mt-1.5 line-clamp-3 text-[11px] text-[var(--muted-foreground)]">{rdv.message}</p>
+                        )}
+                        <p className="mt-1 text-[10px] text-[var(--muted-foreground)]">
+                          {t("requestedOn")} {new Date(rdv.created_at).toLocaleDateString()}
                         </p>
-                      )}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-[10px] text-[var(--muted-foreground)]">{new Date(rdv.created_at).toLocaleDateString()}</span>
-                      <Link href={`/cars/${rdv.car_id}`} className="text-[11px] font-medium text-[var(--accent)] hover:underline">
+                    <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+                      {phone && (
+                        <a
+                          href={`tel:+${phone.startsWith("0") ? `243${phone.slice(1)}` : phone}`}
+                          className="btn-secondary min-h-10 flex-1 justify-center text-center text-xs sm:flex-none"
+                        >
+                          {t("callBuyer")}
+                        </a>
+                      )}
+                      {wa && (
+                        <a
+                          href={wa}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="btn-secondary min-h-10 flex-1 justify-center text-center text-xs sm:flex-none"
+                        >
+                          {t("whatsappBuyer")}
+                        </a>
+                      )}
+                      <Link
+                        href={`/cars/${rdv.car_id}`}
+                        className="btn-secondary min-h-10 flex-1 justify-center text-center text-xs sm:flex-none"
+                      >
                         {t("view")}
                       </Link>
-                      <button type="button" onClick={() => dismissRdv(rdv.id)} className="text-[11px] font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)]">
+                      {!carRow?.is_sold && (
+                        <button
+                          type="button"
+                          onClick={() => handleMarkAsSold(rdv.car_id)}
+                          className="min-h-10 flex-1 rounded border border-emerald-500/40 px-3 py-2 text-xs font-medium text-emerald-400 hover:bg-emerald-500/10 sm:flex-none"
+                        >
+                          {t("markAsSold")}
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => dismissRdv(rdv.id)}
+                        className="min-h-10 text-[11px] font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)] sm:ml-auto"
+                      >
                         {t("dismiss")}
                       </button>
                     </div>
@@ -748,8 +930,8 @@ export default function SellerDashboardPage() {
 
       {activeTab === "listings" && (
         <>
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <div className="flex flex-wrap gap-1.5">
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1">
               {(
                 [
                   ["all", t("allListingsFilter"), cars.length],
@@ -763,7 +945,7 @@ export default function SellerDashboardPage() {
                   key={key}
                   type="button"
                   onClick={() => setListingFilter(key)}
-                  className={`rounded-full border px-3 py-1.5 text-[11px] font-medium transition ${
+                  className={`shrink-0 rounded-full border px-3 py-1.5 text-[11px] font-medium transition ${
                     listingFilter === key
                       ? "border-[var(--accent)] bg-[var(--accent-muted)] text-[var(--accent)]"
                       : "border-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
@@ -774,11 +956,11 @@ export default function SellerDashboardPage() {
               ))}
             </div>
             {canListCars ? (
-              <Link href="/dashboard/cars/new" className="btn-primary px-4 py-2 text-sm">
+              <Link href="/dashboard/cars/new" className="btn-primary shrink-0 px-4 py-2 text-sm">
                 {t("addCar")}
               </Link>
             ) : (
-              <Link href="/dashboard/cars/new" className="btn-secondary px-4 py-2 text-sm">
+              <Link href="/dashboard/cars/new" className="btn-secondary shrink-0 px-4 py-2 text-sm">
                 {t("addCarVerifyFirst")}
               </Link>
             )}
@@ -793,18 +975,27 @@ export default function SellerDashboardPage() {
             </div>
           ) : (
             <ul className="space-y-3">
-              {filteredCars.map((car) => (
-                <li key={car.id} className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4">
-                  <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div className="flex min-w-0 flex-1 gap-3">
-                      <div className="hidden h-16 w-20 shrink-0 overflow-hidden rounded-md bg-[var(--border)] sm:block">
+              {filteredCars.map((car) => {
+                const nextStep = car.is_sold
+                  ? t("listingNextSold")
+                  : car.is_draft
+                    ? t("listingNextDraft")
+                    : car.is_approved
+                      ? (stats[car.id]?.rdv ?? 0) > 0
+                        ? t("listingNextLiveRdv")
+                        : t("listingNextLive")
+                      : t("listingNextPending");
+                return (
+                  <li key={car.id} className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-3 sm:p-4">
+                    <div className="flex gap-3">
+                      <div className="h-14 w-16 shrink-0 overflow-hidden rounded-md bg-[var(--border)] sm:h-16 sm:w-20">
                         {car.images?.[0] ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img src={car.images[0]} alt="" className="h-full w-full object-cover" />
                         ) : null}
                       </div>
-                      <div className="min-w-0">
-                        <p className="font-semibold text-[var(--foreground)]">{car.title}</p>
+                      <div className="min-w-0 flex-1">
+                        <p className="line-clamp-1 font-semibold text-[var(--foreground)]">{car.title}</p>
                         <p className="text-small text-[var(--muted-foreground)]">
                           {car.make} {car.model}
                           {car.year != null ? ` · ${car.year}` : ""} · {formatPrice(car.price, "USD", "USD")}
@@ -822,6 +1013,7 @@ export default function SellerDashboardPage() {
                         >
                           {car.is_sold ? t("sold") : car.is_draft ? t("draft") : car.is_approved ? t("approved") : t("pendingApproval")}
                         </span>
+                        <p className="mt-1 text-[11px] text-[var(--muted-foreground)]">{nextStep}</p>
                         {!car.is_draft && !car.is_approved && car.rejection_reason && (
                           <div className="mt-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-2 text-caption text-amber-100">
                             <p className="font-medium">
@@ -840,26 +1032,20 @@ export default function SellerDashboardPage() {
                             {t("viewsLabel")} <span className="font-semibold text-[var(--foreground)]">{stats[car.id]?.views ?? 0}</span>
                           </span>
                           <span>
-                            {t("favoritesLabel")} <span className="font-semibold text-[var(--foreground)]">{stats[car.id]?.favorites ?? 0}</span>
-                          </span>
-                          <span>
-                            {t("unlocksLabel")} <span className="font-semibold text-[var(--foreground)]">{stats[car.id]?.unlocks ?? 0}</span>
-                          </span>
-                          <span>
                             {t("rdvLabel")} <span className="font-semibold text-[var(--foreground)]">{stats[car.id]?.rdv ?? 0}</span>
                           </span>
                         </div>
                       </div>
                     </div>
-                    <div className="flex flex-wrap gap-2">
-                      <Link href={`/dashboard/cars/${car.id}/edit`} className="btn-secondary py-2 text-xs">
+                    <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+                      <Link href={`/dashboard/cars/${car.id}/edit`} className="btn-secondary min-h-10 flex-1 justify-center text-center text-xs sm:flex-none">
                         {t("edit")}
                       </Link>
                       {!car.is_sold && car.is_approved && !car.is_draft && (
                         <button
                           type="button"
                           onClick={() => handleMarkAsSold(car.id)}
-                          className="rounded border border-emerald-500/40 px-3 py-2 text-xs font-medium text-emerald-400 hover:bg-emerald-500/10"
+                          className="min-h-10 flex-1 rounded border border-emerald-500/40 px-3 py-2 text-xs font-medium text-emerald-400 hover:bg-emerald-500/10 sm:flex-none"
                         >
                           {t("markAsSold")}
                         </button>
@@ -868,22 +1054,38 @@ export default function SellerDashboardPage() {
                         <button
                           type="button"
                           onClick={() => handleMarkAsAvailable(car.id)}
-                          className="rounded border border-emerald-500/40 px-3 py-2 text-xs font-medium text-emerald-400 hover:bg-emerald-500/10"
+                          className="min-h-10 flex-1 rounded border border-emerald-500/40 px-3 py-2 text-xs font-medium text-emerald-400 hover:bg-emerald-500/10 sm:flex-none"
                         >
                           {t("markAsAvailable")}
                         </button>
                       )}
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(car.id)}
-                        className="rounded border border-red-500/40 px-3 py-2 text-xs font-medium text-red-400 hover:bg-red-500/10"
-                      >
-                        {t("adminDeleteListing")}
-                      </button>
+                      <div className="relative sm:ml-auto">
+                        <button
+                          type="button"
+                          onClick={() => setOpenMoreId(openMoreId === car.id ? null : car.id)}
+                          className="min-h-10 w-full rounded border border-[var(--border)] px-3 py-2 text-xs text-[var(--muted-foreground)] hover:text-[var(--foreground)] sm:w-auto"
+                        >
+                          {t("moreActions")}
+                        </button>
+                        {openMoreId === car.id && (
+                          <div className="absolute right-0 z-10 mt-1 min-w-[10rem] rounded-lg border border-[var(--border)] bg-[var(--card)] p-1 shadow-lg">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setOpenMoreId(null);
+                                handleDelete(car.id);
+                              }}
+                              className="w-full rounded px-3 py-2 text-left text-xs font-medium text-red-400 hover:bg-red-500/10"
+                            >
+                              {t("adminDeleteListing")}
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </li>
-              ))}
+                  </li>
+                );
+              })}
             </ul>
           )}
         </>

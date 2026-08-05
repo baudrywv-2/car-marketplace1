@@ -12,9 +12,14 @@ export async function POST(req: NextRequest) {
     const listingType = typeof body.listingType === "string" && ["sale", "rent", "both", ""].includes(body.listingType) ? body.listingType || null : null;
     const eventType = typeof body.eventType === "string" ? body.eventType.trim().slice(0, 50) : null;
 
-    if (!keyword && !make && !province && !minPrice && !maxPrice && !listingType && !eventType) {
+    if (!keyword && !make && !province && !minPrice && !maxPrice && !listingType && !eventType && !body.filters) {
       return NextResponse.json({ ok: true });
     }
+
+    const filters =
+      body.filters && typeof body.filters === "object" && !Array.isArray(body.filters)
+        ? body.filters
+        : null;
 
     const supabase = await createClient();
     await supabase.from("search_logs").insert({
@@ -25,6 +30,7 @@ export async function POST(req: NextRequest) {
       max_price: Number.isFinite(maxPrice) ? maxPrice : null,
       listing_type: listingType,
       event_type: eventType || null,
+      ...(filters ? { filters } : {}),
     });
 
     return NextResponse.json({ ok: true });

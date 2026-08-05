@@ -213,25 +213,30 @@ export default function ImageUpload({ value, onChange, disabled }: Props) {
           ))}
         </div>
       )}
-      <div className="flex gap-2">
-        <input
-          type="url"
-          value={pasteUrl}
-          onChange={(e) => setPasteUrl(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddUrl())}
-          placeholder={t("pasteImageUrl")}
-          disabled={disabled || value.length >= MAX_IMAGES}
-          className="min-h-10 flex-1 rounded border border-zinc-300 px-2 py-1.5 text-[10px] dark:border-zinc-600 dark:bg-zinc-800 dark:text-white"
-        />
-        <button
-          type="button"
-          disabled={disabled || !pasteUrl.trim() || value.length >= MAX_IMAGES}
-          onClick={handleAddUrl}
-          className="min-h-10 rounded border border-zinc-300 px-2 py-1.5 text-[10px] font-medium hover:bg-zinc-100 disabled:opacity-50 dark:border-zinc-600 dark:hover:bg-zinc-800"
-        >
-          {t("addUrl")}
-        </button>
-      </div>
+      <details className="group">
+        <summary className="cursor-pointer text-[10px] font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)]">
+          {t("advancedImageUrl")}
+        </summary>
+        <div className="mt-2 flex gap-2">
+          <input
+            type="url"
+            value={pasteUrl}
+            onChange={(e) => setPasteUrl(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddUrl())}
+            placeholder={t("pasteImageUrl")}
+            disabled={disabled || value.length >= MAX_IMAGES}
+            className="min-h-10 flex-1 rounded border border-zinc-300 px-2 py-1.5 text-[10px] dark:border-zinc-600 dark:bg-zinc-800 dark:text-white"
+          />
+          <button
+            type="button"
+            disabled={disabled || !pasteUrl.trim() || value.length >= MAX_IMAGES}
+            onClick={handleAddUrl}
+            className="min-h-10 rounded border border-zinc-300 px-2 py-1.5 text-[10px] font-medium hover:bg-zinc-100 disabled:opacity-50 dark:border-zinc-600 dark:hover:bg-zinc-800"
+          >
+            {t("addUrl")}
+          </button>
+        </div>
+      </details>
     </div>
   );
 }

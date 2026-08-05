@@ -24,23 +24,23 @@ const content = {
           { label: "Profile data", text: "Name, phone, and WhatsApp for sellers; stored in your profile and used for listings." },
           { label: "Listing data", text: "Vehicle details, images, price, and seller contact information when you list a car." },
           { label: "Meeting requests", text: "Your message and requested date when you request a meeting with a seller." },
-          { label: "Usage data", text: "Favorites, saved searches, recently viewed cars, and compare selections (stored locally or in your account)." },
+          { label: "Usage data", text: "Favorites, saved searches, recently viewed cars, and compare selections (stored locally; signed-in users also sync saved searches to their account)." },
         ],
       },
       {
         title: "3. How We Use Data",
         body:
-          "We use your data to run the platform: to show listings, connect buyers and sellers, manage accounts, process pay-to-unlock contact fees, and improve the service. We do not sell your personal data to third parties for marketing.",
+          "We use your data to run the platform: to show listings, connect buyers and sellers via meeting requests, manage accounts, and improve the service. We do not sell your personal data to third parties for marketing.",
       },
       {
         title: "4. Data Storage",
         body:
-          "Data is stored using Supabase (database, authentication, and file storage). Payment processing for contact unlocks uses Stripe. Your data may be processed on servers in various locations. We take reasonable measures to keep your data secure.",
+          "Data is stored using Supabase (database, authentication, and file storage). DRCCARS does not currently process online payments on the platform. Your data may be processed on servers in various locations. We take reasonable measures to keep your data secure.",
       },
       {
         title: "5. Sharing",
         body:
-          "When you request a meeting or unlock contact details, we share relevant information (e.g. your message, contact info) with the seller or our admin team so they can arrange the meeting. Listing information (including phone, WhatsApp, address if provided) is visible to buyers who unlock contact details.",
+          "When you request a meeting, we share relevant information (e.g. your message and contact info) with the seller or our admin team so they can arrange the meeting. Seller contact may be shared after a meeting request is approved.",
       },
       {
         title: "6. Cookies and Local Storage",
@@ -82,17 +82,17 @@ const content = {
       {
         title: "3. Utilisation des données",
         body:
-          "Nous utilisons vos données pour faire fonctionner la plateforme : afficher les annonces, mettre en relation acheteurs et vendeurs, gérer les comptes, traiter les frais de déblocage de contact et améliorer le service. Nous ne vendons pas vos données personnelles à des tiers à des fins marketing.",
+          "Nous utilisons vos données pour faire fonctionner la plateforme : afficher les annonces, mettre en relation acheteurs et vendeurs via les demandes de rendez-vous, gérer les comptes et améliorer le service. Nous ne vendons pas vos données personnelles à des tiers à des fins marketing.",
       },
       {
         title: "4. Stockage des données",
         body:
-          "Les données sont stockées via Supabase (base de données, authentification et stockage de fichiers). Le paiement pour le déblocage des contacts utilise Stripe. Vos données peuvent être traitées sur des serveurs situés dans différentes régions. Nous prenons des mesures raisonnables pour protéger vos données.",
+          "Les données sont stockées via Supabase (base de données, authentification et stockage de fichiers). DRCCARS ne traite actuellement pas de paiements en ligne sur la plateforme. Vos données peuvent être traitées sur des serveurs situés dans différentes régions. Nous prenons des mesures raisonnables pour protéger vos données.",
       },
       {
         title: "5. Partage",
         body:
-          "Lorsque vous demandez un rendez-vous ou débloquez des coordonnées, nous partageons les informations pertinentes (ex. votre message, vos coordonnées) avec le vendeur ou notre équipe admin afin d’organiser le rendez-vous. Les informations d’annonce (y compris téléphone, WhatsApp, adresse si fournie) sont visibles aux acheteurs qui débloquent les coordonnées.",
+          "Lorsque vous demandez un rendez-vous, nous partageons les informations pertinentes (ex. votre message et vos coordonnées) avec le vendeur ou notre équipe admin afin d’organiser le rendez-vous. Les coordonnées vendeur peuvent être partagées après approbation de la demande.",
       },
       {
         title: "6. Cookies et stockage local",
@@ -134,17 +134,17 @@ const content = {
       {
         title: "3. Ndenge tosalelaka makambo",
         body:
-          "Tosalelaka makambo na yo mpo na kosalisa plateforme: kolakisa ba annonces, kokangisa acheteur na vendeur, kobatela ba comptes, kosala frais ya débloquer contact, mpe kobongisa service. Totesaka te makambo na yo epai ya bato mosusu mpo na marketing.",
+          "Tosalelaka makambo na yo mpo na kosalisa plateforme: kolakisa ba annonces, kokangisa acheteur na vendeur na ba demandes ya rendez-vous, kobatela ba comptes, mpe kobongisa service. Totesaka te makambo na yo epai ya bato mosusu mpo na marketing.",
       },
       {
         title: "4. Esika ebombami",
         body:
-          "Makambo ebombami na Supabase (database, authentification, stockage ya bilili). Paiement mpo na débloquer contact esalelaka Stripe. Makambo ekoki kosalema na ba serveurs ya bisika ndenge na ndenge. Tozwaka matambe mpo na kobatela makambo na yo.",
+          "Makambo ebombami na Supabase (database, authentification, stockage ya bilili). DRCCARS ezali te kobongisa paiements en ligne na plateforme sikoyo. Makambo ekoki kosalema na ba serveurs ya bisika ndenge na ndenge. Tozwaka matambe mpo na kobatela makambo na yo.",
       },
       {
         title: "5. Kopesa/partager",
         body:
-          "Tango osengi rendez-vous to obongoli contact, topesaka makambo ya ntina (ndakisa message, contact) epai ya vendeur to équipe admin mpo na kobongisa rendez-vous. Makambo ya annonce (telefone, WhatsApp, adresse soki epesami) ekoki komonana na acheteur oyo abongoli contact.",
+          "Tango osengi rendez-vous, topesaka makambo ya ntina (ndakisa message, contact) epai ya vendeur to équipe admin mpo na kobongisa rendez-vous. Contact ya vendeur ekoki kopesama sima ya approbation ya demande.",
       },
       {
         title: "6. Cookies mpe stockage local",
@@ -186,17 +186,17 @@ const content = {
       {
         title: "3. Jinsi tunavyotumia data",
         body:
-          "Tunatumia data yako kuendesha jukwaa: kuonyesha matangazo, kuunganisha wanunuzi na wauzaji, kusimamia akaunti, kuchakata ada ya kufungua mawasiliano, na kuboresha huduma. Hatuuzi data yako binafsi kwa uuzaji wa matangazo.",
+          "Tunatumia data yako kuendesha jukwaa: kuonyesha matangazo, kuunganisha wanunuzi na wauzaji kupitia maombi ya mkutano, kusimamia akaunti, na kuboresha huduma. Hatuuzi data yako binafsi kwa uuzaji wa matangazo.",
       },
       {
         title: "4. Uhifadhi wa data",
         body:
-          "Data huhifadhiwa kupitia Supabase (hifadhidata, uthibitishaji, na hifadhi ya picha). Malipo ya kufungua mawasiliano hutumia Stripe. Data inaweza kuchakatwa kwenye seva zilizo maeneo tofauti. Tunachukua hatua za msingi kulinda data yako.",
+          "Data huhifadhiwa kupitia Supabase (hifadhidata, uthibitishaji, na hifadhi ya picha). DRCCARS kwa sasa haichakati malipo mtandaoni kwenye jukwaa. Data inaweza kuchakatwa kwenye seva zilizo maeneo tofauti. Tunachukua hatua za msingi kulinda data yako.",
       },
       {
         title: "5. Kushiriki",
         body:
-          "Unapoomba mkutano au kufungua mawasiliano, tunashiriki taarifa muhimu (mf. ujumbe, mawasiliano) na muuzaji au timu ya admin ili kupanga mkutano. Taarifa za tangazo (ikiwemo simu, WhatsApp, anwani ikiwa imetolewa) zinaweza kuonekana kwa wanunuzi wanaofungua mawasiliano.",
+          "Unapoomba mkutano, tunashiriki taarifa muhimu (mf. ujumbe, mawasiliano) na muuzaji au timu ya admin ili kupanga mkutano. Mawasiliano ya muuzaji yanaweza kushirikiwa baada ya ombi kuidhinishwa.",
       },
       {
         title: "6. Cookies na hifadhi ya ndani",

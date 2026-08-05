@@ -39,8 +39,6 @@ export const config = {
     "/favorites",
     "/compare",
     "/api/favorites/:path*",
-    "/api/unlock",
-    "/api/rdv/:path*",
     "/api/admin/:path*",
     "/api/analytics/:path*",
   ],

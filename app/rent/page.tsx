@@ -2,12 +2,13 @@
 
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useLocale } from "@/app/contexts/LocaleContext";
 import { DRC_LOCATIONS, RENTAL_EVENT_TYPES, RENTAL_EVENT_TRANSLATION_KEYS } from "@/lib/constants";
 import { getBestRentalPrice } from "@/lib/format-utils";
 import { readGuestFavorites, GUEST_FAVORITES_KEY } from "@/lib/guest-favorites";
+import { applyCarFilters } from "@/lib/car-search-query";
 import BuyerCarCard, { type BuyerCarCardData } from "@/app/components/BuyerCarCard";
 import CarCardSkeleton from "@/app/components/CarCardSkeleton";
 import LoadingFallback from "@/app/components/LoadingFallback";
@@ -19,26 +20,55 @@ type RentalCar = BuyerCarCardData & {
 };
 
 function RentPageContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const { t } = useLocale();
   const [cars, setCars] = useState<RentalCar[]>([]);
   const [loading, setLoading] = useState(true);
-  const [eventType, setEventType] = useState<string>("");
-  const [province, setProvince] = useState("");
-  const [keyword, setKeyword] = useState("");
+  const [eventType, setEventType] = useState(() => searchParams.get("event") ?? "");
+  const [province, setProvince] = useState(() => searchParams.get("province") ?? "");
+  const [keyword, setKeyword] = useState(() => searchParams.get("q") ?? "");
+  const [debouncedKeyword, setDebouncedKeyword] = useState(() => searchParams.get("q") ?? "");
   const [user, setUser] = useState<{ id: string } | null>(null);
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
   const [visibleCount, setVisibleCount] = useState(24);
-  const [sortBy, setSortBy] = useState<"newest" | "priceLow" | "priceHigh">("newest");
+  const [sortBy, setSortBy] = useState<"newest" | "priceLow" | "priceHigh">(
+    () => {
+      const s = searchParams.get("sort");
+      return s === "priceLow" || s === "priceHigh" ? s : "newest";
+    }
+  );
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user: u } }) => setUser(u ?? null));
   }, []);
 
   useEffect(() => {
-    const ev = searchParams.get("event");
-    if (ev) setEventType(ev);
+    setEventType(searchParams.get("event") ?? "");
+    setProvince(searchParams.get("province") ?? "");
+    const q = searchParams.get("q") ?? "";
+    setKeyword(q);
+    setDebouncedKeyword(q);
+    const s = searchParams.get("sort");
+    setSortBy(s === "priceLow" || s === "priceHigh" ? s : "newest");
   }, [searchParams]);
+
+  useEffect(() => {
+    const tmr = setTimeout(() => setDebouncedKeyword(keyword), 400);
+    return () => clearTimeout(tmr);
+  }, [keyword]);
+
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (eventType) params.set("event", eventType);
+    if (province) params.set("province", province);
+    if (debouncedKeyword.trim()) params.set("q", debouncedKeyword.trim());
+    if (sortBy !== "newest") params.set("sort", sortBy);
+    const next = params.toString();
+    if (next !== searchParams.toString()) {
+      router.replace(next ? `/rent?${next}` : "/rent", { scroll: false });
+    }
+  }, [eventType, province, debouncedKeyword, sortBy, router, searchParams]);
 
   useEffect(() => {
     const localIds = readGuestFavorites();
@@ -82,39 +112,34 @@ function RentPageContent() {
       if (eventType) {
         query = query.contains("rental_event_type", [eventType]);
       }
-      if (province) query = query.eq("province", province);
-      if (keyword.trim()) {
-        const k = keyword.trim().replace(/%/g, "\\%").replace(/_/g, "\\_");
-        const pat = `%${k}%`;
-        query = query.or(`title.ilike.${pat},make.ilike.${pat},model.ilike.${pat}`);
-      }
+      query = applyCarFilters(query, {
+        q: debouncedKeyword,
+        province,
+      });
 
       const { data } = await query.order("created_at", { ascending: false }).limit(96);
       setCars((data as RentalCar[]) ?? []);
-      const hasFilters = !!(eventType || province || keyword.trim());
+      const hasFilters = !!(eventType || province || debouncedKeyword.trim());
       if (hasFilters) {
         fetch("/api/analytics/search", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            keyword: keyword.trim() || null,
+            keyword: debouncedKeyword.trim() || null,
             province: province || null,
             listingType: "rent",
             eventType: eventType || null,
+            filters: { sort: sortBy },
           }),
         }).catch(() => {});
       }
       setLoading(false);
     }
     load();
-  }, [eventType, province, keyword]);
+  }, [eventType, province, debouncedKeyword, sortBy]);
 
   function selectEvent(ev: string) {
     setEventType(ev);
-    const url = new URL(window.location.href);
-    if (ev) url.searchParams.set("event", ev);
-    else url.searchParams.delete("event");
-    window.history.replaceState({}, "", url.toString());
   }
 
   const sortedCars = [...cars].sort((a, b) => {

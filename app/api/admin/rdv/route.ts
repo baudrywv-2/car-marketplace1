@@ -42,7 +42,7 @@ export async function PATCH(req: Request) {
 
     const { data: rdv, error: fetchErr } = await admin
       .from("rendezvous_requests")
-      .select("id, car_id, buyer_name, buyer_email, cars(title, owner_id)")
+      .select("id, car_id, buyer_id, buyer_name, buyer_email, cars(title, owner_id)")
       .eq("id", body.id)
       .maybeSingle();
     if (fetchErr) return NextResponse.json({ error: fetchErr.message }, { status: 500 });
@@ -61,6 +61,15 @@ export async function PATCH(req: Request) {
         carId: rdv.car_id,
         title: "Nouveau rendez-vous approuvé",
         body: `Un acheteur (${rdv.buyer_name || rdv.buyer_email || "—"}) pour « ${title} ». Voir l’onglet Rendez-vous.`,
+      });
+    }
+    if (rdv.buyer_id) {
+      await notifyUser(admin, {
+        userId: rdv.buyer_id,
+        type: "rdv_approved",
+        carId: rdv.car_id,
+        title: "Votre rendez-vous est approuvé",
+        body: `Votre demande pour « ${title} » a été approuvée. Le vendeur va vous contacter.`,
       });
     }
 

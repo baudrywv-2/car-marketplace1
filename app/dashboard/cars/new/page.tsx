@@ -4,10 +4,16 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { DRC_LOCATIONS, CAR_TYPES, CAR_MAKES, OTHER_MAKE, LISTING_TYPES, RENTAL_EVENT_TYPES, CAR_FEATURES } from "@/lib/constants";
+import { DRC_LOCATIONS, CAR_TYPES, CAR_MAKES, OTHER_MAKE, LISTING_TYPES, RENTAL_EVENT_TYPES } from "@/lib/constants";
 import { CURRENCIES, CONDITIONS, TRANSMISSIONS, FUEL_TYPES } from "@/lib/constants";
 import { useLocale } from "@/app/contexts/LocaleContext";
 import ImageUpload from "@/app/components/ImageUpload";
+import ListingFeaturePicker from "@/app/components/ListingFeaturePicker";
+import {
+  buildListingPayload,
+  hasAtLeastOneRentalPrice,
+  validateListing,
+} from "@/lib/listing-validation";
 
 function isVerified(user: { email_confirmed_at?: string | null } | null): boolean {
   return !!user?.email_confirmed_at;
@@ -56,6 +62,7 @@ export default function NewCarPage() {
     features: [] as string[],
   });
   const [listingContact, setListingContact] = useState<{ phone: string; whatsapp: string } | null>(null);
+  const [submittedSuccess, setSubmittedSuccess] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -123,43 +130,11 @@ export default function NewCarPage() {
   }
 
   function buildPayload() {
-    const { phone, whatsapp } = getSellerContact();
-    const isRent = form.listing_type === "rent" || form.listing_type === "both";
-    return {
-      title: form.title.trim(),
-      description: form.description.trim() || null,
-      price: form.listing_type === "rent" ? 0 : (parseFloat(form.price) || 0),
-      make: form.make === OTHER_MAKE ? form.make_other.trim() : form.make.trim(),
-      model: form.model.trim(),
-      year: form.year ? parseInt(form.year, 10) : null,
-      mileage: form.mileage ? parseInt(form.mileage, 10) : null,
-      province: form.province.trim() || null,
-      city: null,
-      country: form.country.trim() || null,
-      type: form.type.trim() || null,
-      transmission: form.transmission.trim() || null,
-      fuel_type: form.fuel_type.trim() || null,
-      currency: form.currency || "USD",
-      condition: form.condition || "used",
-      discount_percent: form.discount_percent ? parseFloat(form.discount_percent) : null,
-      images: form.images.slice(0, 4),
-      owner_phone: phone,
-      owner_whatsapp: whatsapp,
-      owner_address: form.owner_address.trim() || null,
-      listing_type: form.listing_type,
-      rental_price_per_hour: isRent && form.rental_price_per_hour ? parseFloat(form.rental_price_per_hour) : null,
-      rental_price_per_day: isRent && form.rental_price_per_day ? parseFloat(form.rental_price_per_day) : null,
-      rental_price_per_week: isRent && form.rental_price_per_week ? parseFloat(form.rental_price_per_week) : null,
-      rental_price_per_month: isRent && form.rental_price_per_month ? parseFloat(form.rental_price_per_month) : null,
-      rental_currency: isRent ? (form.rental_currency || "USD") : null,
-      rental_min_hours: isRent && form.rental_min_hours ? parseInt(form.rental_min_hours, 10) : null,
-      rental_event_type: isRent && form.rental_event_type.length > 0 ? form.rental_event_type : null,
-      features: form.features.length > 0 ? form.features : null,
-    };
+    return buildListingPayload(form, getSellerContact());
   }
 
-  async function handleSaveDraft(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleSaveDraft(e?: React.FormEvent | React.MouseEvent) {
+    e?.preventDefault();
     setError("");
     setSubmitting(true);
 
@@ -176,23 +151,22 @@ export default function NewCarPage() {
       return;
     }
 
-    if (!form.title.trim()) {
-      setError(t("titleRequired"));
+    const quality = validateListing(form, "draft");
+    if (!quality.ok) {
+      setError(t(quality.errorKey as Parameters<typeof t>[0]));
       setSubmitting(false);
       return;
     }
-    if ((form.listing_type === "rent" || form.listing_type === "both") && !form.rental_price_per_hour && !form.rental_price_per_day && !form.rental_price_per_week && !form.rental_price_per_month) {
+    if (
+      (form.listing_type === "rent" || form.listing_type === "both") &&
+      !hasAtLeastOneRentalPrice(form)
+    ) {
       setError(t("rentalPriceAtLeastOne"));
       setSubmitting(false);
       return;
     }
 
     const payload = buildPayload();
-    if ((form.listing_type === "rent" || form.listing_type === "both") && !payload.rental_price_per_hour && !payload.rental_price_per_day && !payload.rental_price_per_week && !payload.rental_price_per_month) {
-      setError(t("rentalPriceAtLeastOne"));
-      setSubmitting(false);
-      return;
-    }
     const { error: err } = await supabase.from("cars").insert({
       owner_id: u.id,
       ...payload,
@@ -227,8 +201,16 @@ export default function NewCarPage() {
       return;
     }
 
-    const payload = buildPayload();
-    if ((form.listing_type === "rent" || form.listing_type === "both") && !payload.rental_price_per_hour && !payload.rental_price_per_day && !payload.rental_price_per_week && !payload.rental_price_per_month) {
+    const quality = validateListing(form, "publish");
+    if (!quality.ok) {
+      setError(t(quality.errorKey as Parameters<typeof t>[0]));
+      setSubmitting(false);
+      return;
+    }
+    if (
+      (form.listing_type === "rent" || form.listing_type === "both") &&
+      !hasAtLeastOneRentalPrice(form)
+    ) {
       setError(t("rentalPriceAtLeastOne"));
       setSubmitting(false);
       return;
@@ -238,6 +220,7 @@ export default function NewCarPage() {
       setSubmitting(false);
       return;
     }
+    const payload = buildPayload();
     const { error: err } = await supabase.from("cars").insert({
       owner_id: u.id,
       ...payload,
@@ -250,8 +233,7 @@ export default function NewCarPage() {
       setError(err.message);
       return;
     }
-    router.push("/dashboard");
-    router.refresh();
+    setSubmittedSuccess(true);
   }
 
   const inputClass = "input-premium";
@@ -290,14 +272,28 @@ export default function NewCarPage() {
     );
   }
 
+  if (submittedSuccess) {
+    return (
+      <div className="mx-auto max-w-xl px-4 py-8 sm:px-6 sm:py-12">
+        <div className="rounded-[var(--radius-lg)] border border-[var(--accent)]/40 bg-[var(--accent-muted)] p-6">
+          <h1 className="text-heading mb-3 text-[var(--foreground)]">{t("submittedForApproval")}</h1>
+          <p className="text-body mb-6 text-[var(--muted-foreground)]">{t("submittedForApprovalDesc")}</p>
+          <Link href="/dashboard/seller" className="btn-primary inline-flex min-h-[44px] items-center">
+            {t("backToDashboard")}
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="mx-auto max-w-2xl px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
+    <div className="mx-auto max-w-2xl px-4 py-6 pb-28 sm:px-6 sm:py-10 sm:pb-28 lg:px-8">
       <Link href="/dashboard" className="text-caption mb-6 inline-block font-medium text-[var(--foreground)] hover:underline">
         {t("backToDashboard")}
       </Link>
       <h1 className="text-heading mb-6 text-[var(--foreground)]">{t("addCar")}</h1>
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+      <form id="new-car-form" onSubmit={handleSubmit} className="flex flex-col gap-5">
         <div>
           <label className="mb-1.5 block text-caption font-medium text-[var(--foreground)]">{t("listingType")} *</label>
           <div className="flex flex-wrap gap-3">
@@ -315,6 +311,11 @@ export default function NewCarPage() {
               </label>
             ))}
           </div>
+        </div>
+
+        <div>
+          <label className="mb-1.5 block text-caption font-medium text-[var(--foreground)]">{t("listingPhotosFirst")}</label>
+          <ImageUpload value={form.images} onChange={(urls) => setForm((p) => ({ ...p, images: urls.slice(0, 4) }))} disabled={submitting} />
         </div>
 
         <div>
@@ -503,7 +504,7 @@ export default function NewCarPage() {
           </div>
           <div>
             <label className="mb-1.5 block text-caption font-medium text-[var(--foreground)]">{t("vehicleType")}</label>
-            <select value={form.type} onChange={(e) => setForm((p) => ({ ...p, type: e.target.value }))} className={inputClass}>
+            <select required value={form.type} onChange={(e) => setForm((p) => ({ ...p, type: e.target.value }))} className={inputClass}>
               <option value="">{t("selectOption")}</option>
               {CAR_TYPES.map((ty) => (
                 <option key={ty} value={ty}>{ty}</option>
@@ -533,32 +534,10 @@ export default function NewCarPage() {
           </div>
         </div>
 
-        <div>
-          <label className="mb-2 block text-caption font-medium text-[var(--foreground)]">{t("features")}</label>
-          <p className="mb-3 text-[11px] text-[var(--muted-foreground)]">{t("selectAllThatApply")}</p>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
-            {CAR_FEATURES.map((f) => {
-              const selected = form.features.includes(f.id);
-              return (
-                <button
-                  key={f.id}
-                  type="button"
-                  onClick={() => setForm((p) => ({
-                    ...p,
-                    features: selected ? p.features.filter((x) => x !== f.id) : [...p.features, f.id],
-                  }))}
-                  className={`rounded-lg border px-3 py-2 text-left text-[11px] font-medium transition ${
-                    selected
-                      ? "border-[var(--accent)] bg-[var(--accent)]/15 text-[var(--foreground)]"
-                      : "border-[var(--border)] bg-[var(--card)] text-[var(--muted-foreground)] hover:border-[var(--border-strong)] hover:text-[var(--foreground)]"
-                  }`}
-                >
-                  {f.labelKey ? t(f.labelKey as Parameters<typeof t>[0]) : f.labelEn}
-                </button>
-              );
-            })}
-          </div>
-        </div>
+        <ListingFeaturePicker
+          value={form.features}
+          onChange={(features) => setForm((p) => ({ ...p, features }))}
+        />
 
         <div>
           <label className="mb-1.5 block text-caption font-medium text-[var(--foreground)]">{t("townCity")} *</label>
@@ -574,11 +553,6 @@ export default function NewCarPage() {
           <label className="mb-1.5 block text-caption font-medium text-[var(--foreground)]">{t("country")}</label>
           <input type="text" value={form.country} readOnly className={`${inputClass} bg-[var(--card)] opacity-80`} />
           <p className="mt-1 text-caption text-[var(--muted-foreground)]">{t("listForDRCOnly")}</p>
-        </div>
-
-        <div>
-          <label className="mb-1.5 block text-caption font-medium text-[var(--foreground)]">{t("images")}</label>
-          <ImageUpload value={form.images} onChange={(urls) => setForm((p) => ({ ...p, images: urls.slice(0, 4) }))} disabled={submitting} />
         </div>
 
         <div className="border-t border-[var(--border)] pt-6">
@@ -606,23 +580,29 @@ export default function NewCarPage() {
         </div>
 
         {error && <p className="text-caption text-red-600">{error}</p>}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
-          <button type="submit" disabled={submitting} className="btn-primary min-h-[44px] shrink-0 disabled:opacity-50">
-            {submitting ? t("saving") : t("submitForApproval")}
-          </button>
+        <div className="h-4" aria-hidden />
+      </form>
+
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--border)] bg-[var(--background)]/95 px-4 py-3 backdrop-blur supports-[padding:max(0px)]:pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <div className="mx-auto flex max-w-2xl gap-2 sm:gap-3">
           <button
             type="button"
             onClick={handleSaveDraft}
             disabled={submitting}
-            className="btn-secondary min-h-[44px] shrink-0 disabled:opacity-50"
+            className="btn-secondary min-h-[44px] flex-1 disabled:opacity-50"
           >
             {submitting ? t("saving") : t("saveDraft")}
           </button>
-          <Link href="/dashboard" className="btn-secondary min-h-[44px] shrink-0 text-center">
-            {t("cancel")}
-          </Link>
+          <button
+            type="submit"
+            form="new-car-form"
+            disabled={submitting}
+            className="btn-primary min-h-[44px] flex-[1.4] disabled:opacity-50"
+          >
+            {submitting ? t("saving") : t("submitForApproval")}
+          </button>
         </div>
-      </form>
+      </div>
     </div>
   );
 }
