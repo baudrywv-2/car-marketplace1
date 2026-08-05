@@ -129,25 +129,29 @@ export default function BuyerCarCard({
 
   return (
     <article
-      className={`group relative flex h-full flex-col overflow-hidden rounded-md bg-black ${className}`}
+      className={`group relative flex h-full min-w-0 flex-col overflow-hidden rounded-md bg-black ${className}`}
     >
       <Link
         href={`/cars/${car.id}`}
         className="flex min-h-0 flex-1 flex-col"
         onClick={onNavigate}
       >
-        <div className={`relative bg-[#1a1a1c] ${compact ? "aspect-[3/2] sm:aspect-[5/4]" : "aspect-[4/3]"}`}>
+        <div
+          className={`relative bg-[#1a1a1c] ${
+            compact ? "aspect-[5/3] sm:aspect-[5/4]" : "aspect-[4/3]"
+          }`}
+        >
           {img ? (
             <OptimizedCarImage
               src={img}
               alt={car.title}
-              sizes={compact ? "(max-width: 640px) 54vw, 16vw" : "(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"}
+              sizes={compact ? "(max-width: 640px) 50vw, 16vw" : "(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"}
             />
           ) : (
-            <CarImagePlaceholder className={`h-full ${compact ? "min-h-[48px]" : "min-h-[80px]"}`} />
+            <CarImagePlaceholder className={`h-full ${compact ? "min-h-[40px]" : "min-h-[80px]"}`} />
           )}
           {(car.is_sold || rentBadge || discount) && (
-            <div className="absolute left-1.5 top-1.5 z-[1] flex flex-wrap gap-1 sm:left-2 sm:top-2">
+            <div className="absolute left-1 top-1 z-[1] flex flex-wrap gap-1 sm:left-2 sm:top-2">
               {car.is_sold && (
                 <span className="rounded-sm bg-slate-900/90 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white">
                   {t("sold")}
@@ -170,13 +174,15 @@ export default function BuyerCarCard({
 
         <div
           className={`flex flex-1 flex-col bg-black ${
-            compact ? "px-2 pb-2 pt-1.5 sm:px-2.5 sm:pb-2.5 sm:pt-2" : "px-2.5 pb-2.5 pt-2"
-          } ${onCompareToggle ? "pb-9" : ""}`}
+            compact
+              ? "px-1.5 pb-1.5 pt-1 sm:px-2.5 sm:pb-2.5 sm:pt-2"
+              : "px-2.5 pb-2.5 pt-2"
+          } ${onCompareToggle ? (compact ? "pb-7 sm:pb-9" : "pb-9") : ""}`}
         >
           {make && (
             <p
               className={`font-medium uppercase tracking-[0.12em] text-[var(--accent)] ${
-                compact ? "text-[10px] sm:text-[11px]" : "text-[11px]"
+                compact ? "text-[9px] sm:text-[11px]" : "text-[11px]"
               }`}
             >
               {make}
@@ -184,17 +190,21 @@ export default function BuyerCarCard({
           )}
           <p
             className={`mt-0.5 font-semibold uppercase leading-snug tracking-wide text-white line-clamp-2 ${
-              compact ? "text-[12px] sm:text-[13px]" : "text-sm"
+              compact ? "text-[11px] sm:text-[13px]" : "text-sm"
             } ${car.is_sold ? "opacity-70" : ""}`}
           >
             {model || car.title}
           </p>
 
-          <div className={compact ? "mt-1 sm:mt-1.5" : "mt-1.5"}>
-            {secondaryPrice && <p className="mb-0.5">{secondaryPrice}</p>}
+          <div className={compact ? "mt-0.5 sm:mt-1.5" : "mt-1.5"}>
+            {secondaryPrice && (
+              <p className={`mb-0.5 ${compact ? "[&_span]:text-[9px] sm:[&_span]:text-[10px]" : ""}`}>
+                {secondaryPrice}
+              </p>
+            )}
             <p
               className={`font-semibold tabular-nums text-[var(--accent)] ${
-                compact ? "text-[13px] sm:text-[14px]" : "text-[15px]"
+                compact ? "text-[12px] sm:text-[14px]" : "text-[15px]"
               }`}
             >
               {priceNode}
@@ -202,35 +212,49 @@ export default function BuyerCarCard({
           </div>
 
           {shownSpecs.length > 0 && (
-            <dl className={`border-t border-white/10 ${compact ? "mt-1.5 sm:mt-2" : "mt-2"}`}>
-              {shownSpecs.map((row) => (
-                <div
-                  key={row.label}
-                  className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] gap-1.5 border-b border-white/10 last:border-b-0 sm:gap-2"
-                >
-                  <dt
-                    className={`text-[10px] leading-snug text-[var(--accent)]/80 ${
-                      compact ? "py-1 sm:py-2" : "py-2"
-                    }`}
+            <>
+              {/* Mobile compact: one dense line instead of tall rows */}
+              <p
+                className={`mt-1 border-t border-white/10 pt-1 text-[9px] leading-snug text-white/65 sm:hidden ${
+                  compact ? "" : "hidden"
+                }`}
+              >
+                {shownSpecs.map((row) => row.value).join(" · ")}
+              </p>
+              <dl
+                className={`border-t border-white/10 ${
+                  compact ? "mt-1.5 hidden sm:mt-2 sm:block" : "mt-2"
+                }`}
+              >
+                {shownSpecs.map((row) => (
+                  <div
+                    key={row.label}
+                    className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] gap-1.5 border-b border-white/10 last:border-b-0 sm:gap-2"
                   >
-                    {row.label}
-                  </dt>
-                  <dd
-                    className={`text-right text-[10px] font-medium leading-snug text-white/90 line-clamp-2 ${
-                      compact ? "py-1 sm:py-2" : "py-2"
-                    }`}
-                  >
-                    {row.value}
-                  </dd>
-                </div>
-              ))}
-            </dl>
+                    <dt
+                      className={`text-[10px] leading-snug text-[var(--accent)]/80 ${
+                        compact ? "py-1 sm:py-1.5" : "py-2"
+                      }`}
+                    >
+                      {row.label}
+                    </dt>
+                    <dd
+                      className={`text-right text-[10px] font-medium leading-snug text-white/90 line-clamp-2 ${
+                        compact ? "py-1 sm:py-1.5" : "py-2"
+                      }`}
+                    >
+                      {row.value}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            </>
           )}
         </div>
       </Link>
 
       {showFavorite && onFavToggle != null && (
-        <div className="absolute right-2 top-2 z-[2]">
+        <div className="absolute right-1.5 top-1.5 z-[2] sm:right-2 sm:top-2">
           <FavoriteButton
             carId={car.id}
             isFav={!!isFav}
@@ -243,7 +267,11 @@ export default function BuyerCarCard({
 
       {onCompareToggle && (
         <label
-          className="absolute bottom-2 right-2 z-[2] flex min-h-8 cursor-pointer items-center gap-1.5 rounded-md border border-white/15 bg-black/90 px-2 py-1 text-[10px] text-white/70 backdrop-blur-sm hover:border-[var(--accent)]/50 hover:text-white"
+          className={`absolute z-[2] flex cursor-pointer items-center gap-1 rounded border border-white/15 bg-black/90 text-white/70 backdrop-blur-sm hover:border-[var(--accent)]/50 hover:text-white ${
+            compact
+              ? "bottom-1 right-1 min-h-7 px-1.5 py-0.5 text-[9px] sm:bottom-2 sm:right-2 sm:min-h-8 sm:gap-1.5 sm:px-2 sm:py-1 sm:text-[10px]"
+              : "bottom-2 right-2 min-h-8 gap-1.5 px-2 py-1 text-[10px]"
+          }`}
           onClick={(e) => e.stopPropagation()}
         >
           <input

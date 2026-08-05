@@ -823,8 +823,8 @@ function CarsPageContent({
   return (
     <div className={`mx-auto max-w-7xl px-3 py-4 sm:px-4 sm:py-6 ${compareIds.length > 0 ? "pb-32 sm:pb-24" : ""}`}>
       {/* Search + mobile filters button */}
-      <div className="mb-4 space-y-3">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mb-3 space-y-2 sm:mb-4 sm:space-y-3">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
           <input
             type="search"
             placeholder={t("searchPlaceholder")}
@@ -836,14 +836,14 @@ function CarsPageContent({
             <button
               type="button"
               onClick={saveCurrentSearch}
-              className="btn-secondary"
+              className="btn-secondary min-h-10 flex-1 px-3 text-[11px] sm:min-h-[44px] sm:flex-none sm:text-[0.8125rem]"
             >
               {t("saveSearch")}
             </button>
             <button
               type="button"
               onClick={() => setFiltersOpen(true)}
-              className="btn-secondary md:hidden"
+              className="btn-secondary min-h-10 px-3 text-[11px] md:hidden sm:min-h-[44px] sm:text-[0.8125rem]"
               aria-label={t("filters")}
             >
               {t("filters")}
@@ -985,13 +985,37 @@ function CarsPageContent({
             </div>
           )}
 
-          <h2 className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">{t("newArrivals")}</h2>
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <h2 className="text-[10px] font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">{t("newArrivals")}</h2>
+            <div className="flex items-center gap-0.5 rounded-[var(--radius)] border border-[var(--border)] bg-[var(--card)] p-0.5">
+              <button
+                type="button"
+                onClick={() => setDensityAndSave("spacious")}
+                className={`flex h-8 min-w-8 items-center justify-center rounded px-1.5 text-[10px] font-medium transition ${density === "spacious" ? "bg-[var(--border)] text-[var(--foreground)]" : "text-[var(--muted-foreground)] hover:bg-[var(--border)]"}`}
+                title={t("spaciousView")}
+                aria-label={t("spaciousView")}
+                aria-pressed={density === "spacious"}
+              >
+                −
+              </button>
+              <button
+                type="button"
+                onClick={() => setDensityAndSave("compact")}
+                className={`flex h-8 min-w-8 items-center justify-center rounded px-1.5 text-[10px] font-medium transition ${density === "compact" ? "bg-[var(--border)] text-[var(--foreground)]" : "text-[var(--muted-foreground)] hover:bg-[var(--border)]"}`}
+                title={t("compactView")}
+                aria-label={t("compactView")}
+                aria-pressed={density === "compact"}
+              >
+                ≡
+              </button>
+            </div>
+          </div>
           <FadeInSection
             stagger
             className={
               density === "compact"
-                ? "mb-6 grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6"
-                : "mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 sm:gap-4"
+                ? "mb-6 grid grid-cols-2 gap-1.5 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6"
+                : "mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 sm:gap-4"
             }
           >
             {newArrivals.map((car) => (
@@ -1052,8 +1076,9 @@ function CarsPageContent({
                 type="button"
                 onClick={() => setDensityAndSave("spacious")}
                 className={`flex h-8 w-8 items-center justify-center rounded text-[10px] font-medium transition ${density === "spacious" ? "bg-[var(--border)] text-[var(--foreground)]" : "text-[var(--muted-foreground)] hover:bg-[var(--border)]"}`}
-                title="Fewer, larger cards"
+                title={t("spaciousView")}
                 aria-label={t("spaciousView")}
+                aria-pressed={density === "spacious"}
               >
                 −
               </button>
@@ -1061,10 +1086,11 @@ function CarsPageContent({
                 type="button"
                 onClick={() => setDensityAndSave("compact")}
                 className={`flex h-8 w-8 items-center justify-center rounded text-[10px] font-medium transition ${density === "compact" ? "bg-[var(--border)] text-[var(--foreground)]" : "text-[var(--muted-foreground)] hover:bg-[var(--border)]"}`}
-                title="More, smaller cards"
+                title={t("compactView")}
                 aria-label={t("compactView")}
+                aria-pressed={density === "compact"}
               >
-                +
+                ≡
               </button>
             </div>
           </div>
@@ -1080,8 +1106,8 @@ function CarsPageContent({
               <div
                 className={
                   density === "compact"
-                    ? "grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6"
-                    : "grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 sm:gap-4"
+                    ? "grid grid-cols-2 gap-1.5 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6"
+                    : "grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 sm:gap-4"
                 }
               >
                 {visibleCars.map((car) => (
