@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
+import { cache } from "react";
+import { preload } from "react-dom";
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase-server";
 import { SITE_URL } from "@/lib/constants";
+import { getCarImageUrl, GALLERY_HERO_WIDTH } from "@/lib/image-utils";
 import CarProductJsonLd from "@/app/components/CarProductJsonLd";
-import LoadingFallback from "@/app/components/LoadingFallback";
+import CarDetailSkeleton from "@/app/components/CarDetailSkeleton";
 import CarDetailClient, { type CarDetailInitial } from "./CarDetailClient";
 
 export const revalidate = 60;
@@ -16,7 +19,8 @@ type PageProps = {
   searchParams: Promise<{ preview?: string }>;
 };
 
-async function fetchApprovedCar(id: string): Promise<CarDetailInitial | null> {
+/** Shared between metadata + page so we don't hit Supabase twice per request. */
+const fetchApprovedCar = cache(async (id: string): Promise<CarDetailInitial | null> => {
   const supabase = await createClient();
   const { data } = await supabase
     .from("cars")
@@ -26,18 +30,11 @@ async function fetchApprovedCar(id: string): Promise<CarDetailInitial | null> {
     .eq("is_draft", false)
     .maybeSingle();
   return (data as CarDetailInitial | null) ?? null;
-}
+});
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params;
-  const supabase = await createClient();
-  const { data } = await supabase
-    .from("cars")
-    .select("title, description, make, model, year, province, city, price, currency, images")
-    .eq("id", id)
-    .eq("is_approved", true)
-    .eq("is_draft", false)
-    .maybeSingle();
+  const data = await fetchApprovedCar(id);
 
   if (!data) {
     return {
@@ -83,10 +80,20 @@ export default async function CarDetailPage({ params, searchParams }: PageProps)
   const isPreview = sp.preview === "1";
   const initialCar = isPreview ? null : await fetchApprovedCar(id);
 
+  const firstImage =
+    initialCar && Array.isArray(initialCar.images) && initialCar.images[0]
+      ? initialCar.images[0]
+      : null;
+  if (firstImage) {
+    const lcpSrc =
+      getCarImageUrl(firstImage, { width: GALLERY_HERO_WIDTH, quality: 72 }) ?? firstImage;
+    preload(lcpSrc, { as: "image", fetchPriority: "high" });
+  }
+
   return (
     <>
       {initialCar && <CarProductJsonLd car={initialCar} />}
-      <Suspense fallback={<LoadingFallback />}>
+      <Suspense fallback={<CarDetailSkeleton />}>
         <CarDetailClient initialCar={initialCar} />
       </Suspense>
     </>

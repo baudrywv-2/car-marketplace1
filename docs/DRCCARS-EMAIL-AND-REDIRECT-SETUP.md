@@ -36,12 +36,14 @@ Do these steps in order. When done, users get emails from **no-reply@drccars.com
 ## Step 3: Redirect to drccars.com (no localhost after confirm)
 
 1. In Supabase: **Authentication** → **URL Configuration**.
-2. Set **Site URL** to: `https://drccars.com`
+2. Set **Site URL** to: `https://www.drccars.com` (preferred host — apex redirects here)
 3. Under **Redirect URLs**, add:
-   - `https://drccars.com/**`
+   - `https://www.drccars.com/**`
+   - `https://drccars.com/**` (legacy; still redirects to www)
 4. Click **Save**.
+5. In Vercel / hosting env, set `NEXT_PUBLIC_SITE_URL=https://www.drccars.com`.
 
-The app code already uses `SITE_URL` for signup and reset links, so once this is set, confirmation and password-reset emails will send users to drccars.com.
+The app code already uses `SITE_URL` for signup and reset links, so once this is set, confirmation and password-reset emails will send users to www.drccars.com.
 
 ---
 

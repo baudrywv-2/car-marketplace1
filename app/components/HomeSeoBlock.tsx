@@ -6,12 +6,12 @@ export default function HomeSeoBlock() {
   const topCities = SEO_CITIES.slice(0, 12);
 
   return (
-    <section className="border-t border-white/10 bg-[#0a0a0b] px-4 py-10 sm:px-6 sm:py-12">
+    <section className="border-t border-white/10 bg-gradient-to-b from-[#0a0a0b] to-black px-4 py-11 sm:px-6 sm:py-14">
       <div className="mx-auto max-w-4xl">
-        <h2 className="font-mono text-xl font-bold tracking-tight text-white sm:text-2xl">
+        <h2 className="section-title font-mono text-xl font-bold tracking-tight sm:text-2xl">
           Voitures à vendre en RDC — Goma, Kinshasa, Lubumbashi
         </h2>
-        <p className="mt-3 text-[14px] leading-relaxed text-white/65">
+        <p className="mt-4 text-[14px] leading-relaxed text-white/65">
           DRCCARS est la marketplace pour <strong className="text-white/90">acheter</strong> et{" "}
           <strong className="text-white/90">vendre</strong> une voiture d&apos;occasion en République Démocratique du
           Congo. Trouvez une <strong className="text-white/90">voiture Goma</strong>,{" "}
@@ -21,37 +21,37 @@ export default function HomeSeoBlock() {
           sans passer par les annonces génériques.
         </p>
 
-        <div className="mt-6 grid gap-3 sm:grid-cols-3">
+        <div className="mt-7 grid gap-3 sm:grid-cols-3">
           <Link
             href="/voitures-a-vendre/goma"
-            className="rounded-lg border border-[var(--accent)]/30 bg-black/40 px-3 py-3 text-[12px] text-white/80 hover:border-[var(--accent)]"
+            className="rounded-[var(--radius-lg)] border border-[var(--accent)]/30 bg-black/40 px-3 py-3.5 text-[12px] text-white/80 transition hover:border-[var(--accent)] hover:bg-[var(--accent-muted)]/30"
           >
             <span className="block font-semibold text-[var(--accent)]">Voiture Goma</span>
             Voitures à vendre à Goma (Nord-Kivu)
           </Link>
           <Link
             href="/voitures-a-vendre/kinshasa"
-            className="rounded-lg border border-[var(--accent)]/30 bg-black/40 px-3 py-3 text-[12px] text-white/80 hover:border-[var(--accent)]"
+            className="rounded-[var(--radius-lg)] border border-[var(--accent)]/30 bg-black/40 px-3 py-3.5 text-[12px] text-white/80 transition hover:border-[var(--accent)] hover:bg-[var(--accent-muted)]/30"
           >
             <span className="block font-semibold text-[var(--accent)]">Voiture Kinshasa</span>
             Occasions et véhicules à vendre
           </Link>
           <Link
             href="/location-voiture"
-            className="rounded-lg border border-[var(--accent)]/30 bg-black/40 px-3 py-3 text-[12px] text-white/80 hover:border-[var(--accent)]"
+            className="rounded-[var(--radius-lg)] border border-[var(--accent)]/30 bg-black/40 px-3 py-3.5 text-[12px] text-white/80 transition hover:border-[var(--accent)] hover:bg-[var(--accent-muted)]/30"
           >
             <span className="block font-semibold text-[var(--accent)]">Location véhicule</span>
             Mariage, voyage, tourisme, ONG
           </Link>
         </div>
 
-        <h3 className="mt-8 text-[11px] font-semibold uppercase tracking-wide text-white/45">Parcourir par ville</h3>
-        <ul className="mt-3 flex flex-wrap gap-2">
+        <h3 className="mt-9 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/45">Parcourir par ville</h3>
+        <ul className="mt-3.5 flex flex-wrap gap-2">
           {topCities.map((c) => (
             <li key={c.slug}>
               <Link
                 href={`/voiture/${c.slug}`}
-                className="inline-block rounded-full border border-white/15 px-3 py-1.5 text-[11px] text-white/70 hover:border-[var(--accent)]/50 hover:text-white"
+                className="inline-block rounded-full border border-white/15 px-3 py-1.5 text-[11px] text-white/70 transition hover:border-[var(--accent)]/50 hover:bg-[var(--accent-muted)]/25 hover:text-white"
               >
                 Voiture {c.name}
               </Link>

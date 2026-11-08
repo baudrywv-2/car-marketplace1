@@ -49,6 +49,7 @@ export default function OptimizedCarImage({
         fill={fill}
         sizes={sizes}
         priority={priority}
+        fetchPriority={priority ? "high" : "auto"}
         className={`object-cover ${className}`}
         loading={priority ? "eager" : "lazy"}
         decoding="async"
@@ -65,7 +66,8 @@ export default function OptimizedCarImage({
       src={currentSrc}
       alt={alt}
       className={`h-full w-full object-cover ${className}`}
-      loading="lazy"
+      loading={priority ? "eager" : "lazy"}
+      fetchPriority={priority ? "high" : "auto"}
       decoding="async"
       onError={() => {
         if (!useOriginal && currentSrc !== src) setUseOriginal(true);

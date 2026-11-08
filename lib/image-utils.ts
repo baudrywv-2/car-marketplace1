@@ -6,9 +6,9 @@
  * @see docs/SCALING.md
  */
 
-export const CARD_IMAGE_WIDTH = 480;
-export const GALLERY_THUMB_WIDTH = 160;
-export const GALLERY_HERO_WIDTH = 1200;
+export const CARD_IMAGE_WIDTH = 440;
+export const GALLERY_THUMB_WIDTH = 120;
+export const GALLERY_HERO_WIDTH = 960;
 
 const SUPABASE_STORAGE_PATTERN = /supabase\.co\/storage\/v1\/object\/public\//;
 

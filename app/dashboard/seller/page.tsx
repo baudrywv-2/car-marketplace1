@@ -160,6 +160,18 @@ export default function SellerDashboardPage() {
   const [headerMenuOpen, setHeaderMenuOpen] = useState(false);
   const [openMoreId, setOpenMoreId] = useState<string | null>(null);
 
+  useEffect(() => {
+    try {
+      const tab = new URLSearchParams(window.location.search).get("tab");
+      if (tab === "pending" || tab === "draft" || tab === "live" || tab === "sold") {
+        setActiveTab("listings");
+        setListingFilter(tab);
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
   const visibleAdminMessages = adminMessages.filter((m) => !dismissedMsgIds.has(m.id));
   const visibleApprovedRdv = approvedRdv.filter((r) => !dismissedRdvIds.has(r.id));
 

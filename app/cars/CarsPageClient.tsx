@@ -22,8 +22,8 @@ import {
   type SavedSearchEntry,
 } from "@/lib/saved-searches";
 import CarCardSkeleton from "@/app/components/CarCardSkeleton";
+import CarsBrowseSkeleton from "@/app/components/CarsBrowseSkeleton";
 import VerifiedSellerBadge from "@/app/components/VerifiedSellerBadge";
-import LoadingFallback from "@/app/components/LoadingFallback";
 import CompareBar from "@/app/components/CompareBar";
 import FadeInSection from "@/app/components/FadeInSection";
 import EmptyState from "@/app/components/EmptyState";
@@ -64,7 +64,8 @@ type Profile = { id: string; full_name: string | null; phone_verified?: boolean;
 
 const PAGE_SIZE_OPTIONS = [24, 48, 96] as const;
 /** Cap catalog payload so browse stays fast as inventory grows */
-const CARS_FETCH_LIMIT = 60;
+/** Keep in sync with `app/cars/page.tsx` SSR limit. */
+const CARS_FETCH_LIMIT = 48;
 
 function FilterBlock({
   title,
@@ -76,6 +77,14 @@ function FilterBlock({
       {children}
     </div>
   );
+}
+
+function filterItemClass(active: boolean) {
+  return `block w-full min-h-10 rounded-[var(--radius)] px-2 py-2.5 text-left text-small transition ${
+    active
+      ? "bg-[var(--accent-muted)] font-semibold text-[var(--accent)]"
+      : "text-[var(--muted-foreground)] hover:bg-white/5"
+  }`;
 }
 
 function CarsPageContent({
@@ -92,7 +101,9 @@ function CarsPageContent({
   const [allCars, setAllCars] = useState<Car[]>(initialCars ?? []);
   const [profiles, setProfiles] = useState<Record<string, Profile>>(initialProfiles ?? {});
   const [loading, setLoading] = useState(!initialCars);
+  const [refreshing, setRefreshing] = useState(false);
   const skipNextFetch = useRef(!!initialCars);
+  const hasResultsRef = useRef((initialCars?.length ?? 0) > 0);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [keyword, setKeyword] = useState(() => initial.q ?? "");
   const [debouncedKeyword, setDebouncedKeyword] = useState(() => initial.q ?? "");
@@ -321,7 +332,8 @@ function CarsPageContent({
       return;
     }
     async function load() {
-      setLoading(true);
+      if (hasResultsRef.current) setRefreshing(true);
+      else setLoading(true);
       const filters = currentFilters();
       let query = supabase
         .from("cars")
@@ -342,6 +354,7 @@ function CarsPageContent({
       }
       const cars = (carsData as Car[]) ?? [];
       setAllCars(cars);
+      hasResultsRef.current = true;
 
       const ownerIds = [...new Set(cars.map((c) => c.owner_id).filter(Boolean))] as string[];
       if (ownerIds.length > 0) {
@@ -386,6 +399,7 @@ function CarsPageContent({
         }).catch(() => {});
       }
       setLoading(false);
+      setRefreshing(false);
     }
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- currentFilters derived from listed deps
@@ -603,13 +617,14 @@ function CarsPageContent({
   const sidebarContent = (
     <>
       <FilterBlock title={t("listingType")}>
-        <ul className="space-y-1 text-small">
+        <ul className="space-y-0.5 text-small">
           {(["", "sale", "rent"] as const).map((lt) => (
             <li key={lt || "all"}>
               <button
                 type="button"
                 onClick={() => setListingType(lt)}
-                className={`block w-full rounded-[var(--radius)] py-2 text-left ${listingType === lt ? "font-semibold text-[var(--foreground)]" : "text-[var(--muted-foreground)]"}`}
+                className={filterItemClass(listingType === lt)}
+                aria-pressed={listingType === lt}
               >
                 {lt ? t(LISTING_TYPE_TRANSLATION_KEYS[lt] as Parameters<typeof t>[0]) : t("all")}
               </button>
@@ -618,13 +633,14 @@ function CarsPageContent({
         </ul>
       </FilterBlock>
       <FilterBlock title={t("shopByTownCity")}>
-        <ul className="space-y-1 text-small">
+        <ul className="space-y-0.5 text-small">
           {DRC_LOCATIONS.map((p) => (
             <li key={p}>
               <button
                 type="button"
                 onClick={() => setProvince(province === p ? "" : p)}
-                className={`block w-full rounded-[var(--radius)] py-2 text-left ${province === p ? "font-semibold text-[var(--foreground)]" : "text-[var(--muted-foreground)]"}`}
+                className={filterItemClass(province === p)}
+                aria-pressed={province === p}
               >
                 {p} ({provinceCounts[p] ?? 0})
               </button>
@@ -633,7 +649,7 @@ function CarsPageContent({
         </ul>
       </FilterBlock>
       <FilterBlock title={t("shopByMake")}>
-        <ul className="space-y-1 text-small">
+        <ul className="space-y-0.5 text-small">
           {makes.map((m) => (
             <li key={m}>
               <button
@@ -642,7 +658,8 @@ function CarsPageContent({
                   setMake(m === make ? "" : m);
                   setModelFilter("");
                 }}
-                className={`block w-full rounded-[var(--radius)] py-2 text-left ${make === m ? "font-semibold text-[var(--foreground)]" : "text-[var(--muted-foreground)]"}`}
+                className={filterItemClass(make === m)}
+                aria-pressed={make === m}
               >
                 {m === OTHER_MAKE ? t("other") : m} ({makeCounts[m] ?? 0})
               </button>
@@ -650,8 +667,31 @@ function CarsPageContent({
           ))}
         </ul>
       </FilterBlock>
+      {make && modelOptions.length > 0 && (
+        <FilterBlock title={t("model")}>
+          <ul className="space-y-0.5 text-small">
+            <li>
+              <button type="button" onClick={() => setModelFilter("")} className={filterItemClass(!modelFilter)} aria-pressed={!modelFilter}>
+                {t("all")}
+              </button>
+            </li>
+            {modelOptions.map(({ name, count }) => (
+              <li key={name}>
+                <button
+                  type="button"
+                  onClick={() => setModelFilter(modelFilter === name ? "" : name)}
+                  className={filterItemClass(modelFilter === name)}
+                  aria-pressed={modelFilter === name}
+                >
+                  {name} ({count})
+                </button>
+              </li>
+            ))}
+          </ul>
+        </FilterBlock>
+      )}
       <FilterBlock title={t("shopByPrice")}>
-        <ul className="mb-2 space-y-1 text-small">
+        <ul className="mb-2 space-y-0.5 text-small">
           {PRICE_RANGES.map((r) => (
             <li key={r.key}>
               <button
@@ -664,7 +704,8 @@ function CarsPageContent({
                     setMaxPrice("");
                   }
                 }}
-                className={`block w-full rounded-[var(--radius)] py-2 text-left ${priceRange === r.key ? "font-semibold text-[var(--foreground)]" : "text-[var(--muted-foreground)]"}`}
+                className={filterItemClass(priceRange === r.key)}
+                aria-pressed={priceRange === r.key}
               >
                 {t(r.key)}
               </button>
@@ -701,13 +742,14 @@ function CarsPageContent({
         </div>
       </FilterBlock>
       <FilterBlock title={t("shopByDiscount")}>
-        <ul className="space-y-1 text-small">
+        <ul className="space-y-0.5 text-small">
           {DISCOUNT_RANGES.map((r) => (
             <li key={r.key}>
               <button
                 type="button"
                 onClick={() => setDiscountRange(discountRange === r.key ? "" : r.key)}
-                className={`block w-full rounded-[var(--radius)] py-2 text-left ${discountRange === r.key ? "font-semibold text-[var(--foreground)]" : "text-[var(--muted-foreground)]"}`}
+                className={filterItemClass(discountRange === r.key)}
+                aria-pressed={discountRange === r.key}
               >
                 {t(r.key)}
               </button>
@@ -716,13 +758,14 @@ function CarsPageContent({
         </ul>
       </FilterBlock>
       <FilterBlock title={t("shopByType")}>
-        <ul className="space-y-1 text-small">
+        <ul className="space-y-0.5 text-small">
           {(types.length > 0 ? types : [...CAR_TYPES]).map((ty) => (
             <li key={ty}>
               <button
                 type="button"
                 onClick={() => setType(ty === type ? "" : ty)}
-                className={`block w-full rounded-[var(--radius)] py-2 text-left ${type === ty ? "font-semibold text-[var(--foreground)]" : "text-[var(--muted-foreground)]"}`}
+                className={filterItemClass(type === ty)}
+                aria-pressed={type === ty}
               >
                 {ty} {typeCounts[ty] != null ? `(${typeCounts[ty]})` : ""}
               </button>
@@ -731,13 +774,14 @@ function CarsPageContent({
         </ul>
       </FilterBlock>
       <FilterBlock title={t("condition")}>
-        <ul className="space-y-1 text-small">
+        <ul className="space-y-0.5 text-small">
           {(["new", "used"] as const).map((c) => (
             <li key={c}>
               <button
                 type="button"
                 onClick={() => setCondition(condition === c ? "" : c)}
-                className={`block w-full rounded-[var(--radius)] py-2 text-left ${condition === c ? "font-semibold text-[var(--foreground)]" : "text-[var(--muted-foreground)]"}`}
+                className={filterItemClass(condition === c)}
+                aria-pressed={condition === c}
               >
                 {t(c)}
               </button>
@@ -772,13 +816,14 @@ function CarsPageContent({
         </div>
       </FilterBlock>
       <FilterBlock title={t("shopByTransmission")}>
-        <ul className="space-y-1 text-small">
+        <ul className="space-y-0.5 text-small">
           {(["automatic", "manual"] as const).map((tr) => (
             <li key={tr}>
               <button
                 type="button"
                 onClick={() => setTransmission(transmission === tr ? "" : tr)}
-                className={`block w-full rounded-[var(--radius)] py-2 text-left ${transmission === tr ? "font-semibold text-[var(--foreground)]" : "text-[var(--muted-foreground)]"}`}
+                className={filterItemClass(transmission === tr)}
+                aria-pressed={transmission === tr}
               >
                 {t(tr)} ({transmissionCounts[tr] ?? 0})
               </button>
@@ -787,13 +832,14 @@ function CarsPageContent({
         </ul>
       </FilterBlock>
       <FilterBlock title={t("shopByFuel")}>
-        <ul className="space-y-1 text-small">
+        <ul className="space-y-0.5 text-small">
           {(["essence", "diesel", "electric", "hybrid"] as const).map((fuel) => (
             <li key={fuel}>
               <button
                 type="button"
                 onClick={() => setFuelType(fuelType === fuel ? "" : fuel)}
-                className={`block w-full rounded-[var(--radius)] py-2 text-left ${fuelType === fuel ? "font-semibold text-[var(--foreground)]" : "text-[var(--muted-foreground)]"}`}
+                className={filterItemClass(fuelType === fuel)}
+                aria-pressed={fuelType === fuel}
               >
                 {t(fuel)} ({fuelTypeCounts[fuel] ?? 0})
               </button>
@@ -808,29 +854,22 @@ function CarsPageContent({
   );
 
   if (loading) {
-    return (
-      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
-        <div className="mb-6 h-10 w-64 animate-pulse rounded bg-[var(--border)]" />
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-5 sm:gap-3">
-          {Array.from({ length: 10 }).map((_, i) => (
-            <CarCardSkeleton key={i} compact />
-          ))}
-        </div>
-      </div>
-    );
+    return <CarsBrowseSkeleton />;
   }
 
+  const activeFilterCount = getActiveFilterPills().length;
+
   return (
-    <div className={`mx-auto max-w-7xl px-3 py-4 sm:px-4 sm:py-6 ${compareIds.length > 0 ? "pb-32 sm:pb-24" : ""}`}>
+    <div className={`mx-auto max-w-7xl px-3 py-5 sm:px-4 sm:py-8 ${compareIds.length > 0 ? "pb-32 sm:pb-24" : ""}`}>
       {/* Search + mobile filters button */}
-      <div className="mb-3 space-y-2 sm:mb-4 sm:space-y-3">
+      <div className="mb-4 space-y-2.5 sm:mb-5 sm:space-y-3">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
           <input
             type="search"
             placeholder={t("searchPlaceholder")}
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
-            className="input-premium max-w-xl"
+            className="input-premium max-w-xl min-h-11"
           />
           <div className="flex items-center gap-2">
             <button
@@ -843,25 +882,31 @@ function CarsPageContent({
             <button
               type="button"
               onClick={() => setFiltersOpen(true)}
-              className="btn-secondary min-h-10 px-3 text-[11px] md:hidden sm:min-h-[44px] sm:text-[0.8125rem]"
+              className="btn-secondary relative min-h-11 px-3 text-[11px] md:hidden sm:text-[0.8125rem]"
               aria-label={t("filters")}
+              aria-expanded={filtersOpen}
             >
               {t("filters")}
+              {activeFilterCount > 0 && (
+                <span className="ml-1.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--accent)] px-1.5 text-[10px] font-bold text-black">
+                  {activeFilterCount}
+                </span>
+              )}
             </button>
           </div>
         </div>
         {hasActiveFilters && (
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-1.5" aria-label={t("filters")}>
             {getActiveFilterPills().map((p) => (
               <span
                 key={p.key}
-                className="inline-flex items-center gap-1 rounded-full border border-[var(--border)] bg-[var(--card)] px-3 py-1.5 text-caption text-[var(--foreground)]"
+                className="inline-flex items-center gap-0.5 rounded-full border border-[var(--accent)]/40 bg-[var(--accent-muted)] py-1 pl-2.5 pr-0.5 text-[11px] font-medium text-[var(--accent)]"
               >
                 {p.label}
                 <button
                   type="button"
                   onClick={p.onRemove}
-                  className="-mr-1 ml-1 flex min-h-[44px] min-w-[44px] items-center justify-center rounded hover:bg-[var(--border)]"
+                  className="flex h-8 w-8 items-center justify-center rounded-full text-[15px] leading-none hover:bg-black/10"
                   aria-label={`Remove ${p.label}`}
                 >
                   ×
@@ -871,7 +916,7 @@ function CarsPageContent({
             <button
               type="button"
               onClick={clearAllFilters}
-              className="link-accent text-caption font-medium"
+              className="link-accent min-h-8 px-2 text-caption font-medium"
             >
               {t("clearAllFilters")}
             </button>
@@ -910,7 +955,7 @@ function CarsPageContent({
 
       <div className="flex gap-6">
         {/* Desktop sidebar */}
-        <aside className="hidden w-52 shrink-0 space-y-4 md:block">
+        <aside className="hidden w-52 shrink-0 space-y-3 md:block lg:w-56">
           {sidebarContent}
         </aside>
 
@@ -922,13 +967,20 @@ function CarsPageContent({
               aria-hidden
               onClick={() => setFiltersOpen(false)}
             />
-            <aside className="fixed left-0 top-0 z-50 flex h-full w-[min(100vw,20rem)] flex-col overflow-auto border-r border-[var(--border)] bg-[var(--card)] p-4 shadow-[var(--shadow-lg)] md:hidden">
-              <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-heading text-[var(--foreground)]">{t("filters")}</h2>
+            <aside className="fixed left-0 top-0 z-50 flex h-full w-[min(100vw,20rem)] flex-col border-r border-[var(--border)] bg-[var(--card)] shadow-[var(--shadow-lg)] md:hidden">
+              <div className="flex shrink-0 items-center justify-between border-b border-[var(--border)] p-4">
+                <h2 className="text-heading text-[var(--foreground)]">
+                  {t("filters")}
+                  {activeFilterCount > 0 ? (
+                    <span className="ml-2 text-caption font-normal text-[var(--muted-foreground)]">
+                      ({activeFilterCount})
+                    </span>
+                  ) : null}
+                </h2>
                 <button
                   type="button"
                   onClick={() => setFiltersOpen(false)}
-                  className="flex h-10 w-10 items-center justify-center rounded-[var(--radius)] text-[var(--foreground)] hover:bg-[var(--border)]"
+                  className="flex h-11 w-11 items-center justify-center rounded-[var(--radius)] text-[var(--foreground)] hover:bg-[var(--border)]"
                   aria-label={t("closeFilters")}
                 >
                   <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -936,23 +988,39 @@ function CarsPageContent({
                   </svg>
                 </button>
               </div>
-              <div className="space-y-6">
+              <div className="min-h-0 flex-1 space-y-4 overflow-auto p-4 pb-28">
                 {sidebarContent}
               </div>
-              <button
-                type="button"
-                onClick={() => setFiltersOpen(false)}
-                className="btn-primary mt-4 w-full"
-              >
-                {t("apply")}
-              </button>
+              <div className="safe-area-bottom absolute bottom-0 left-0 right-0 flex gap-2 border-t border-[var(--border)] bg-[var(--card)] p-3">
+                {hasActiveFilters && (
+                  <button
+                    type="button"
+                    onClick={clearAllFilters}
+                    className="btn-secondary min-h-12 flex-1"
+                  >
+                    {t("clearAllFilters")}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setFiltersOpen(false)}
+                  className="btn-primary min-h-12 flex-[1.4]"
+                >
+                  {t("apply")} · {cars.length}
+                </button>
+              </div>
             </aside>
           </>
         )}
 
         {/* Main content */}
-        <div className="min-w-0 flex-1">
-          <h2 className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">{t("topSellersInDRC")}</h2>
+        <div className={`min-w-0 flex-1 ${refreshing ? "opacity-60 transition-opacity" : ""}`} aria-busy={refreshing}>
+          {refreshing && (
+            <p className="mb-3 text-[11px] text-[var(--muted-foreground)]" role="status">
+              {t("loading")}
+            </p>
+          )}
+          <h2 className="mb-2.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--accent)]/80">{t("topSellersInDRC")}</h2>
           <div className="mb-5 flex flex-wrap gap-2">
             {topSellers.map((s) => (
               <span
@@ -985,8 +1053,8 @@ function CarsPageContent({
             </div>
           )}
 
-          <div className="mb-2 flex items-center justify-between gap-2">
-            <h2 className="text-[10px] font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">{t("newArrivals")}</h2>
+          <div className="mb-2.5 flex items-center justify-between gap-2">
+            <h2 className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--accent)]/80">{t("newArrivals")}</h2>
             <div className="flex items-center gap-0.5 rounded-[var(--radius)] border border-[var(--border)] bg-[var(--card)] p-0.5">
               <button
                 type="button"
@@ -1018,11 +1086,12 @@ function CarsPageContent({
                 : "mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 sm:gap-4"
             }
           >
-            {newArrivals.map((car) => (
+            {newArrivals.map((car, i) => (
               <BuyerCarCard
                 key={car.id}
                 car={car}
                 compact={density === "compact"}
+                priority={i < 4}
                 showFavorite
                 isFav={favoriteIds.has(car.id)}
                 loggedIn={!!user}
@@ -1035,7 +1104,7 @@ function CarsPageContent({
           </FadeInSection>
 
           <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-            <h2 className="text-[10px] font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">{t("browseAll")}</h2>
+            <h2 className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--accent)]/80">{t("browseAll")}</h2>
             {cars.length > 0 && (
               <div className="flex flex-wrap items-center gap-3">
                 <span className="text-caption text-[var(--muted-foreground)]">
@@ -1110,11 +1179,12 @@ function CarsPageContent({
                     : "grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 sm:gap-4"
                 }
               >
-                {visibleCars.map((car) => (
+                {visibleCars.map((car, i) => (
                   <BuyerCarCard
                     key={car.id}
                     car={car}
                     compact={density === "compact"}
+                    priority={i < 6}
                     showFavorite
                     isFav={favoriteIds.has(car.id)}
                     loggedIn={!!user}
@@ -1160,7 +1230,7 @@ export default function CarsPageClient({
   initialProfiles?: Record<string, Profile> | null;
 }) {
   return (
-    <Suspense fallback={<LoadingFallback />}>
+    <Suspense fallback={<CarsBrowseSkeleton />}>
       <CarsPageContent initialCars={initialCars} initialProfiles={initialProfiles} />
     </Suspense>
   );

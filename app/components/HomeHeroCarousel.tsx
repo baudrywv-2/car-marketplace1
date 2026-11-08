@@ -83,7 +83,7 @@ export default function HomeHeroCarousel({ className = "" }: Props) {
         />
       </div>
 
-      {/* Desktop: ambient crossfade — no dots / arrows */}
+      {/* Desktop: ambient crossfade — no priority so mobile LCP keeps the eager slot. */}
       <div className="absolute inset-0 hidden sm:block">
         {HERO_SLIDES.map((slide, i) => (
           <div
@@ -98,8 +98,8 @@ export default function HomeHeroCarousel({ className = "" }: Props) {
               fill
               className={`object-cover ${slide.position}`}
               sizes="100vw"
-              priority={i === 0}
-              fetchPriority={i === 0 ? "high" : "auto"}
+              loading={i === 0 ? "eager" : "lazy"}
+              fetchPriority="auto"
             />
           </div>
         ))}

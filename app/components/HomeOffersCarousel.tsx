@@ -51,9 +51,9 @@ export default function HomeOffersCarousel({ cars, loading, autoPlay = true }: P
         onUserScroll={() => setPaused(true)}
         className="snap-x snap-mandatory gap-2.5 pb-1 px-1.5 sm:gap-3 sm:px-3"
       >
-        {cars.map((car) => (
+        {cars.map((car, i) => (
           <div key={car.id} className={CARD_W}>
-            <BuyerCarCard car={car} compact />
+            <BuyerCarCard car={car} compact priority={i < 2} />
           </div>
         ))}
       </SubtleScrollRail>

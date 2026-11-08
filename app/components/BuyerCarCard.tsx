@@ -36,6 +36,8 @@ export type BuyerCarCardData = {
 type Props = {
   car: BuyerCarCardData;
   compact?: boolean;
+  /** First visible cards only — improves LCP without loading every thumb eagerly. */
+  priority?: boolean;
   isFav?: boolean;
   loggedIn?: boolean;
   onFavToggle?: (next: boolean) => void;
@@ -63,6 +65,7 @@ function transmissionLabel(t: (k: string) => string, tr?: string | null) {
 export default function BuyerCarCard({
   car,
   compact,
+  priority = false,
   isFav,
   loggedIn,
   onFavToggle,
@@ -129,15 +132,15 @@ export default function BuyerCarCard({
 
   return (
     <article
-      className={`group relative flex h-full min-w-0 flex-col overflow-hidden rounded-md bg-black ${className}`}
+      className={`listing-card group relative flex h-full min-w-0 flex-col overflow-hidden bg-black ${className}`}
     >
       <Link
         href={`/cars/${car.id}`}
-        className="flex min-h-0 flex-1 flex-col"
+        className="flex min-h-0 flex-1 flex-col outline-none"
         onClick={onNavigate}
       >
         <div
-          className={`relative bg-[#1a1a1c] ${
+          className={`listing-card-media relative overflow-hidden bg-[#1a1a1c] ${
             compact ? "aspect-[5/3] sm:aspect-[5/4]" : "aspect-[4/3]"
           }`}
         >
@@ -145,8 +148,9 @@ export default function BuyerCarCard({
             <OptimizedCarImage
               src={img}
               alt={car.title}
-              thumbWidth={compact ? 400 : 480}
-              quality={70}
+              thumbWidth={compact ? 360 : 440}
+              quality={65}
+              priority={priority}
               sizes={compact ? "(max-width: 640px) 50vw, 16vw" : "(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"}
             />
           ) : (

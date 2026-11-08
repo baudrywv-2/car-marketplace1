@@ -11,7 +11,7 @@ import type { Currency } from "@/lib/constants";
 const fontSans = Inter({
   variable: "--font-sans",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["400", "600", "700"],
   display: "swap",
 });
 
@@ -107,8 +107,25 @@ export default async function RootLayout({
   const htmlLang =
     initialLocale === "ln" ? "ln" : initialLocale === "sw" ? "sw" : initialLocale;
 
+  const supabaseOrigin = (() => {
+    try {
+      const u = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      return u ? new URL(u).origin : null;
+    } catch {
+      return null;
+    }
+  })();
+
   return (
     <html lang={htmlLang}>
+      <head>
+        {supabaseOrigin && (
+          <>
+            <link rel="preconnect" href={supabaseOrigin} />
+            <link rel="dns-prefetch" href={supabaseOrigin} />
+          </>
+        )}
+      </head>
       <body
         className={`${fontSans.variable} ${fontMono.variable} ${fontLogo.variable} ${fontDisplay.variable} font-sans antialiased`}
       >

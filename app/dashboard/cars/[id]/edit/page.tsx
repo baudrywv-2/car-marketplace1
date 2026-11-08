@@ -8,6 +8,8 @@ import { useLocale } from "@/app/contexts/LocaleContext";
 import { DRC_LOCATIONS, CAR_TYPES, CAR_MAKES, OTHER_MAKE, CURRENCIES, CONDITIONS, TRANSMISSIONS, FUEL_TYPES, LISTING_TYPES, RENTAL_EVENT_TYPES } from "@/lib/constants";
 import ImageUpload from "@/app/components/ImageUpload";
 import ListingFeaturePicker from "@/app/components/ListingFeaturePicker";
+import ListingPublishChecklist from "@/app/components/ListingPublishChecklist";
+import ListingSubmittedSuccess from "@/app/components/ListingSubmittedSuccess";
 import {
   buildListingPayload,
   hasAtLeastOneRentalPrice,
@@ -26,6 +28,8 @@ export default function EditCarPage() {
   const [error, setError] = useState("");
   const [isDraft, setIsDraft] = useState(true);
   const [submittedSuccess, setSubmittedSuccess] = useState(false);
+  const [draftSuccess, setDraftSuccess] = useState(false);
+  const errorRef = useRef<HTMLParagraphElement>(null);
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -138,6 +142,12 @@ export default function EditCarPage() {
     return buildListingPayload(form, getSellerContact());
   }
 
+  function failWith(message: string) {
+    setError(message);
+    setSaving(false);
+    queueMicrotask(() => errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }));
+  }
+
   async function handleSaveDraft(e?: React.FormEvent | React.MouseEvent) {
     e?.preventDefault();
     setError("");
@@ -146,19 +156,16 @@ export default function EditCarPage() {
       (form.listing_type === "rent" || form.listing_type === "both") &&
       !hasAtLeastOneRentalPrice(form)
     ) {
-      setError(t("rentalPriceAtLeastOne"));
-      setSaving(false);
+      failWith(t("rentalPriceAtLeastOne"));
       return;
     }
     if (!getSellerContact().phone) {
-      setError(t("setContactToList"));
-      setSaving(false);
+      failWith(t("setContactToList"));
       return;
     }
     const quality = validateListing(form, "draft");
     if (!quality.ok) {
-      setError(t(quality.errorKey as Parameters<typeof t>[0]));
-      setSaving(false);
+      failWith(t(quality.errorKey as Parameters<typeof t>[0]));
       return;
     }
     const { error: err } = await supabase
@@ -167,11 +174,11 @@ export default function EditCarPage() {
       .eq("id", id);
     setSaving(false);
     if (err) {
-      setError(err.message);
+      failWith(err.message);
       return;
     }
     setIsDraft(true);
-    router.refresh();
+    setDraftSuccess(true);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -182,24 +189,20 @@ export default function EditCarPage() {
       (form.listing_type === "rent" || form.listing_type === "both") &&
       !hasAtLeastOneRentalPrice(form)
     ) {
-      setError(t("rentalPriceAtLeastOne"));
-      setSaving(false);
+      failWith(t("rentalPriceAtLeastOne"));
       return;
     }
     if ((form.listing_type === "sale" || form.listing_type === "both") && !form.price.trim()) {
-      setError(t("salePriceRequired"));
-      setSaving(false);
+      failWith(t("salePriceRequired"));
       return;
     }
     if (!getSellerContact().phone) {
-      setError(t("setContactToList"));
-      setSaving(false);
+      failWith(t("setContactToList"));
       return;
     }
     const quality = validateListing(form, "publish");
     if (!quality.ok) {
-      setError(t(quality.errorKey as Parameters<typeof t>[0]));
-      setSaving(false);
+      failWith(t(quality.errorKey as Parameters<typeof t>[0]));
       return;
     }
     const payload = buildPayload();
@@ -209,7 +212,7 @@ export default function EditCarPage() {
       .eq("id", id);
     setSaving(false);
     if (err) {
-      setError(err.message);
+      failWith(err.message);
       return;
     }
     const newDiscount = payload.discount_percent != null ? payload.discount_percent : 0;
@@ -230,8 +233,7 @@ export default function EditCarPage() {
       setSubmittedSuccess(true);
       return;
     }
-    router.push("/dashboard");
-    router.refresh();
+    setSubmittedSuccess(true);
   }
 
   if (loading) {
@@ -256,25 +258,38 @@ export default function EditCarPage() {
   const inputClass = "input-premium";
 
   if (submittedSuccess) {
-    return (
-      <div className="mx-auto max-w-xl px-4 py-8 sm:px-6 sm:py-12">
-        <div className="rounded-[var(--radius-lg)] border border-[var(--accent)]/40 bg-[var(--accent-muted)] p-6">
-          <h1 className="text-heading mb-3 text-[var(--foreground)]">{t("submittedForApproval")}</h1>
-          <p className="text-body mb-6 text-[var(--muted-foreground)]">{t("submittedForApprovalDesc")}</p>
-          <Link href="/dashboard/seller" className="btn-primary inline-flex min-h-[44px] items-center">
-            {t("backToDashboard")}
-          </Link>
-        </div>
-      </div>
-    );
+    return <ListingSubmittedSuccess mode="submitted" />;
   }
+
+  if (draftSuccess) {
+    return <ListingSubmittedSuccess mode="draft" />;
+  }
+
+  const phoneReady = !!(
+    form.owner_phone.replace(/\D/g, "").length >= 9 ||
+    (profile?.phone ?? "").replace(/\D/g, "").length >= 9
+  );
+  const checklist = {
+    photos: form.images.length > 0,
+    title: form.title.trim().length >= 8,
+    makeModel: !!(form.make && (form.make !== OTHER_MAKE ? form.model.trim().length >= 2 : form.make_other.trim().length >= 2 && form.model.trim().length >= 2)),
+    type: !!form.type.trim(),
+    price: !!form.price.trim(),
+    contact: phoneReady,
+    location: !!form.province.trim(),
+  };
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-6 pb-28 sm:px-6 sm:py-10 sm:pb-28 lg:px-8">
       <Link href="/dashboard" className="text-caption mb-6 inline-block font-medium text-[var(--foreground)] hover:underline">
         {t("backToDashboard")}
       </Link>
-      <h1 className="text-heading mb-6 text-[var(--foreground)]">{t("editCar")}</h1>
+      <h1 className="text-heading mb-4 text-[var(--foreground)]">{t("editCar")}</h1>
+
+      <ListingPublishChecklist
+        state={checklist}
+        needsSalePrice={form.listing_type === "sale" || form.listing_type === "both"}
+      />
 
       <form id="edit-car-form" onSubmit={handleSubmit} className="flex flex-col gap-5">
         <div>
@@ -568,7 +583,11 @@ export default function EditCarPage() {
           </div>
         </div>
 
-        {error && <p className="text-caption text-red-600">{error}</p>}
+        {error && (
+          <p ref={errorRef} className="rounded-[var(--radius)] border border-red-500/40 bg-red-500/10 px-3 py-3 text-[13px] text-red-400" role="alert">
+            {error}
+          </p>
+        )}
         <div className="h-4" aria-hidden />
       </form>
 

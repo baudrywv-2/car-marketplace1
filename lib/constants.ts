@@ -1,5 +1,9 @@
-/** Site base URL for sitemap, robots, canonical links */
-export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://drccars.com";
+import { normalizeSiteUrl } from "@/lib/site-url";
+
+/** Site base URL for sitemap, robots, canonical links — always https://www.drccars.com in prod */
+export const SITE_URL = normalizeSiteUrl(
+  process.env.NEXT_PUBLIC_SITE_URL || "https://www.drccars.com"
+);
 
 // Approximate USD → CDF rate (update via env or admin later)
 export const CDF_PER_USD = Number(process.env.NEXT_PUBLIC_CDF_PER_USD) || 2750;

@@ -14,6 +14,7 @@ import CarImageGallery from "@/app/components/CarImageGallery";
 import VerifiedSellerBadge from "@/app/components/VerifiedSellerBadge";
 import CarProductJsonLd from "@/app/components/CarProductJsonLd";
 import BuyerCarCard from "@/app/components/BuyerCarCard";
+import CarDetailSkeleton from "@/app/components/CarDetailSkeleton";
 import FadeInSection from "@/app/components/FadeInSection";
 import { formatListedDate } from "@/lib/date-utils";
 import { RENTAL_EVENT_TRANSLATION_KEYS, LISTING_TYPE_TRANSLATION_KEYS, CAR_FEATURE_BY_ID } from "@/lib/constants";
@@ -80,6 +81,7 @@ export default function CarDetailClient({ initialCar = null }: Props) {
   const [rdvLoading, setRdvLoading] = useState(false);
   const [rdvMessage, setRdvMessage] = useState("");
   const [rdvDate, setRdvDate] = useState("");
+  const [rdvDateError, setRdvDateError] = useState(false);
   const [rdvSuggestedPrice, setRdvSuggestedPrice] = useState("");
   const [rdvIntent, setRdvIntent] = useState<"sale" | "rent">("sale");
   const [hasUnlocked, setHasUnlocked] = useState(false);
@@ -270,11 +272,7 @@ export default function CarDetailClient({ initialCar = null }: Props) {
   }, [user, id]);
 
   if (loading) {
-    return (
-      <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
-        <p className="text-body text-[var(--muted-foreground)]">{t("loading")}</p>
-      </div>
-    );
+    return <CarDetailSkeleton />;
   }
 
   if (!car) {
@@ -315,11 +313,17 @@ export default function CarDetailClient({ initialCar = null }: Props) {
         <span className="truncate text-[var(--foreground)]">{car.title}</span>
       </nav>
       {backUrl ? (
-        <a href={backUrl} className="link-accent text-caption mb-4 inline-block font-medium">
+        <a
+          href={backUrl}
+          className="mb-4 inline-flex min-h-11 items-center gap-2 rounded-[var(--radius)] border border-[var(--border)] bg-[var(--card)] px-3 text-[13px] font-medium text-[var(--foreground)] transition hover:border-[var(--accent)]/50 hover:text-[var(--accent)]"
+        >
           {t("backToResults")}
         </a>
       ) : (
-        <Link href="/cars" className="text-caption mb-4 inline-block font-medium text-[var(--foreground)] hover:underline">
+        <Link
+          href="/cars"
+          className="mb-4 inline-flex min-h-11 items-center gap-2 rounded-[var(--radius)] border border-[var(--border)] bg-[var(--card)] px-3 text-[13px] font-medium text-[var(--foreground)] transition hover:border-[var(--accent)]/50 hover:text-[var(--accent)]"
+        >
           ← {t("browseCars")}
         </Link>
       )}
@@ -573,9 +577,9 @@ export default function CarDetailClient({ initialCar = null }: Props) {
                       href={`https://wa.me/${contact.owner_whatsapp.replace(/\D/g, "")}?text=${encodeURIComponent(t("whatsappCarInterest").replace("{title}", car.title))}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="btn-accent inline-flex items-center gap-2"
+                      className="btn-accent inline-flex min-h-12 w-full items-center justify-center gap-2"
                     >
-                      <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+                      <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
                         <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
                       </svg>
                       {t("whatsappSeller")}
@@ -585,7 +589,7 @@ export default function CarDetailClient({ initialCar = null }: Props) {
                   {!contact.owner_whatsapp && contact.owner_phone && (
                     <a
                       href={`tel:${contact.owner_phone}`}
-                      className="btn-primary inline-flex min-h-[40px]"
+                      className="btn-primary inline-flex min-h-12 w-full items-center justify-center"
                     >
                       {t("callSeller")}
                     </a>
@@ -597,30 +601,31 @@ export default function CarDetailClient({ initialCar = null }: Props) {
               <div className="flex flex-col gap-2">
                 {user ? (
                   rdvSent ? (
-                    <p id="contact" className="rounded-lg border border-[var(--accent)]/30 bg-[var(--accent-muted)] px-3 py-2 text-[12px] text-[var(--accent)]">
+                    <p id="contact" className="scroll-mt-28 rounded-lg border border-[var(--accent)]/30 bg-[var(--accent-muted)] px-3 py-3 text-[13px] font-medium text-[var(--accent)] sm:scroll-mt-4">
                       {t("meetingRequestSent")}
                     </p>
                   ) : null
                 ) : (
-                  <Link id="contact" href={`/login?next=/cars/${id}`} className="btn-secondary w-full min-h-[44px] text-center">
+                  <Link id="contact" href={`/login?next=/cars/${id}`} className="btn-accent w-full min-h-12 scroll-mt-28 text-center sm:scroll-mt-4">
                     {t("logIn")} — {t("requestMeeting")}
                   </Link>
                 )}
               </div>
             </div>
             {user && !rdvSent && (
-              <div id="contact" className="mt-3 scroll-mt-28 rounded-lg border border-[var(--border)] bg-[var(--background)] p-3 sm:scroll-mt-4">
-                <p className="text-[12px] mb-2 text-[var(--muted-foreground)]">{t("meetingReassurance")}</p>
+              <div id="contact" className="mt-3 scroll-mt-28 rounded-lg border border-[var(--accent)]/25 bg-[var(--background)] p-3 sm:scroll-mt-4 sm:p-4">
+                <h2 className="mb-1 text-[14px] font-semibold text-[var(--foreground)]">{t("requestMeeting")}</h2>
+                <p className="mb-3 text-[12px] leading-relaxed text-[var(--muted-foreground)]">{t("meetingReassurance")}</p>
                 {(car.listing_type === "both") && (
                   <div className="mb-3">
                     <label className="text-caption mb-1.5 block">{t("interestedIn")}</label>
-                    <div className="flex gap-3">
-                      <label className="flex cursor-pointer items-center gap-2 text-[12px]">
-                        <input type="radio" name="rdvIntent" checked={rdvIntent === "sale"} onChange={() => setRdvIntent("sale")} className="rounded-full" />
+                    <div className="flex gap-2">
+                      <label className={`flex min-h-11 flex-1 cursor-pointer items-center justify-center gap-2 rounded-[var(--radius)] border px-3 text-[12px] ${rdvIntent === "sale" ? "border-[var(--accent)] bg-[var(--accent-muted)] text-[var(--accent)]" : "border-[var(--border)]"}`}>
+                        <input type="radio" name="rdvIntent" checked={rdvIntent === "sale"} onChange={() => setRdvIntent("sale")} className="sr-only" />
                         {t(LISTING_TYPE_TRANSLATION_KEYS.sale as Parameters<typeof t>[0])}
                       </label>
-                      <label className="flex cursor-pointer items-center gap-2 text-[12px]">
-                        <input type="radio" name="rdvIntent" checked={rdvIntent === "rent"} onChange={() => setRdvIntent("rent")} className="rounded-full" />
+                      <label className={`flex min-h-11 flex-1 cursor-pointer items-center justify-center gap-2 rounded-[var(--radius)] border px-3 text-[12px] ${rdvIntent === "rent" ? "border-[var(--accent)] bg-[var(--accent-muted)] text-[var(--accent)]" : "border-[var(--border)]"}`}>
+                        <input type="radio" name="rdvIntent" checked={rdvIntent === "rent"} onChange={() => setRdvIntent("rent")} className="sr-only" />
                         {t(LISTING_TYPE_TRANSLATION_KEYS.rent as Parameters<typeof t>[0])}
                       </label>
                     </div>
@@ -631,35 +636,49 @@ export default function CarDetailClient({ initialCar = null }: Props) {
                   value={rdvMessage}
                   onChange={(e) => setRdvMessage(e.target.value)}
                   rows={2}
-                  className="input-premium mb-3"
+                  className="input-premium mb-3 min-h-[72px]"
                 />
-                <label className="text-caption mb-1.5 block">
+                <label className="text-caption mb-1.5 block" htmlFor="rdv-date">
                   {t("preferredDate")} <span className="text-red-500">*</span>
                 </label>
                 <input
+                  id="rdv-date"
                   type="date"
                   value={rdvDate}
-                  onChange={(e) => setRdvDate(e.target.value)}
+                  onChange={(e) => {
+                    setRdvDate(e.target.value);
+                    if (e.target.value) setRdvDateError(false);
+                  }}
                   required
-                  className="input-premium mb-3"
+                  aria-invalid={rdvDateError}
+                  className={`input-premium mb-1 min-h-11 ${rdvDateError ? "border-red-500 focus:border-red-500" : ""}`}
                 />
-                <label className="text-caption mb-1.5 block">{t("suggestedPriceLabel")}</label>
+                {rdvDateError && (
+                  <p className="mb-2 text-[11px] text-red-500" role="alert">
+                    {t("preferredDateRequired")}
+                  </p>
+                )}
+                {!rdvDateError && <div className="mb-3" />}
+                <label className="text-caption mb-1.5 block" htmlFor="rdv-price">{t("suggestedPriceLabel")}</label>
                 <input
+                  id="rdv-price"
                   type="text"
                   inputMode="decimal"
                   placeholder={t("suggestedPricePlaceholder")}
                   value={rdvSuggestedPrice}
                   onChange={(e) => setRdvSuggestedPrice(e.target.value)}
-                  className="input-premium mb-3"
+                  className="input-premium mb-3 min-h-11"
                 />
                 <button
                   type="button"
                   disabled={rdvLoading}
                   onClick={async () => {
                     if (!rdvDate?.trim()) {
+                      setRdvDateError(true);
                       toast.error(t("preferredDateRequired"));
                       return;
                     }
+                    setRdvDateError(false);
                     setRdvLoading(true);
                     try {
                       const { data: profile } = await supabase
@@ -693,7 +712,7 @@ export default function CarDetailClient({ initialCar = null }: Props) {
                     }
                     setRdvLoading(false);
                   }}
-                  className="btn-primary disabled:opacity-50"
+                  className="btn-primary min-h-12 w-full disabled:opacity-50"
                 >
                   {rdvLoading ? t("sending") : t("sendRequest")}
                 </button>
@@ -723,17 +742,36 @@ export default function CarDetailClient({ initialCar = null }: Props) {
       )}
 
       {/* Sticky CTA on mobile */}
-      <div className="safe-area-bottom animate-slide-up-in fixed bottom-0 left-0 right-0 z-40 flex gap-2 border-t border-[var(--border)] bg-[var(--background)] p-4 sm:hidden">
-        <a href="#contact" className="btn-accent flex-1 text-center">
-          {(car.listing_type === "rent" || car.listing_type === "both") ? t("rentThisCar") : t("requestMeeting")}
-        </a>
+      <div className="safe-area-bottom animate-slide-up-in fixed bottom-0 left-0 right-0 z-40 flex gap-2 border-t border-[var(--border)] bg-[var(--background)]/95 p-3 backdrop-blur-sm sm:hidden">
+        {rdvSent ? (
+          <p className="flex min-h-12 flex-1 items-center justify-center rounded-[var(--radius)] border border-[var(--accent)]/30 bg-[var(--accent-muted)] px-3 text-center text-[12px] font-medium text-[var(--accent)]">
+            {t("meetingRequestSent")}
+          </p>
+        ) : (
+          <a href="#contact" className="btn-accent flex min-h-12 flex-1 items-center justify-center text-center">
+            {(car.listing_type === "rent" || car.listing_type === "both") ? t("rentThisCar") : t("requestMeeting")}
+          </a>
+        )}
+        {hasUnlocked && contact?.owner_whatsapp && (
+          <a
+            href={`https://wa.me/${contact.owner_whatsapp.replace(/\D/g, "")}?text=${encodeURIComponent(t("whatsappCarInterest").replace("{title}", car.title))}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-secondary flex min-h-12 min-w-12 items-center justify-center px-3"
+            aria-label={t("whatsappSeller")}
+          >
+            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+            </svg>
+          </a>
+        )}
         <FavoriteButton
           carId={id}
           isFav={isFav}
           onToggle={setIsFav}
           loggedIn={!!user}
           variant="button"
-          className="shrink-0"
+          className="min-h-12 shrink-0"
         />
       </div>
     </div>

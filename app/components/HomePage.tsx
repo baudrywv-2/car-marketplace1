@@ -188,9 +188,9 @@ export default function HomePage({ initialFeatured = [], initialMakeCounts = [] 
             <Link
               key={m}
               href={stripHref(m)}
-              className="group flex shrink-0 items-center gap-1.5 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--accent)] transition hover:bg-[var(--accent)]/10 sm:px-4 sm:py-3 sm:text-xs"
+              className="make-strip-link group flex shrink-0 items-center gap-1.5 px-3 py-2.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--accent)] transition hover:bg-[var(--accent)]/10 sm:px-4 sm:py-3.5 sm:text-xs"
             >
-              <span className="inline-block h-1 w-1 rounded-full bg-[var(--accent)]" aria-hidden />
+              <span className="inline-block h-1 w-1 rounded-full bg-[var(--accent)] transition group-hover:scale-125" aria-hidden />
               {stripLabel(m)}
             </Link>
           ))}
@@ -274,35 +274,37 @@ export default function HomePage({ initialFeatured = [], initialMakeCounts = [] 
       </section>
 
       {/* New offers */}
-      <section className="min-w-0 shrink-0 bg-black pt-4 pb-5 sm:pt-7 sm:pb-10" aria-busy={featuredLoading}>
+      <section className="min-w-0 shrink-0 border-t border-white/[0.06] bg-black pt-6 pb-7 sm:pt-9 sm:pb-12" aria-busy={featuredLoading}>
         <div className="mx-auto w-full min-w-0 max-w-[1400px] px-4 sm:px-5 lg:px-6">
-          <div className="mb-2.5 flex items-end justify-between gap-3 sm:mb-4">
-            <h2 className="text-base font-semibold tracking-tight text-white sm:text-2xl">
+          <div className="mb-3.5 flex items-end justify-between gap-3 sm:mb-5">
+            <h2 className="section-title text-base sm:text-2xl">
               {t("featuredCars")}
             </h2>
             <Link
               href="/cars"
-              className="inline-flex min-h-9 shrink-0 items-center text-[12px] font-medium text-[var(--accent)] hover:underline sm:min-h-10 sm:text-sm"
+              className="inline-flex min-h-9 shrink-0 items-center text-[12px] font-medium text-[var(--accent)] transition hover:text-[var(--accent-hover)] hover:underline sm:min-h-10 sm:text-sm"
             >
               {t("viewAllListings")}
             </Link>
           </div>
-          {featuredLoading ? (
-            <HomeOffersCarousel cars={[]} loading />
-          ) : featured.length > 0 ? (
-            <HomeOffersCarousel cars={featured} autoPlay />
-          ) : (
-            <HomeShowcasePlaceholders />
-          )}
+          <FadeInSection>
+            {featuredLoading ? (
+              <HomeOffersCarousel cars={[]} loading />
+            ) : featured.length > 0 ? (
+              <HomeOffersCarousel cars={featured} autoPlay />
+            ) : (
+              <HomeShowcasePlaceholders />
+            )}
+          </FadeInSection>
         </div>
       </section>
 
       {/* Merged trust strip: how it works + contact */}
-      <section className="shrink-0 border-t border-white/10 bg-black py-6 sm:py-10">
+      <section className="shrink-0 border-t border-white/10 bg-gradient-to-b from-black via-[#070708] to-black py-8 sm:py-12">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <div className="grid gap-0 lg:grid-cols-[1.4fr_1fr] lg:gap-12">
-            <div className="pb-5 sm:pb-0">
-              <h2 className="mb-3 text-base font-semibold tracking-tight text-white sm:mb-5 sm:text-xl">
+            <div className="pb-6 sm:pb-0">
+              <h2 className="section-title mb-4 text-base sm:mb-6 sm:text-xl">
                 {t("howItWorks")}
               </h2>
               <FadeInSection stagger className="grid gap-0 sm:grid-cols-3">
@@ -340,15 +342,15 @@ export default function HomePage({ initialFeatured = [], initialMakeCounts = [] 
               </div>
             </div>
 
-            <div className="border-t border-white/15 pt-5 sm:border-t-0 sm:pt-0 lg:border-l lg:border-white/10 lg:pl-10 lg:pt-0">
-              <h2 className="mb-2.5 text-base font-semibold tracking-tight text-white sm:mb-4 sm:text-xl">
+            <div className="border-t border-white/15 pt-6 sm:border-t-0 sm:pt-0 lg:border-l lg:border-white/10 lg:pl-10 lg:pt-0">
+              <h2 className="section-title mb-3 text-base sm:mb-5 sm:text-xl">
                 {t("findUsTitle")}
               </h2>
               <p className="mb-3 text-[11px] text-white/50 sm:mb-4 sm:text-[13px]">{t("findUsSubtitle")}</p>
               <FadeInSection stagger className="grid gap-2">
                 <a
                   href={SUPPORT_MAILTO}
-                  className="flex min-h-[2.85rem] items-center gap-2.5 border border-[var(--accent)]/35 bg-[#0c0c0e] px-3 py-2.5 transition hover:border-[var(--accent)] sm:min-h-[3.25rem] sm:gap-3 sm:px-3.5 sm:py-3.5"
+                  className="flex min-h-[2.85rem] items-center gap-2.5 border border-[var(--accent)]/35 bg-[#0c0c0e] px-3 py-2.5 transition duration-200 hover:border-[var(--accent)] hover:bg-[var(--accent-muted)]/40 sm:min-h-[3.25rem] sm:gap-3 sm:px-3.5 sm:py-3.5"
                 >
                   <span className="flex h-9 w-9 shrink-0 items-center justify-center border border-[var(--accent)]/30 text-[var(--accent)] sm:h-10 sm:w-10" aria-hidden>
                     @
@@ -362,7 +364,7 @@ export default function HomePage({ initialFeatured = [], initialMakeCounts = [] 
                 </a>
                 <Link
                   href="/faq"
-                  className="flex min-h-[2.85rem] items-center gap-2.5 border border-[var(--accent)]/35 bg-[#0c0c0e] px-3 py-2.5 transition hover:border-[var(--accent)] sm:min-h-[3.25rem] sm:gap-3 sm:px-3.5 sm:py-3.5"
+                  className="flex min-h-[2.85rem] items-center gap-2.5 border border-[var(--accent)]/35 bg-[#0c0c0e] px-3 py-2.5 transition duration-200 hover:border-[var(--accent)] hover:bg-[var(--accent-muted)]/40 sm:min-h-[3.25rem] sm:gap-3 sm:px-3.5 sm:py-3.5"
                 >
                   <span className="flex h-9 w-9 shrink-0 items-center justify-center border border-[var(--accent)]/30 text-[var(--accent)] sm:h-10 sm:w-10" aria-hidden>
                     ?
@@ -376,7 +378,7 @@ export default function HomePage({ initialFeatured = [], initialMakeCounts = [] 
                 </Link>
                 <Link
                   href="/dashboard/cars/new"
-                  className="flex min-h-[2.85rem] items-center gap-2.5 border border-[var(--accent)]/35 bg-[#0c0c0e] px-3 py-2.5 transition hover:border-[var(--accent)] sm:min-h-[3.25rem] sm:gap-3 sm:px-3.5 sm:py-3.5"
+                  className="flex min-h-[2.85rem] items-center gap-2.5 border border-[var(--accent)]/35 bg-[#0c0c0e] px-3 py-2.5 transition duration-200 hover:border-[var(--accent)] hover:bg-[var(--accent-muted)]/40 sm:min-h-[3.25rem] sm:gap-3 sm:px-3.5 sm:py-3.5"
                 >
                   <span className="flex h-9 w-9 shrink-0 items-center justify-center border border-[var(--accent)]/30 text-[var(--accent)] sm:h-10 sm:w-10" aria-hidden>
                     +
@@ -395,16 +397,16 @@ export default function HomePage({ initialFeatured = [], initialMakeCounts = [] 
       </section>
 
       {recent.length > 0 && (
-        <section className="hidden shrink-0 border-t border-white/10 bg-black py-5 sm:block sm:py-9">
+        <section className="hidden shrink-0 border-t border-white/10 bg-black py-7 sm:block sm:py-11">
           <div className="mx-auto max-w-7xl px-4 sm:px-6">
-            <h2 className="mb-3 text-base font-semibold tracking-tight text-white sm:mb-4 sm:text-lg">
+            <h2 className="section-title mb-4 text-base sm:mb-5 sm:text-lg">
               {t("recentlyViewed")}
             </h2>
-            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 lg:grid-cols-6">
+            <FadeInSection stagger className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 lg:grid-cols-6">
               {recent.map((car) => (
                 <BuyerCarCard key={car.id} car={car} compact />
               ))}
-            </div>
+            </FadeInSection>
           </div>
         </section>
       )}

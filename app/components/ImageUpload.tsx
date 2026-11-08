@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { useLocale } from "@/app/contexts/LocaleContext";
 
@@ -49,66 +49,85 @@ async function compressImage(file: File): Promise<File> {
 export default function ImageUpload({ value, onChange, disabled }: Props) {
   const { t } = useLocale();
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number } | null>(null);
   const [uploadError, setUploadError] = useState("");
   const [pasteUrl, setPasteUrl] = useState("");
+  const [dragging, setDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = e.target.files;
-    if (!files?.length || value.length >= MAX_IMAGES) return;
+  const uploadFiles = useCallback(
+    async (fileList: FileList | File[]) => {
+      const files = Array.from(fileList);
+      if (!files.length || value.length >= MAX_IMAGES || disabled) return;
 
-    setUploadError("");
-    setUploading(true);
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      setUploadError(t("loginToUploadImages"));
-      setUploading(false);
-      return;
-    }
-
-    const toAdd: string[] = [];
-    const remaining = MAX_IMAGES - value.length;
-    const count = Math.min(files.length, remaining);
-
-    for (let i = 0; i < count; i++) {
-      const raw = files[i];
-      if (!raw?.type.startsWith("image/")) continue;
-
-      let file = raw;
-      try {
-        file = await compressImage(raw);
-      } catch {
-        file = raw;
-      }
-
-      if (file.size > MAX_SIZE_MB * 1024 * 1024) {
-        setUploadError(t("imageTooLarge").replace("{n}", String(MAX_SIZE_MB)));
-        continue;
-      }
-
-      const ext = file.type === "image/jpeg" ? "jpg" : file.name.split(".").pop() || "jpg";
-      const path = `users/${user.id}/${Date.now()}-${i}.${ext}`;
-
-      const { error } = await supabase.storage.from("car-images").upload(path, file, {
-        upsert: true,
-        contentType: file.type || "image/jpeg",
-      });
-      if (error) {
-        setUploadError(t("actionFailedRetry"));
-        break;
-      }
+      setUploadError("");
+      setUploading(true);
 
       const {
-        data: { publicUrl },
-      } = supabase.storage.from("car-images").getPublicUrl(path);
-      toAdd.push(publicUrl);
-    }
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        setUploadError(t("loginToUploadImages"));
+        setUploading(false);
+        setUploadProgress(null);
+        return;
+      }
 
-    if (toAdd.length) onChange([...value, ...toAdd].slice(0, MAX_IMAGES));
-    setUploading(false);
+      const toAdd: string[] = [];
+      const remaining = MAX_IMAGES - value.length;
+      const candidates = files
+        .filter((f) => f.type.startsWith("image/"))
+        .slice(0, remaining);
+      const total = candidates.length;
+
+      if (total === 0) {
+        setUploading(false);
+        return;
+      }
+
+      for (let i = 0; i < candidates.length; i++) {
+        setUploadProgress({ current: i + 1, total });
+        const raw = candidates[i];
+
+        let file = raw;
+        try {
+          file = await compressImage(raw);
+        } catch {
+          file = raw;
+        }
+
+        if (file.size > MAX_SIZE_MB * 1024 * 1024) {
+          setUploadError(t("imageTooLarge").replace("{n}", String(MAX_SIZE_MB)));
+          continue;
+        }
+
+        const ext = file.type === "image/jpeg" ? "jpg" : file.name.split(".").pop() || "jpg";
+        const path = `users/${user.id}/${Date.now()}-${i}.${ext}`;
+
+        const { error } = await supabase.storage.from("car-images").upload(path, file, {
+          upsert: true,
+          contentType: file.type || "image/jpeg",
+        });
+        if (error) {
+          setUploadError(t("actionFailedRetry"));
+          break;
+        }
+
+        const {
+          data: { publicUrl },
+        } = supabase.storage.from("car-images").getPublicUrl(path);
+        toAdd.push(publicUrl);
+      }
+
+      if (toAdd.length) onChange([...value, ...toAdd].slice(0, MAX_IMAGES));
+      setUploading(false);
+      setUploadProgress(null);
+    },
+    [value, onChange, disabled, t]
+  );
+
+  async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    if (e.target.files?.length) await uploadFiles(e.target.files);
     e.target.value = "";
   }
 
@@ -122,6 +141,13 @@ export default function ImageUpload({ value, onChange, disabled }: Props) {
     const arr = [...value];
     [arr[idx], arr[next]] = [arr[next], arr[idx]];
     onChange(arr);
+  }
+
+  function setAsCover(idx: number) {
+    if (idx <= 0) return;
+    const arr = [...value];
+    const [picked] = arr.splice(idx, 1);
+    onChange([picked, ...arr]);
   }
 
   function handleAddUrl() {
@@ -141,9 +167,42 @@ export default function ImageUpload({ value, onChange, disabled }: Props) {
     .replace("{max}", String(MAX_IMAGES))
     .replace("{n}", String(MAX_SIZE_MB));
 
+  const progressLabel = uploadProgress
+    ? t("uploadingProgress")
+        .replace("{current}", String(uploadProgress.current))
+        .replace("{total}", String(uploadProgress.total))
+    : t("uploading");
+
+  const canAdd = !disabled && !uploading && value.length < MAX_IMAGES;
+
   return (
-    <div className="space-y-2">
-      <div className="flex flex-wrap items-center gap-2">
+    <div className="space-y-3">
+      <p className="text-[11px] leading-relaxed text-[var(--muted-foreground)]">{t("photoTipCover")}</p>
+
+      <div
+        onDragEnter={(e) => {
+          e.preventDefault();
+          if (canAdd) setDragging(true);
+        }}
+        onDragOver={(e) => {
+          e.preventDefault();
+          if (canAdd) setDragging(true);
+        }}
+        onDragLeave={(e) => {
+          e.preventDefault();
+          setDragging(false);
+        }}
+        onDrop={(e) => {
+          e.preventDefault();
+          setDragging(false);
+          if (canAdd && e.dataTransfer.files?.length) void uploadFiles(e.dataTransfer.files);
+        }}
+        className={`rounded-[var(--radius)] border border-dashed p-4 transition ${
+          dragging
+            ? "border-[var(--accent)] bg-[var(--accent-muted)]"
+            : "border-[var(--border)] bg-[var(--card)]"
+        }`}
+      >
         <input
           ref={inputRef}
           type="file"
@@ -152,67 +211,110 @@ export default function ImageUpload({ value, onChange, disabled }: Props) {
           onChange={handleFileSelect}
           className="hidden"
         />
-        <button
-          type="button"
-          disabled={disabled || uploading || value.length >= MAX_IMAGES}
-          onClick={() => inputRef.current?.click()}
-          className="min-h-10 rounded border border-zinc-300 px-3 py-1.5 text-[10px] font-medium hover:bg-zinc-100 disabled:opacity-50 dark:border-zinc-600 dark:hover:bg-zinc-800"
-        >
-          {uploading ? t("uploading") : t("uploadImages")}
-        </button>
-        <span className="text-[10px] text-zinc-500">{countHint}</span>
+        <div className="flex flex-col items-center gap-2 text-center sm:flex-row sm:justify-between sm:text-left">
+          <div>
+            <p className="text-[12px] font-medium text-[var(--foreground)]">{t("dropPhotosHere")}</p>
+            <p className="mt-0.5 text-[10px] text-[var(--muted-foreground)]">{countHint}</p>
+          </div>
+          <button
+            type="button"
+            disabled={!canAdd}
+            onClick={() => inputRef.current?.click()}
+            className="btn-secondary min-h-11 shrink-0 px-4 text-[12px] disabled:opacity-50"
+          >
+            {uploading ? progressLabel : t("uploadImages")}
+          </button>
+        </div>
+
+        {uploading && uploadProgress && (
+          <div className="mt-3" role="status" aria-live="polite">
+            <div className="mb-1 flex justify-between text-[10px] text-[var(--muted-foreground)]">
+              <span>{progressLabel}</span>
+              <span>
+                {uploadProgress.current}/{uploadProgress.total}
+              </span>
+            </div>
+            <div className="h-1.5 overflow-hidden rounded-full bg-[var(--border)]">
+              <div
+                className="h-full rounded-full bg-[var(--accent)] transition-all duration-300"
+                style={{ width: `${Math.round((uploadProgress.current / uploadProgress.total) * 100)}%` }}
+              />
+            </div>
+          </div>
+        )}
       </div>
+
       {uploadError && (
-        <p className="text-[10px] text-red-600" role="alert">
+        <p className="text-[11px] text-red-500" role="alert">
           {uploadError}
         </p>
       )}
+
       {value.length > 0 && (
-        <div className="flex flex-wrap gap-2">
+        <ul className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {value.map((url, idx) => (
-            <div key={`${url}-${idx}`} className="relative flex flex-col items-center">
+            <li key={`${url}-${idx}`} className="relative overflow-hidden rounded-[var(--radius)] border border-[var(--border)] bg-black">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={url}
-                alt=""
-                className="h-16 w-16 rounded border border-zinc-200 object-cover dark:border-zinc-600"
-              />
-              <div className="mt-1 flex gap-0.5">
+              <img src={url} alt="" className="aspect-[4/3] w-full object-cover" />
+              {idx === 0 && (
+                <span className="absolute left-1.5 top-1.5 rounded-sm bg-[var(--accent)] px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-black">
+                  {t("main")}
+                </span>
+              )}
+              <div className="flex items-center justify-between gap-0.5 border-t border-[var(--border)] bg-[var(--card)] p-1">
+                <div className="flex gap-0.5">
+                  <button
+                    type="button"
+                    disabled={disabled || uploading || idx === 0}
+                    onClick={() => moveImage(idx, -1)}
+                    className="flex h-9 w-9 items-center justify-center rounded text-[12px] text-[var(--foreground)] hover:bg-[var(--border)] disabled:opacity-40"
+                    title={t("moveLeft")}
+                    aria-label={t("moveLeft")}
+                  >
+                    ←
+                  </button>
+                  <button
+                    type="button"
+                    disabled={disabled || uploading || idx === value.length - 1}
+                    onClick={() => moveImage(idx, 1)}
+                    className="flex h-9 w-9 items-center justify-center rounded text-[12px] text-[var(--foreground)] hover:bg-[var(--border)] disabled:opacity-40"
+                    title={t("moveRight")}
+                    aria-label={t("moveRight")}
+                  >
+                    →
+                  </button>
+                </div>
+                {idx > 0 && (
+                  <button
+                    type="button"
+                    disabled={disabled || uploading}
+                    onClick={() => setAsCover(idx)}
+                    className="rounded px-1.5 py-1 text-[9px] font-medium text-[var(--accent)] hover:bg-[var(--accent-muted)] disabled:opacity-40"
+                  >
+                    {t("setAsCover")}
+                  </button>
+                )}
                 <button
                   type="button"
-                  disabled={disabled || idx === 0}
-                  onClick={() => moveImage(idx, -1)}
-                  className="min-h-8 min-w-8 rounded bg-[var(--border)] px-1.5 py-0.5 text-[10px] disabled:opacity-40"
-                  title={t("moveLeft")}
-                  aria-label={t("moveLeft")}
-                >
-                  ↑
-                </button>
-                <button
-                  type="button"
-                  disabled={disabled || idx === value.length - 1}
-                  onClick={() => moveImage(idx, 1)}
-                  className="min-h-8 min-w-8 rounded bg-[var(--border)] px-1.5 py-0.5 text-[10px] disabled:opacity-40"
-                  title={t("moveRight")}
-                  aria-label={t("moveRight")}
-                >
-                  ↓
-                </button>
-                <button
-                  type="button"
-                  disabled={disabled}
+                  disabled={disabled || uploading}
                   onClick={() => handleRemove(idx)}
-                  className="min-h-8 min-w-8 rounded bg-red-500 px-1.5 py-0.5 text-[10px] text-white hover:bg-red-600 disabled:opacity-50"
+                  className="flex h-9 w-9 items-center justify-center rounded text-[14px] text-red-400 hover:bg-red-500/20 disabled:opacity-50"
                   aria-label={t("remove")}
                 >
                   ×
                 </button>
               </div>
-              {idx === 0 && <span className="mt-0.5 text-[8px] text-[var(--muted-foreground)]">{t("main")}</span>}
-            </div>
+            </li>
           ))}
-        </div>
+          {uploading && value.length < MAX_IMAGES && (
+            <li
+              className="aspect-[4/3] animate-pulse rounded-[var(--radius)] border border-[var(--border)] bg-[var(--border)]"
+              aria-hidden
+            />
+          )}
+        </ul>
       )}
+
       <details className="group">
         <summary className="cursor-pointer text-[10px] font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)]">
           {t("advancedImageUrl")}
@@ -225,13 +327,13 @@ export default function ImageUpload({ value, onChange, disabled }: Props) {
             onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddUrl())}
             placeholder={t("pasteImageUrl")}
             disabled={disabled || value.length >= MAX_IMAGES}
-            className="min-h-10 flex-1 rounded border border-zinc-300 px-2 py-1.5 text-[10px] dark:border-zinc-600 dark:bg-zinc-800 dark:text-white"
+            className="input-premium flex-1 text-[11px]"
           />
           <button
             type="button"
             disabled={disabled || !pasteUrl.trim() || value.length >= MAX_IMAGES}
             onClick={handleAddUrl}
-            className="min-h-10 rounded border border-zinc-300 px-2 py-1.5 text-[10px] font-medium hover:bg-zinc-100 disabled:opacity-50 dark:border-zinc-600 dark:hover:bg-zinc-800"
+            className="btn-secondary min-h-11 px-3 text-[11px] disabled:opacity-50"
           >
             {t("addUrl")}
           </button>
