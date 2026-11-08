@@ -17,6 +17,7 @@ import BuyerCarCard from "@/app/components/BuyerCarCard";
 import CarDetailSkeleton from "@/app/components/CarDetailSkeleton";
 import FadeInSection from "@/app/components/FadeInSection";
 import { formatListedDate } from "@/lib/date-utils";
+import { isValidDRCPhone } from "@/lib/phone-validation";
 import { RENTAL_EVENT_TRANSLATION_KEYS, LISTING_TYPE_TRANSLATION_KEYS, CAR_FEATURE_BY_ID } from "@/lib/constants";
 
 type Car = {
@@ -82,6 +83,8 @@ export default function CarDetailClient({ initialCar = null }: Props) {
   const [rdvMessage, setRdvMessage] = useState("");
   const [rdvDate, setRdvDate] = useState("");
   const [rdvDateError, setRdvDateError] = useState(false);
+  const [rdvPhone, setRdvPhone] = useState("");
+  const [rdvPhoneError, setRdvPhoneError] = useState(false);
   const [rdvSuggestedPrice, setRdvSuggestedPrice] = useState("");
   const [rdvIntent, setRdvIntent] = useState<"sale" | "rent">("sale");
   const [hasUnlocked, setHasUnlocked] = useState(false);
@@ -104,6 +107,22 @@ export default function CarDetailClient({ initialCar = null }: Props) {
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user: u } }) => setUser(u ?? null));
   }, []);
+
+  useEffect(() => {
+    if (!user) {
+      setRdvPhone("");
+      return;
+    }
+    (async () => {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("phone")
+        .eq("id", user.id)
+        .maybeSingle();
+      const ph = (profile?.phone ?? "").trim();
+      if (ph) setRdvPhone(ph);
+    })();
+  }, [user]);
 
   useEffect(() => {
     if (car?.listing_type === "rent") setRdvIntent("rent");
@@ -638,6 +657,30 @@ export default function CarDetailClient({ initialCar = null }: Props) {
                   rows={2}
                   className="input-premium mb-3 min-h-[72px]"
                 />
+                <label className="text-caption mb-1.5 block" htmlFor="rdv-phone">
+                  {t("phone")} <span className="text-red-500">*</span>
+                </label>
+                <input
+                  id="rdv-phone"
+                  type="tel"
+                  inputMode="tel"
+                  autoComplete="tel"
+                  required
+                  placeholder="+243 812 345 678"
+                  value={rdvPhone}
+                  onChange={(e) => {
+                    setRdvPhone(e.target.value);
+                    if (e.target.value.trim()) setRdvPhoneError(false);
+                  }}
+                  aria-invalid={rdvPhoneError}
+                  className={`input-premium mb-1 min-h-11 ${rdvPhoneError ? "border-red-500 focus:border-red-500" : ""}`}
+                />
+                {rdvPhoneError && (
+                  <p className="mb-2 text-[11px] text-red-500" role="alert">
+                    {rdvPhone.trim() ? t("signupPhoneInvalid") : t("rdvPhoneRequired")}
+                  </p>
+                )}
+                {!rdvPhoneError && <div className="mb-3" />}
                 <label className="text-caption mb-1.5 block" htmlFor="rdv-date">
                   {t("preferredDate")} <span className="text-red-500">*</span>
                 </label>
@@ -673,19 +716,38 @@ export default function CarDetailClient({ initialCar = null }: Props) {
                   type="button"
                   disabled={rdvLoading}
                   onClick={async () => {
+                    let hasError = false;
+                    if (!rdvPhone.trim() || !isValidDRCPhone(rdvPhone)) {
+                      setRdvPhoneError(true);
+                      toast.error(rdvPhone.trim() ? t("signupPhoneInvalid") : t("rdvPhoneRequired"));
+                      hasError = true;
+                    } else {
+                      setRdvPhoneError(false);
+                    }
                     if (!rdvDate?.trim()) {
                       setRdvDateError(true);
                       toast.error(t("preferredDateRequired"));
-                      return;
+                      hasError = true;
+                    } else {
+                      setRdvDateError(false);
                     }
-                    setRdvDateError(false);
+                    if (hasError) return;
+
                     setRdvLoading(true);
                     try {
+                      const phoneNormalized = rdvPhone.replace(/\D/g, "");
                       const { data: profile } = await supabase
                         .from("profiles")
                         .select("full_name, phone")
                         .eq("id", user.id)
                         .single();
+                      const profilePhone = (profile?.phone ?? "").replace(/\D/g, "");
+                      if (!profilePhone || profilePhone.length < 9) {
+                        await supabase
+                          .from("profiles")
+                          .update({ phone: phoneNormalized })
+                          .eq("id", user.id);
+                      }
                       const suggestedPriceNum = rdvSuggestedPrice.trim() ? parseFloat(String(rdvSuggestedPrice).replace(/,/g, "")) : null;
                       const intentValue = car.listing_type === "both" ? rdvIntent : (car.listing_type === "rent" ? "rent" : "sale");
                       const { error: insertError } = await supabase.from("rendezvous_requests").insert({
@@ -697,7 +759,7 @@ export default function CarDetailClient({ initialCar = null }: Props) {
                         suggested_price: !isNaN(suggestedPriceNum as number) && (suggestedPriceNum as number) > 0 ? suggestedPriceNum : null,
                         buyer_email: user.email ?? null,
                         buyer_name: profile?.full_name ?? user.email ?? null,
-                        buyer_phone: (profile?.phone ?? "").trim() || null,
+                        buyer_phone: phoneNormalized,
                         status: "pending",
                       });
                       if (insertError) {
