@@ -18,11 +18,15 @@ const nextConfig: NextConfig = {
         : []),
     ],
     formats: ["image/avif", "image/webp"],
-    deviceSizes: [640, 750, 828, 1080, 1200, 1920],
+    deviceSizes: [640, 750, 828, 1080, 1200],
     imageSizes: [64, 96, 128, 256, 384],
     minimumCacheTTL: 60 * 60 * 24 * 30,
   },
-  experimental: { optimizePackageImports: ["@supabase/supabase-js"] },
+  experimental: {
+    optimizePackageImports: ["@supabase/supabase-js"],
+  },
+  // Avoid shipping source maps to browsers in production
+  productionBrowserSourceMaps: false,
 };
 
 export default nextConfig;

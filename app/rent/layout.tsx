@@ -1,21 +1,28 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Location de voiture en RDC (Kinshasa) — événements & tourisme",
+  title: "Location voiture & véhicule RDC | Mariage voyage tourisme ONG — DRCCARS",
   description:
-    "Trouvez une location de voiture en RDC, notamment à Kinshasa, pour mariages, tourisme, événements d’entreprise et transferts. Parcourez les annonces et contactez les propriétaires.",
+    "Voiture de location pour tout événement en RDC : mariages, voyage, tourisme, ONG, entreprises, aéroport. Kinshasa, Goma, Lubumbashi.",
   keywords: [
-    "location véhicule kinshasa",
+    "location voiture RDC",
+    "véhicule de location",
+    "voiture de location",
+    "voiture de location pour tout événement",
+    "location voiture mariage",
+    "location voiture voyage",
+    "location voiture tourisme",
+    "location véhicule ONG",
     "location voiture kinshasa",
-    "location voiture de luxe kinshasa",
+    "location voiture goma",
+    "agence vente voyage",
     "location 4x4 kinshasa",
-    "location de voiture avec chauffeur kinshasa",
   ],
   alternates: { canonical: "/rent" },
   openGraph: {
-    title: "Location de voiture à Kinshasa",
+    title: "Location voiture pour tout événement en RDC",
     description:
-      "Location de voiture à Kinshasa pour événements et tourisme. Parcourez les annonces sur DRCCARS.",
+      "Louez un véhicule pour mariage, voyage, tourisme ou ONG. Annonces sur DRCCARS.",
     url: "/rent",
   },
 };

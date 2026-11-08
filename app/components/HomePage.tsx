@@ -14,6 +14,7 @@ import HomeHeroCarousel from "@/app/components/HomeHeroCarousel";
 import SubtleScrollRail from "@/app/components/SubtleScrollRail";
 
 type RecentCar = BuyerCarCardData;
+export type HomeFeaturedCar = BuyerCarCardData;
 
 function buildSearchUrl(params: { q?: string; make?: string }) {
   const searchParams = new URLSearchParams();
@@ -23,17 +24,31 @@ function buildSearchUrl(params: { q?: string; make?: string }) {
   return qs ? `/cars?${qs}` : "/cars";
 }
 
-export default function HomePage() {
+type Props = {
+  initialFeatured?: HomeFeaturedCar[];
+  initialMakeCounts?: { name: string; count: number }[];
+};
+
+export default function HomePage({ initialFeatured = [], initialMakeCounts = [] }: Props) {
   const router = useRouter();
   const { t } = useLocale();
   const [recent, setRecent] = useState<RecentCar[]>([]);
-  const [featured, setFeatured] = useState<BuyerCarCardData[]>([]);
-  const [featuredLoading, setFeaturedLoading] = useState(true);
-  const [makeCounts, setMakeCounts] = useState<{ name: string; count: number }[]>([]);
+  const [featured, setFeatured] = useState<BuyerCarCardData[]>(initialFeatured);
+  const [featuredLoading, setFeaturedLoading] = useState(initialFeatured.length === 0);
+  const [makeCounts, setMakeCounts] = useState<{ name: string; count: number }[]>(
+    initialMakeCounts.length > 0 ? initialMakeCounts : [...CAR_MAKES].map((name) => ({ name, count: 0 }))
+  );
   const [searchQ, setSearchQ] = useState("");
   const [searchMake, setSearchMake] = useState("");
 
   useEffect(() => {
+    if (initialFeatured.length > 0) {
+      setFeatured(initialFeatured);
+      setFeaturedLoading(false);
+      if (initialMakeCounts.length > 0) setMakeCounts(initialMakeCounts);
+      return;
+    }
+    let cancelled = false;
     (async () => {
       setFeaturedLoading(true);
       const [{ data: featuredData }, { data: metaData }] = await Promise.all([
@@ -47,15 +62,16 @@ export default function HomePage() {
           .eq("is_sold", false)
           .order("boost_score", { ascending: false, nullsFirst: false })
           .order("created_at", { ascending: false })
-          .limit(18),
+          .limit(12),
         supabase
           .from("cars")
           .select("make")
           .eq("is_approved", true)
           .eq("is_draft", false)
           .eq("is_sold", false)
-          .limit(800),
+          .limit(250),
       ]);
+      if (cancelled) return;
 
       setFeatured((featuredData ?? []) as BuyerCarCardData[]);
 
@@ -68,15 +84,13 @@ export default function HomePage() {
         .map(([name, count]) => ({ name, count }))
         .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
 
-      if (ranked.length > 0) {
-        setMakeCounts(ranked);
-      } else {
-        setMakeCounts([...CAR_MAKES].map((name) => ({ name, count: 0 })));
-      }
-
+      setMakeCounts(ranked.length > 0 ? ranked : [...CAR_MAKES].map((name) => ({ name, count: 0 })));
       setFeaturedLoading(false);
     })();
-  }, []);
+    return () => {
+      cancelled = true;
+    };
+  }, [initialFeatured, initialMakeCounts]);
 
   useEffect(() => {
     (async () => {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -10,11 +11,12 @@ import type { Locale } from "@/lib/translations";
 import type { Currency } from "@/lib/constants";
 import { SUPPORT_EMAIL, SUPPORT_MAILTO } from "@/lib/constants";
 import AuthNav from "./AuthNav";
-import CookieNotice from "./CookieNotice";
-import LogVisit from "./LogVisit";
-import PresenceHeartbeat from "./PresenceHeartbeat";
 import LocaleSwitcher from "./LocaleSwitcher";
 import Logo from "./Logo";
+
+const CookieNotice = dynamic(() => import("./CookieNotice"), { ssr: false });
+const LogVisit = dynamic(() => import("./LogVisit"), { ssr: false });
+const PresenceHeartbeat = dynamic(() => import("./PresenceHeartbeat"), { ssr: false });
 
 function AnimatedMain({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -213,6 +215,15 @@ function Footer() {
               </Link>
               <Link href="/rent" className="inline-flex min-h-9 items-center link-accent">
                 {t("rentCars")}
+              </Link>
+              <Link href="/voiture/goma" className="inline-flex min-h-9 items-center link-accent">
+                Voiture Goma
+              </Link>
+              <Link href="/voiture/kinshasa" className="inline-flex min-h-9 items-center link-accent">
+                Voiture Kinshasa
+              </Link>
+              <Link href="/location-voiture" className="inline-flex min-h-9 items-center link-accent">
+                Location véhicule
               </Link>
               <Link href="/dashboard/cars/new" className="inline-flex min-h-9 items-center link-accent">
                 {t("listYourCar")}

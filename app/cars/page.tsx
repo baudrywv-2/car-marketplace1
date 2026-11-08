@@ -1,14 +1,23 @@
+import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase-server";
 import {
   applyCarFilters,
   filtersFromSearchParams,
   type CarSearchFilters,
 } from "@/lib/car-search-query";
+import { SITE_URL } from "@/lib/constants";
 import CarsPageClient from "./CarsPageClient";
 
 export const revalidate = 60;
 
-const CARS_FETCH_LIMIT = 60;
+export const metadata: Metadata = {
+  title: "Voitures à vendre en RDC | Acheter occasion — DRCCARS",
+  description:
+    "Parcourir les voitures et véhicules à vendre en RDC. Acheter une voiture d'occasion à Kinshasa, Goma, Lubumbashi et partout au Congo.",
+  alternates: { canonical: `${SITE_URL}/cars` },
+};
+
+const CARS_FETCH_LIMIT = 48;
 
 const CAR_LIST_SELECT =
   "id, title, price, make, model, year, type, province, city, images, currency, condition, discount_percent, transmission, fuel_type, mileage, owner_id, created_at, listing_type, rental_price_per_hour, rental_price_per_day, rental_price_per_week, rental_price_per_month, rental_currency, rental_event_type, is_sold, boost_score";

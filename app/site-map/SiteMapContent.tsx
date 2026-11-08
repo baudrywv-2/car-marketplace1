@@ -18,6 +18,19 @@ export default function SiteMapContent() {
         <ul className="space-y-2 text-body">
           <li><Link href="/" className="text-[var(--foreground)] hover:text-[var(--accent)] hover:underline">{t("home")}</Link></li>
           <li><Link href="/cars" className="text-[var(--foreground)] hover:text-[var(--accent)] hover:underline">{t("browseCars")}</Link></li>
+          <li><Link href="/voitures-a-vendre" className="text-[var(--foreground)] hover:text-[var(--accent)] hover:underline">Voitures à vendre (par ville)</Link></li>
+          <li><Link href="/acheter-voiture" className="text-[var(--foreground)] hover:text-[var(--accent)] hover:underline">Acheter une voiture (par ville)</Link></li>
+          <li><Link href="/voiture/goma" className="text-[var(--foreground)] hover:text-[var(--accent)] hover:underline">Voiture Goma</Link></li>
+          <li><Link href="/voiture/kinshasa" className="text-[var(--foreground)] hover:text-[var(--accent)] hover:underline">Voiture Kinshasa</Link></li>
+          <li><Link href="/annonces/voiture-d-occasion-a-vendre" className="text-[var(--foreground)] hover:text-[var(--accent)] hover:underline">Voiture d&apos;occasion à vendre</Link></li>
+          <li><Link href="/annonces/agence-vente-voyage" className="text-[var(--foreground)] hover:text-[var(--accent)] hover:underline">Agence vente voyage / location</Link></li>
+          <li><Link href="/location-voiture" className="text-[var(--foreground)] hover:text-[var(--accent)] hover:underline">Location voiture & véhicule</Link></li>
+          <li><Link href="/location-voiture/pour/mariage" className="text-[var(--foreground)] hover:text-[var(--accent)] hover:underline">Location mariage</Link></li>
+          <li><Link href="/location-voiture/pour/ong" className="text-[var(--foreground)] hover:text-[var(--accent)] hover:underline">Location véhicule ONG</Link></li>
+          <li><Link href="/annonces/voiture-de-location" className="text-[var(--foreground)] hover:text-[var(--accent)] hover:underline">Voiture de location</Link></li>
+          <li><Link href="/guides/acheter-voiture-rdc" className="text-[var(--foreground)] hover:text-[var(--accent)] hover:underline">Guide : acheter en RDC</Link></li>
+          <li><Link href="/guides/vendre-voiture-rdc" className="text-[var(--foreground)] hover:text-[var(--accent)] hover:underline">Guide : vendre en RDC</Link></li>
+          <li><Link href="/guides/location-voiture-evenement" className="text-[var(--foreground)] hover:text-[var(--accent)] hover:underline">Guide : location événement</Link></li>
           <li><Link href="/rent" className="text-[var(--foreground)] hover:text-[var(--accent)] hover:underline">{t("rentCars")}</Link></li>
           <li><Link href="/favorites" className="text-[var(--foreground)] hover:text-[var(--accent)] hover:underline">{t("myFavorites")}</Link></li>
           <li><Link href="/compare" className="text-[var(--foreground)] hover:text-[var(--accent)] hover:underline">{t("compareBarTitle")}</Link></li>
