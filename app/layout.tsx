@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
-import { Bebas_Neue, JetBrains_Mono, Inter, Orbitron } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import ClientLayout from "./components/ClientLayout";
 import JsonLd from "./components/JsonLd";
@@ -8,31 +8,39 @@ import { SITE_URL } from "@/lib/constants";
 import { translations, type Locale } from "@/lib/translations";
 import type { Currency } from "@/lib/constants";
 
-const fontSans = Inter({
+/** Self-hosted — Google Fonts fetch fails intermittently on Vercel builds. */
+const fontSans = localFont({
+  src: [
+    { path: "./fonts/inter-latin-400-normal.woff2", weight: "400", style: "normal" },
+    { path: "./fonts/inter-latin-600-normal.woff2", weight: "600", style: "normal" },
+    { path: "./fonts/inter-latin-700-normal.woff2", weight: "700", style: "normal" },
+  ],
   variable: "--font-sans",
-  subsets: ["latin"],
-  weight: ["400", "600", "700"],
   display: "swap",
 });
 
-const fontMono = JetBrains_Mono({
+const fontMono = localFont({
+  src: [
+    { path: "./fonts/jetbrains-mono-latin-400-normal.woff2", weight: "400", style: "normal" },
+    { path: "./fonts/jetbrains-mono-latin-500-normal.woff2", weight: "500", style: "normal" },
+    { path: "./fonts/jetbrains-mono-latin-700-normal.woff2", weight: "700", style: "normal" },
+  ],
   variable: "--font-mono",
-  subsets: ["latin"],
-  weight: ["400", "500", "700"],
   display: "swap",
 });
 
-const fontLogo = Bebas_Neue({
+const fontLogo = localFont({
+  src: [{ path: "./fonts/bebas-neue-latin-400-normal.woff2", weight: "400", style: "normal" }],
   variable: "--font-logo",
-  subsets: ["latin"],
-  weight: ["400"],
   display: "swap",
 });
 
-const fontDisplay = Orbitron({
+const fontDisplay = localFont({
+  src: [
+    { path: "./fonts/orbitron-latin-600-normal.woff2", weight: "600", style: "normal" },
+    { path: "./fonts/orbitron-latin-700-normal.woff2", weight: "700", style: "normal" },
+  ],
   variable: "--font-display",
-  subsets: ["latin"],
-  weight: ["600", "700"],
   display: "swap",
 });
 
