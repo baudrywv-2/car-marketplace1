@@ -7,6 +7,7 @@ import {
   seoPhraseCanonical,
 } from "@/lib/seo-phrases";
 import { SEO_CITIES } from "@/lib/seo-locations";
+import { seoSocialImages } from "@/lib/seo-og";
 
 export const revalidate = 600;
 
@@ -21,6 +22,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const page = getSeoPhrase(slug);
   if (!page) return {};
   const canonical = seoPhraseCanonical(page.slug);
+  const images = seoSocialImages(null, page.title);
   return {
     title: { absolute: page.title },
     description: page.description,
@@ -31,6 +33,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description: page.description,
       url: canonical,
       type: "website",
+      images,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: page.title,
+      description: page.description,
+      images: images.map((i) => (typeof i === "string" ? i : String(i.url))),
     },
   };
 }

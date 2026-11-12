@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import OptimizedCarImage from "@/app/components/OptimizedCarImage";
 import { SITE_URL } from "@/lib/constants";
 import { fetchSeoSampleCars } from "@/lib/seo-location-cars";
+import { firstSampleImage, seoSocialImages } from "@/lib/seo-og";
 import {
   SEO_CITIES,
   allSeoLocationSlugs,
@@ -31,6 +33,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   // Autofill alias — prefer the fuller vente landing as canonical to avoid
   // "Duplicate without user-selected canonical" clusters in GSC.
   const canonical = `${SITE_URL}/voitures-a-vendre/${location.slug}`;
+  const sampleCars = await fetchSeoSampleCars(location);
+  const images = seoSocialImages(firstSampleImage(sampleCars), title);
   return {
     title: { absolute: title },
     description,
@@ -41,6 +45,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description,
       url: canonical,
       type: "website",
+      images,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: images.map((i) => (typeof i === "string" ? i : String(i.url))),
     },
   };
 }
@@ -109,18 +120,33 @@ export default async function VoitureShortPage({ params }: Props) {
           <h2 className="text-[11px] font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">
             Annonces voiture {location.name}
           </h2>
-          <ul className="mt-3 divide-y divide-[var(--border)] rounded-xl border border-[var(--border)] bg-[var(--card)]">
+          <ul className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3">
             {sampleCars.map((car) => (
               <li key={car.id}>
                 <Link
                   href={`/cars/${car.id}`}
-                  className="flex flex-wrap items-baseline justify-between gap-2 px-4 py-3 text-[13px] hover:bg-[var(--border)]/30"
+                  className="group block overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--card)] hover:border-[var(--accent)]/45"
                 >
-                  <span className="font-medium text-[var(--foreground)]">{car.title}</span>
-                  <span className="font-mono text-[var(--accent)]">
-                    {car.currency === "CDF" ? "FC" : "$"}
-                    {Number(car.price).toLocaleString()}
-                  </span>
+                  <div className="relative aspect-[4/3] bg-[var(--background)]">
+                    {car.image ? (
+                      <OptimizedCarImage
+                        src={car.image}
+                        alt={car.title}
+                        sizes="(max-width: 640px) 50vw, 33vw"
+                        thumbWidth={480}
+                        quality={70}
+                      />
+                    ) : null}
+                  </div>
+                  <div className="px-2.5 py-2">
+                    <p className="line-clamp-2 text-[12px] font-medium leading-snug text-[var(--foreground)]">
+                      {car.title}
+                    </p>
+                    <p className="mt-1 font-mono text-[12px] text-[var(--accent)]">
+                      {car.currency === "CDF" ? "FC" : "$"}
+                      {Number(car.price).toLocaleString()}
+                    </p>
+                  </div>
                 </Link>
               </li>
             ))}

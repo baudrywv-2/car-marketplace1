@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import { createClient } from "@/lib/supabase-server";
 import { SITE_URL } from "@/lib/constants";
 import { getCarImageUrl, GALLERY_HERO_WIDTH } from "@/lib/image-utils";
+import { seoSocialImages } from "@/lib/seo-og";
 import CarProductJsonLd from "@/app/components/CarProductJsonLd";
 import CarDetailSkeleton from "@/app/components/CarDetailSkeleton";
 import CarDetailClient, { type CarDetailInitial } from "./CarDetailClient";
@@ -60,6 +61,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const image = Array.isArray(data.images) && data.images[0] ? data.images[0] : undefined;
   const canonical = `${SITE_URL}/cars/${id}`;
+  const images = seoSocialImages(image, title);
 
   return {
     title,
@@ -69,7 +71,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       title,
       description,
       url: canonical,
-      images: image ? [{ url: image }] : undefined,
+      type: "website",
+      images,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: images.map((i) => (typeof i === "string" ? i : String(i.url))),
     },
   };
 }

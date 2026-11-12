@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { SITE_URL } from "@/lib/constants";
 import { SEO_CITIES, SEO_NATIONAL } from "@/lib/seo-locations";
+import { seoSocialImages } from "@/lib/seo-og";
 import {
   allSeoRentEventSlugs,
   getSeoRentEvent,
@@ -27,12 +28,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const title = rentEventTitle(event);
   const description = rentEventDescription(event);
   const canonical = `${SITE_URL}/location-voiture/pour/${event.slug}`;
+  const images = seoSocialImages(null, title);
   return {
     title: { absolute: title },
     description,
     keywords: event.keywords,
     alternates: { canonical },
-    openGraph: { title, description, url: canonical, type: "website" },
+    openGraph: { title, description, url: canonical, type: "website", images },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: images.map((i) => (typeof i === "string" ? i : String(i.url))),
+    },
   };
 }
 

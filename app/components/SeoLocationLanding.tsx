@@ -1,5 +1,7 @@
 import Link from "next/link";
+import OptimizedCarImage from "@/app/components/OptimizedCarImage";
 import { SITE_URL } from "@/lib/constants";
+import type { SeoSampleCar } from "@/lib/seo-location-cars";
 import {
   SEO_CITIES,
   SEO_PROVINCES,
@@ -15,7 +17,7 @@ type Intent = "vente" | "acheter";
 type Props = {
   location: SeoLocation;
   intent: Intent;
-  sampleCars?: { id: string; title: string; price: number; currency?: string | null; city?: string | null; province?: string | null }[];
+  sampleCars?: SeoSampleCar[];
 };
 
 export default function SeoLocationLanding({ location, intent, sampleCars = [] }: Props) {
@@ -40,11 +42,22 @@ export default function SeoLocationLanding({ location, intent, sampleCars = [] }
           "@context": "https://schema.org",
           "@type": "ItemList",
           name: h1,
+          numberOfItems: sampleCars.length,
           itemListElement: sampleCars.map((car, i) => ({
             "@type": "ListItem",
             position: i + 1,
-            url: `${SITE_URL}/cars/${car.id}`,
-            name: car.title,
+            item: {
+              "@type": "Product",
+              name: car.title,
+              url: `${SITE_URL}/cars/${car.id}`,
+              ...(car.image ? { image: car.image } : {}),
+              offers: {
+                "@type": "Offer",
+                price: car.price,
+                priceCurrency: car.currency === "CDF" ? "CDF" : "USD",
+                availability: "https://schema.org/InStock",
+              },
+            },
           })),
         }
       : null;
@@ -155,18 +168,37 @@ export default function SeoLocationLanding({ location, intent, sampleCars = [] }
           <h2 className="text-[11px] font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">
             Annonces récentes
           </h2>
-          <ul className="mt-3 divide-y divide-[var(--border)] rounded-xl border border-[var(--border)] bg-[var(--card)]">
+          <ul className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3">
             {sampleCars.map((car) => (
               <li key={car.id}>
                 <Link
                   href={`/cars/${car.id}`}
-                  className="flex flex-wrap items-baseline justify-between gap-2 px-4 py-3 text-[13px] hover:bg-[var(--border)]/30"
+                  className="group block overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--card)] hover:border-[var(--accent)]/45"
                 >
-                  <span className="font-medium text-[var(--foreground)]">{car.title}</span>
-                  <span className="font-mono text-[var(--accent)]">
-                    {car.currency === "CDF" ? "FC" : "$"}
-                    {Number(car.price).toLocaleString()}
-                  </span>
+                  <div className="relative aspect-[4/3] bg-[var(--background)]">
+                    {car.image ? (
+                      <OptimizedCarImage
+                        src={car.image}
+                        alt={car.title}
+                        sizes="(max-width: 640px) 50vw, 33vw"
+                        thumbWidth={480}
+                        quality={70}
+                      />
+                    ) : (
+                      <div className="flex h-full items-center justify-center text-[10px] text-[var(--muted-foreground)]">
+                        DRCCARS
+                      </div>
+                    )}
+                  </div>
+                  <div className="px-2.5 py-2">
+                    <p className="line-clamp-2 text-[12px] font-medium leading-snug text-[var(--foreground)] group-hover:text-[var(--accent)]">
+                      {car.title}
+                    </p>
+                    <p className="mt-1 font-mono text-[12px] text-[var(--accent)]">
+                      {car.currency === "CDF" ? "FC" : "$"}
+                      {Number(car.price).toLocaleString()}
+                    </p>
+                  </div>
                 </Link>
               </li>
             ))}

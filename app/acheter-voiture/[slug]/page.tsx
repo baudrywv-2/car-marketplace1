@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import SeoLocationLanding from "@/app/components/SeoLocationLanding";
 import { SITE_URL } from "@/lib/constants";
 import { fetchSeoSampleCars } from "@/lib/seo-location-cars";
+import { firstSampleImage, seoSocialImages } from "@/lib/seo-og";
 import {
   acheterDescription,
   acheterTitle,
@@ -26,12 +27,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const title = acheterTitle(location);
   const description = acheterDescription(location);
   const canonical = `${SITE_URL}/acheter-voiture/${location.slug}`;
+  const sampleCars = await fetchSeoSampleCars(location);
+  const images = seoSocialImages(firstSampleImage(sampleCars), title);
   return {
     title: { absolute: title },
     description,
     keywords: locationAutofillPhrases(location),
     alternates: { canonical },
-    openGraph: { title, description, url: canonical, type: "website" },
+    openGraph: { title, description, url: canonical, type: "website", images },
+    twitter: { card: "summary_large_image", title, description, images: images.map((i) => (typeof i === "string" ? i : i.url)) },
   };
 }
 

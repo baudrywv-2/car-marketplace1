@@ -2,12 +2,17 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SITE_URL } from "@/lib/constants";
 import { SEO_CITIES } from "@/lib/seo-locations";
+import { seoSocialImages } from "@/lib/seo-og";
 import { SEO_RENT_EVENTS } from "@/lib/seo-rent";
 
+const TITLE = "Location voiture & véhicule RDC | Mariage voyage tourisme ONG — DRCCARS";
+const DESCRIPTION =
+  "Voiture de location pour tout événement en RDC : mariages, voyage, tourisme, ONG, entreprises, aéroport. Par ville — Kinshasa, Goma, Lubumbashi.";
+const OG_IMAGES = seoSocialImages(null, TITLE);
+
 export const metadata: Metadata = {
-  title: "Location voiture & véhicule RDC | Mariage voyage tourisme ONG — DRCCARS",
-  description:
-    "Voiture de location pour tout événement en RDC : mariages, voyage, tourisme, ONG, entreprises, aéroport. Par ville — Kinshasa, Goma, Lubumbashi.",
+  title: TITLE,
+  description: DESCRIPTION,
   keywords: [
     "location voiture RDC",
     "véhicule de location",
@@ -18,6 +23,19 @@ export const metadata: Metadata = {
     "location véhicule ONG",
   ],
   alternates: { canonical: `${SITE_URL}/location-voiture` },
+  openGraph: {
+    title: TITLE,
+    description: DESCRIPTION,
+    url: `${SITE_URL}/location-voiture`,
+    type: "website",
+    images: OG_IMAGES,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: TITLE,
+    description: DESCRIPTION,
+    images: OG_IMAGES.map((i) => (typeof i === "string" ? i : String(i.url))),
+  },
 };
 
 export default function LocationVoitureHubPage() {
