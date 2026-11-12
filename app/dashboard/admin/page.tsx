@@ -1360,7 +1360,7 @@ export default function AdminPage() {
               }}
             />
           ) : (
-            <ul className="space-y-3">
+            <ul className="space-y-2">
               {filteredCars.map((car) => {
                 const seller = profiles[car.owner_id];
                 const brand = seller?.company_name ?? seller?.full_name ?? "—";
@@ -1384,10 +1384,19 @@ export default function AdminPage() {
                         : t("pending");
                 const thumb = car.images?.[0];
                 const carPending = isPendingCar(car);
+                const metaLine = [
+                  [car.make, car.model].filter(Boolean).join(" "),
+                  car.year != null ? String(car.year) : null,
+                  formatPrice(car.price, "USD", car.currency ?? "USD"),
+                  car.created_at ? new Date(car.created_at).toLocaleDateString() : null,
+                ]
+                  .filter(Boolean)
+                  .join(" · ");
                 return (
-                  <li key={car.id} className="card-premium p-4">
-                    <div className="flex flex-wrap items-start justify-between gap-4">
-                      <div className="flex min-w-0 flex-1 gap-3">
+                  <li key={car.id} className="card-premium p-2.5 sm:p-4">
+                    {/* Stack on mobile so actions never crush the title column */}
+                    <div className="flex flex-col gap-2 sm:gap-3">
+                      <div className="flex min-w-0 gap-2 sm:gap-3">
                         {carPending && (
                           <input
                             type="checkbox"
@@ -1402,13 +1411,15 @@ export default function AdminPage() {
                           />
                         )}
                         {thumb && (
-                          <div className="relative h-16 w-24 shrink-0 overflow-hidden rounded-md border border-[var(--border)] bg-[var(--background)]">
+                          <div className="relative h-12 w-16 shrink-0 overflow-hidden rounded border border-[var(--border)] bg-[var(--background)] sm:h-16 sm:w-24 sm:rounded-md">
                             <OptimizedCarImage src={thumb} alt={car.title} sizes="96px" thumbWidth={192} quality={70} />
                           </div>
                         )}
                         <div className="min-w-0 flex-1">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <p className="font-semibold text-[var(--foreground)]">{car.title}</p>
+                          <p className="truncate text-[12px] font-semibold leading-snug text-[var(--foreground)] sm:text-[14px] sm:whitespace-normal sm:line-clamp-2">
+                            {car.title}
+                          </p>
+                          <div className="mt-1 flex flex-wrap items-center gap-1">
                             <StatusBadge tone={statusTone}>{statusLabel}</StatusBadge>
                             {car.listing_type && (
                               <StatusBadge tone="muted">{listingTypeLabel(car.listing_type, t)}</StatusBadge>
@@ -1417,41 +1428,37 @@ export default function AdminPage() {
                               <StatusBadge tone="muted">{t("adminBoostN").replace("{n}", String(car.boost_score))}</StatusBadge>
                             )}
                           </div>
-                          <p className="mt-1 text-caption text-[var(--muted-foreground)]">
-                            {car.make} {car.model}
-                            {car.year != null ? ` · ${car.year}` : ""} · {formatPrice(car.price, "USD", car.currency ?? "USD")}
+                          <p className="mt-1 truncate text-[10px] leading-snug text-[var(--muted-foreground)] sm:whitespace-normal">
+                            {metaLine}
                           </p>
-                          {car.created_at && (
-                            <p className="mt-0.5 text-[10px] text-[var(--muted-foreground)]">
-                              {new Date(car.created_at).toLocaleDateString()}
-                            </p>
-                          )}
-                          <p className="mt-1 text-[10px] text-[var(--muted-foreground)]">
+                          <p className="mt-0.5 truncate text-[10px] text-[var(--muted-foreground)]">
                             {t("adminBrandLabel")} {brand}
                           </p>
                           {car.rejection_reason && (
-                            <p className="mt-1 rounded border border-red-500/30 bg-red-500/10 px-2 py-1 text-[10px] text-red-300">
+                            <p className="mt-1 rounded border border-red-500/30 bg-red-500/10 px-2 py-1 text-[10px] text-red-300 line-clamp-2">
                               {car.rejection_reason}
                             </p>
                           )}
-                          <div className="mt-2 grid gap-1 rounded-lg border border-[var(--border)] bg-[var(--background)]/60 p-2.5 text-[10px] sm:grid-cols-3">
-                            <p>
-                              {t("phone")}: {car.owner_phone ?? "—"}
-                            </p>
-                            <p>
-                              {t("whatsapp")}: {car.owner_whatsapp ?? "—"}
-                            </p>
-                            <p>
-                              {t("address")}: {car.owner_address ?? "—"}
-                            </p>
-                          </div>
                         </div>
                       </div>
-                      <div className="flex flex-wrap gap-2">
+
+                      <div className="rounded border border-[var(--border)] bg-[var(--background)]/60 px-2 py-1.5 text-[10px] leading-snug text-[var(--muted-foreground)] sm:grid sm:grid-cols-3 sm:gap-2 sm:p-2.5">
+                        <p className="truncate">
+                          <span className="text-[var(--foreground)]/70">{t("phone")}:</span> {car.owner_phone ?? "—"}
+                        </p>
+                        <p className="truncate">
+                          <span className="text-[var(--foreground)]/70">{t("whatsapp")}:</span> {car.owner_whatsapp ?? "—"}
+                        </p>
+                        <p className="truncate">
+                          <span className="text-[var(--foreground)]/70">{t("address")}:</span> {car.owner_address ?? "—"}
+                        </p>
+                      </div>
+
+                      <div className="flex flex-wrap gap-1.5 sm:gap-2">
                         <select
                           value={car.boost_score ?? 0}
                           onChange={(e) => setBoost(car.id, parseInt(e.target.value, 10))}
-                          className="min-h-9 rounded border border-[var(--border)] bg-[var(--background)] px-2 py-1.5 text-[10px] text-[var(--foreground)]"
+                          className="min-h-8 rounded border border-[var(--border)] bg-[var(--background)] px-1.5 py-1 text-[10px] text-[var(--foreground)] sm:min-h-9 sm:px-2 sm:py-1.5"
                           title={t("adminBoostTitle")}
                         >
                           {[0, 1, 2, 3, 4, 5].map((n) => (
@@ -1464,7 +1471,7 @@ export default function AdminPage() {
                           href={`/cars/${car.id}?preview=1`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="btn-secondary min-h-9 px-3 text-[10px]"
+                          className="btn-secondary min-h-8 px-2.5 text-[10px] sm:min-h-9 sm:px-3"
                         >
                           {t("adminPreview")}
                         </Link>
@@ -1472,7 +1479,7 @@ export default function AdminPage() {
                           <button
                             type="button"
                             onClick={() => setSold(car.id, !car.is_sold)}
-                            className="min-h-9 rounded border border-[var(--border)] px-3 py-1.5 text-[10px] font-medium text-[var(--muted-foreground)] hover:bg-[var(--border)]/50"
+                            className="min-h-8 rounded border border-[var(--border)] px-2.5 py-1 text-[10px] font-medium text-[var(--muted-foreground)] hover:bg-[var(--border)]/50 sm:min-h-9 sm:px-3 sm:py-1.5"
                           >
                             {car.is_sold ? t("approved") : t("markAsSold")}
                           </button>
@@ -1481,13 +1488,17 @@ export default function AdminPage() {
                           <button
                             type="button"
                             onClick={() => openRejectModal(car)}
-                            className="min-h-9 rounded border border-amber-500/50 px-3 py-1.5 text-[10px] font-medium text-amber-300 hover:bg-amber-500/10"
+                            className="min-h-8 rounded border border-amber-500/50 px-2.5 py-1 text-[10px] font-medium text-amber-300 hover:bg-amber-500/10 sm:min-h-9 sm:px-3 sm:py-1.5"
                           >
                             {t("adminReject")}
                           </button>
                         ) : (
                           carPending && (
-                            <button type="button" onClick={() => approveCar(car.id)} className="btn-primary min-h-9 py-1.5 text-[10px]">
+                            <button
+                              type="button"
+                              onClick={() => approveCar(car.id)}
+                              className="btn-primary min-h-8 py-1 text-[10px] sm:min-h-9 sm:py-1.5"
+                            >
                               {t("adminApprove")}
                             </button>
                           )
@@ -1495,7 +1506,7 @@ export default function AdminPage() {
                         <button
                           type="button"
                           onClick={() => deleteListing(car.id)}
-                          className="min-h-9 rounded border border-red-500/40 px-3 py-1.5 text-[10px] font-medium text-red-400 hover:bg-red-500/10"
+                          className="min-h-8 rounded border border-red-500/40 px-2.5 py-1 text-[10px] font-medium text-red-400 hover:bg-red-500/10 sm:min-h-9 sm:px-3 sm:py-1.5"
                         >
                           {t("adminDeleteListing")}
                         </button>
