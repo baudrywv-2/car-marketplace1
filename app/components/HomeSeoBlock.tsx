@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { SEO_CITIES } from "@/lib/seo-locations";
 
-/** Crawlable French SEO block on the homepage (competitors use dense listing + city copy). */
+/** Crawlable French SEO block on the homepage — links prefer canonical vente/acheter URLs. */
 export default function HomeSeoBlock() {
   const topCities = SEO_CITIES.slice(0, 12);
 
@@ -21,20 +21,27 @@ export default function HomeSeoBlock() {
           sans passer par les annonces génériques.
         </p>
 
-        <div className="mt-7 grid gap-3 sm:grid-cols-3">
+        <div className="mt-7 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <Link
             href="/voitures-a-vendre/goma"
             className="rounded-[var(--radius-lg)] border border-[var(--accent)]/30 bg-black/40 px-3 py-3.5 text-[12px] text-white/80 transition hover:border-[var(--accent)] hover:bg-[var(--accent-muted)]/30"
           >
-            <span className="block font-semibold text-[var(--accent)]">Voiture Goma</span>
-            Voitures à vendre à Goma (Nord-Kivu)
+            <span className="block font-semibold text-[var(--accent)]">Voitures à vendre Goma</span>
+            Occasions et 4x4 à Goma (Nord-Kivu)
           </Link>
           <Link
             href="/voitures-a-vendre/kinshasa"
             className="rounded-[var(--radius-lg)] border border-[var(--accent)]/30 bg-black/40 px-3 py-3.5 text-[12px] text-white/80 transition hover:border-[var(--accent)] hover:bg-[var(--accent-muted)]/30"
           >
-            <span className="block font-semibold text-[var(--accent)]">Voiture Kinshasa</span>
-            Occasions et véhicules à vendre
+            <span className="block font-semibold text-[var(--accent)]">Voitures à vendre Kinshasa</span>
+            Occasions et véhicules à Kinshasa
+          </Link>
+          <Link
+            href="/voitures-a-vendre/lubumbashi"
+            className="rounded-[var(--radius-lg)] border border-[var(--accent)]/30 bg-black/40 px-3 py-3.5 text-[12px] text-white/80 transition hover:border-[var(--accent)] hover:bg-[var(--accent-muted)]/30"
+          >
+            <span className="block font-semibold text-[var(--accent)]">Voitures à vendre Lubumbashi</span>
+            Occasions Haut-Katanga
           </Link>
           <Link
             href="/location-voiture"
@@ -45,15 +52,54 @@ export default function HomeSeoBlock() {
           </Link>
         </div>
 
-        <h3 className="mt-9 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/45">Parcourir par ville</h3>
+        <p className="mt-5 flex flex-wrap gap-x-4 gap-y-2 text-[12px] text-white/55">
+          <Link href="/voitures-a-vendre" className="text-[var(--accent)] hover:underline">
+            Hub voitures à vendre
+          </Link>
+          <Link href="/acheter-voiture" className="text-[var(--accent)] hover:underline">
+            Hub acheter une voiture
+          </Link>
+          <Link href="/acheter-voiture/kinshasa" className="hover:text-white hover:underline">
+            Acheter Kinshasa
+          </Link>
+          <Link href="/acheter-voiture/goma" className="hover:text-white hover:underline">
+            Acheter Goma
+          </Link>
+          <Link href="/acheter-voiture/lubumbashi" className="hover:text-white hover:underline">
+            Acheter Lubumbashi
+          </Link>
+          <Link href="/voitures-a-vendre/rdc" className="hover:text-white hover:underline">
+            Toute la RDC
+          </Link>
+        </p>
+
+        <h3 className="mt-9 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/45">
+          Parcourir par ville (vente)
+        </h3>
         <ul className="mt-3.5 flex flex-wrap gap-2">
           {topCities.map((c) => (
             <li key={c.slug}>
               <Link
-                href={`/voiture/${c.slug}`}
+                href={`/voitures-a-vendre/${c.slug}`}
                 className="inline-block rounded-full border border-white/15 px-3 py-1.5 text-[11px] text-white/70 transition hover:border-[var(--accent)]/50 hover:bg-[var(--accent-muted)]/25 hover:text-white"
               >
                 Voiture {c.name}
+              </Link>
+            </li>
+          ))}
+        </ul>
+
+        <h3 className="mt-7 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/45">
+          Acheter par ville
+        </h3>
+        <ul className="mt-3.5 flex flex-wrap gap-2">
+          {topCities.slice(0, 8).map((c) => (
+            <li key={`acheter-${c.slug}`}>
+              <Link
+                href={`/acheter-voiture/${c.slug}`}
+                className="inline-block rounded-full border border-white/15 px-3 py-1.5 text-[11px] text-white/70 transition hover:border-[var(--accent)]/50 hover:bg-[var(--accent-muted)]/25 hover:text-white"
+              >
+                Acheter {c.name}
               </Link>
             </li>
           ))}

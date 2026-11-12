@@ -8,6 +8,7 @@ import {
   acheterH1,
   carsBrowseHref,
   locationAutofillPhrases,
+  locationGuideParagraphs,
   venteH1,
   type SeoLocation,
 } from "@/lib/seo-locations";
@@ -35,6 +36,10 @@ export default function SeoLocationLanding({ location, intent, sampleCars = [] }
   const relatedCities = SEO_CITIES.filter((c) => c.slug !== location.slug).slice(0, 12);
   const relatedProvinces = SEO_PROVINCES.filter((p) => p.slug !== location.slug).slice(0, 12);
   const autofill = locationAutofillPhrases(location);
+  const guideParagraphs = locationGuideParagraphs(location, intent);
+  const hubHref = intent === "vente" ? "/voitures-a-vendre" : "/acheter-voiture";
+  const canonicalCityHref =
+    intent === "vente" ? `/voitures-a-vendre/${location.slug}` : `/acheter-voiture/${location.slug}`;
 
   const itemListLd =
     sampleCars.length > 0
@@ -137,6 +142,47 @@ export default function SeoLocationLanding({ location, intent, sampleCars = [] }
         </Link>
       </div>
 
+      <section className="mt-10 max-w-2xl">
+        <h2 className="text-[11px] font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">
+          {intent === "vente" ? `Vendre ou publier à ${location.name}` : `Acheter à ${location.name}`}
+        </h2>
+        {guideParagraphs.map((paragraph) => (
+          <p key={paragraph.slice(0, 48)} className="mt-3 text-[14px] leading-relaxed text-[var(--muted-foreground)]">
+            {paragraph}
+          </p>
+        ))}
+        <ul className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-[12px]">
+          <li>
+            <Link href={browse} className="text-[var(--accent)] hover:underline">
+              Annonces {location.name}
+            </Link>
+          </li>
+          <li>
+            <Link href={otherIntentHref} className="text-[var(--accent)] hover:underline">
+              {otherIntentLabel}
+            </Link>
+          </li>
+          <li>
+            <Link href={hubHref} className="text-[var(--accent)] hover:underline">
+              {intent === "vente" ? "Toutes les villes — vente" : "Toutes les villes — achat"}
+            </Link>
+          </li>
+          <li>
+            <Link href="/location-voiture" className="text-[var(--accent)] hover:underline">
+              Location voiture RDC
+            </Link>
+          </li>
+          <li>
+            <Link
+              href={intent === "acheter" ? "/guides/acheter-voiture-rdc" : "/guides/vendre-voiture-rdc"}
+              className="text-[var(--accent)] hover:underline"
+            >
+              {intent === "acheter" ? "Guide achat" : "Guide vente"}
+            </Link>
+          </li>
+        </ul>
+      </section>
+
       <section className="mt-10">
         <h2 className="text-[11px] font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">
           Suggestions de recherche
@@ -145,7 +191,7 @@ export default function SeoLocationLanding({ location, intent, sampleCars = [] }
           {autofill.map((p) => (
             <li key={p}>
               <Link
-                href={`/voiture/${location.slug}`}
+                href={canonicalCityHref}
                 className="inline-block rounded-full border border-[var(--border)] px-3 py-1.5 text-[11px] text-[var(--muted-foreground)] hover:border-[var(--accent)]/40 hover:text-[var(--foreground)]"
               >
                 {p}

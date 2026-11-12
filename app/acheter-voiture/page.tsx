@@ -123,12 +123,41 @@ export default async function AcheterVoitureHubPage() {
         </ul>
       </section>
 
-      <p className="mt-10 text-[12px] text-[var(--muted-foreground)]">
-        Vous vendez ? Voir{" "}
-        <Link href="/voitures-a-vendre" className="text-[var(--accent)] hover:underline">
-          voitures à vendre
+      <p className="mt-8 text-[12px] text-[var(--muted-foreground)]">
+        Villes populaires (vente) :{" "}
+        <Link href="/voitures-a-vendre/kinshasa" className="text-[var(--accent)] hover:underline">
+          Kinshasa
         </Link>
-        .
+        {" · "}
+        <Link href="/voitures-a-vendre/goma" className="text-[var(--accent)] hover:underline">
+          Goma
+        </Link>
+        {" · "}
+        <Link href="/voitures-a-vendre/lubumbashi" className="text-[var(--accent)] hover:underline">
+          Lubumbashi
+        </Link>
+        {" · "}
+        <Link href="/voitures-a-vendre/bukavu" className="text-[var(--accent)] hover:underline">
+          Bukavu
+        </Link>
+        {" · "}
+        <Link href="/voitures-a-vendre" className="text-[var(--accent)] hover:underline">
+          hub vente
+        </Link>
+      </p>
+      <p className="mt-3 text-[12px] text-[var(--muted-foreground)]">
+        Guides :{" "}
+        <Link href="/guides/acheter-voiture-rdc" className="text-[var(--accent)] hover:underline">
+          Acheter en RDC
+        </Link>
+        {" · "}
+        <Link href="/guides/vendre-voiture-rdc" className="text-[var(--accent)] hover:underline">
+          Vendre sa voiture
+        </Link>
+        {" · "}
+        <Link href="/location-voiture" className="text-[var(--accent)] hover:underline">
+          Location voiture
+        </Link>
       </p>
     </div>
   );

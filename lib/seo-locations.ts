@@ -222,3 +222,96 @@ export function voitureShortH1(location: SeoLocation): string {
   if (location.kind === "national") return "Voiture RDC";
   return `Voiture ${location.name}`;
 }
+
+/**
+ * Extra on-page copy for SEO landings. Additive only — does not change titles/H1s.
+ * Keep paragraphs factual and location-specific to avoid thin duplicates.
+ */
+export function locationGuideParagraphs(
+  location: SeoLocation,
+  intent: "vente" | "acheter"
+): string[] {
+  const n = location.name;
+  const region = location.region;
+
+  if (location.kind === "national") {
+    return intent === "vente"
+      ? [
+          "Sur DRCCARS, les annonces de vente sont publiées par des particuliers et des vendeurs locaux. Filtrez par ville, marque, budget, puis contactez le vendeur ou demandez un rendez-vous — le paiement et la transaction se font hors plateforme.",
+          "Les pages par ville (Kinshasa, Goma, Lubumbashi, Bukavu…) regroupent les occasions et véhicules utiles pour comparer avant de vous déplacer.",
+        ]
+      : [
+          "Pour acheter en RDC, commencez par les annonces vérifiées sur DRCCARS : prix affiché, photos, ville, puis échangez directement avec le vendeur. Pas de paiement en ligne sur la marketplace.",
+          "Utilisez les pages par ville pour cibler Kinshasa, Goma, Lubumbashi ou votre province, puis ouvrez les fiches détaillées pour le kilométrage, l’année et les contacts.",
+        ];
+  }
+
+  if (location.kind === "province") {
+    return intent === "vente"
+      ? [
+          `Les annonces en ${n} couvrent les villes et axes de cette province. Vérifiez la localisation exacte sur chaque fiche avant un déplacement.`,
+          `Vous vendez en ${n} ? Publiez gratuitement avec photos claires, prix et numéro WhatsApp pour répondre vite aux acheteurs.`,
+        ]
+      : [
+          `Acheter en ${n} : comparez plusieurs annonces de la province, demandez l’historique du véhicule et privilégiez un rendez-vous sur place.`,
+          `DRCCARS affiche le contact du vendeur (téléphone / WhatsApp) pour organiser la visite dans ${n}.`,
+        ];
+  }
+
+  // City-specific notes for major markets (unique content, stable wording).
+  const cityNotes: Record<string, { vente: string[]; acheter: string[] }> = {
+    kinshasa: {
+      vente: [
+        "À Kinshasa, les demandes portent souvent sur berlines, SUV et véhicules de ville. Indiquez clairement la commune ou le quartier sur l’annonce pour faciliter les rendez-vous.",
+        "Comparez plusieurs offres Kinshasa sur DRCCARS, puis contactez le vendeur pour voir le véhicule avant tout engagement.",
+      ],
+      acheter: [
+        "Pour acheter à Kinshasa, filtrez par budget et type (berline, SUV, utilitaire), puis demandez un RDV dans la commune du vendeur.",
+        "Vérifiez les papiers et l’état du véhicule sur place — DRCCARS met en relation, sans paiement intégré.",
+      ],
+    },
+    goma: {
+      vente: [
+        "À Goma (Nord-Kivu), les 4x4, pick-up et véhicules adaptés aux routes locales sont très recherchés. Précisez l’état, le kilométrage et la disponibilité pour un essai.",
+        "Les annonces Goma sur DRCCARS aident acheteurs et vendeurs à se trouver sans passer par des groupes saturés.",
+      ],
+      acheter: [
+        "Acheter à Goma : regardez surtout transmission, garde au sol et entretien. Contactez le vendeur via WhatsApp pour fixer un essai.",
+        "Les pages voitures à vendre à Goma et location véhicule complètent l’achat si vous avez besoin d’un véhicule temporaire.",
+      ],
+    },
+    lubumbashi: {
+      vente: [
+        "À Lubumbashi (Haut-Katanga), berlines, SUV et utilitaires circulent beaucoup. Une annonce avec prix net et plusieurs photos attire plus de contacts sérieux.",
+        "Publiez ou parcourez les occasions Lubumbashi sur DRCCARS, puis organisez la visite directement avec le vendeur.",
+      ],
+      acheter: [
+        "Pour acheter à Lubumbashi, comparez prix et année, puis confirmez la disponibilité avant de vous déplacer.",
+        "DRCCARS centralise les annonces locales pour éviter de chercher uniquement sur les réseaux sociaux.",
+      ],
+    },
+    bukavu: {
+      vente: [
+        "À Bukavu (Sud-Kivu), précisez si le véhicule est adapté à la ville et aux trajets vers l’intérieur. Photos récentes et prix clair accélèrent les échanges.",
+        "Les acheteurs Bukavu trouvent les annonces vente et occasion sur DRCCARS, avec contact direct vendeur.",
+      ],
+      acheter: [
+        "Acheter à Bukavu : ciblez les annonces locales, demandez un RDV et vérifiez les documents du véhicule sur place.",
+        "Utilisez aussi la page voitures à vendre Bukavu pour élargir la comparaison avant d’acheter.",
+      ],
+    },
+  };
+
+  const specific = cityNotes[location.slug];
+  if (specific) return intent === "vente" ? specific.vente : specific.acheter;
+
+  return intent === "vente"
+    ? [
+        `À ${n}${region ? ` (${region})` : ""}, publiez ou consultez des voitures d’occasion avec photos, prix et contact. Les acheteurs locaux filtrent souvent par budget et type de véhicule.`,
+        `Sur DRCCARS, chaque annonce ${n} permet d’écrire ou d’appeler le vendeur, ou de demander un rendez-vous — sans achat en ligne.`,
+      ]
+    : [
+        `Pour acheter une voiture à ${n}${region ? ` (${region})` : ""}, parcourez les annonces, comparez prix et année, puis contactez le vendeur pour une visite.`,
+        `DRCCARS reste une vitrine locale : la négociation et le paiement se font entre vous et le vendeur.`,
+      ];
+}
