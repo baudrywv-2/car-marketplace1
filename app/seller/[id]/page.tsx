@@ -5,11 +5,8 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useLocale } from "@/app/contexts/LocaleContext";
-import { formatPrice, getRentalTiers } from "@/lib/format-utils";
-import OptimizedCarImage from "@/app/components/OptimizedCarImage";
-import CarImagePlaceholder from "@/app/components/CarImagePlaceholder";
-import FavoriteButton from "@/app/components/FavoriteButton";
-import { readGuestFavorites, GUEST_FAVORITES_KEY } from "@/lib/guest-favorites";
+import BuyerCarCard from "@/app/components/BuyerCarCard";
+import { readGuestFavorites } from "@/lib/guest-favorites";
 
 type Car = {
   id: string;
@@ -22,11 +19,18 @@ type Car = {
   currency?: string | null;
   images: string[];
   listing_type?: string | null;
+  discount_percent?: number | null;
+  province?: string | null;
+  city?: string | null;
+  mileage?: number | null;
+  fuel_type?: string | null;
+  transmission?: string | null;
   rental_price_per_hour?: number | null;
   rental_price_per_day?: number | null;
   rental_price_per_week?: number | null;
   rental_price_per_month?: number | null;
   rental_currency?: string | null;
+  is_sold?: boolean | null;
 };
 
 type Profile = { id: string; full_name: string | null; company_name: string | null };
@@ -34,7 +38,7 @@ type Profile = { id: string; full_name: string | null; company_name: string | nu
 export default function SellerListingsPage() {
   const params = useParams();
   const id = params?.id as string | undefined;
-  const { t, currency } = useLocale();
+  const { t } = useLocale();
   const [cars, setCars] = useState<Car[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -78,7 +82,9 @@ export default function SellerListingsPage() {
           .single(),
         supabase
           .from("cars")
-          .select("id, title, price, make, model, year, condition, currency, images, listing_type, rental_price_per_hour, rental_price_per_day, rental_price_per_week, rental_price_per_month, rental_currency")
+          .select(
+            "id, title, price, make, model, year, condition, currency, images, listing_type, discount_percent, province, city, mileage, fuel_type, transmission, is_sold, rental_price_per_hour, rental_price_per_day, rental_price_per_week, rental_price_per_month, rental_currency"
+          )
           .eq("owner_id", id)
           .eq("is_approved", true)
           .eq("is_draft", false)
@@ -91,19 +97,6 @@ export default function SellerListingsPage() {
     }
     load();
   }, [id]);
-
-  function getCarPriceLabel(car: Car): string {
-    const lt = car.listing_type ?? "sale";
-    if (lt === "rent") {
-      const tiers = getRentalTiers(car);
-      if (tiers.length > 0) {
-        const cur = car.rental_currency ?? "USD";
-        const suffix: Record<string, string> = { hour: "hr", day: "day", week: "wk", month: "mo" };
-        return tiers.map((t) => `${formatPrice(t.price, currency, cur)}/${suffix[t.period]}`).join(" · ");
-      }
-    }
-    return formatPrice(car.price, currency, car.currency ?? null);
-  }
 
   const displayName = profile?.company_name || profile?.full_name || t("seller");
 
@@ -146,36 +139,24 @@ export default function SellerListingsPage() {
           <Link href="/cars" className="btn-accent mt-4 inline-block">{t("browseCars")}</Link>
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-5">
+        <div className="grid grid-cols-2 gap-0.5 sm:grid-cols-3 sm:gap-2 lg:grid-cols-4 xl:grid-cols-5">
           {cars.map((car) => (
-            <Link
+            <BuyerCarCard
               key={car.id}
-              href={`/cars/${car.id}`}
-              className="card-compact card-hover-lift card-img-zoom block overflow-hidden"
-            >
-              <div className="relative aspect-[4/3] bg-[var(--border)]">
-                {car.images?.[0] ? (
-                  <OptimizedCarImage src={car.images[0]} alt={car.title} sizes="(max-width: 640px) 50vw, 25vw" thumbWidth={480} quality={72} />
-                ) : (
-                  <CarImagePlaceholder className="h-full min-h-[80px]" />
-                )}
-                <FavoriteButton
-                  carId={car.id}
-                  isFav={favoriteIds.has(car.id)}
-                  onToggle={(next) => setFavoriteIds((prev) => {
-                    const s = new Set(prev);
-                    if (next) s.add(car.id); else s.delete(car.id);
-                    return s;
-                  })}
-                  loggedIn={!!user}
-                  variant="icon"
-                />
-              </div>
-              <div className="p-2.5">
-                <p className="truncate text-[10px] font-semibold text-[var(--foreground)]">{car.title}</p>
-                <p className="mt-0.5 text-[9px] text-[var(--accent)] font-semibold">{getCarPriceLabel(car)}</p>
-              </div>
-            </Link>
+              car={car}
+              compact
+              showFavorite
+              isFav={favoriteIds.has(car.id)}
+              loggedIn={!!user}
+              onFavToggle={(next) =>
+                setFavoriteIds((prev) => {
+                  const s = new Set(prev);
+                  if (next) s.add(car.id);
+                  else s.delete(car.id);
+                  return s;
+                })
+              }
+            />
           ))}
         </div>
       )}

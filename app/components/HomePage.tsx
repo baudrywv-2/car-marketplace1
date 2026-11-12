@@ -402,7 +402,7 @@ export default function HomePage({ initialFeatured = [], initialMakeCounts = [] 
             <h2 className="section-title mb-4 text-base sm:mb-5 sm:text-lg">
               {t("recentlyViewed")}
             </h2>
-            <FadeInSection stagger className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 lg:grid-cols-6">
+            <FadeInSection stagger className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 sm:gap-2.5 lg:grid-cols-6">
               {recent.map((car) => (
                 <BuyerCarCard key={car.id} car={car} compact />
               ))}

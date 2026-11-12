@@ -795,7 +795,7 @@ export default function CarDetailClient({ initialCar = null }: Props) {
           <FadeInSection>
             <h2 className="text-heading mb-4 text-[var(--foreground)]">{t("similarCars")}</h2>
           </FadeInSection>
-          <FadeInSection stagger delay={80} className="grid min-w-0 grid-cols-2 gap-3 sm:grid-cols-4">
+          <FadeInSection stagger delay={80} className="grid min-w-0 grid-cols-2 gap-1.5 sm:grid-cols-4 sm:gap-3">
             {similarCars.map((similarCar) => (
               <BuyerCarCard key={similarCar.id} car={similarCar} compact />
             ))}

@@ -21,7 +21,7 @@ export default function CarsBrowseSkeleton() {
         </aside>
         <div className="min-w-0 flex-1">
           <div className="mb-4 h-4 w-32 animate-pulse rounded bg-[var(--border)]" />
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4 xl:grid-cols-5">
+          <div className="grid grid-cols-2 gap-1 sm:grid-cols-3 sm:gap-2.5 lg:grid-cols-4 xl:grid-cols-5">
             {Array.from({ length: 10 }).map((_, i) => (
               <CarCardSkeleton key={i} compact />
             ))}

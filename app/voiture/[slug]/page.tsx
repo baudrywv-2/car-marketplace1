@@ -28,13 +28,20 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!location) return {};
   const title = voitureShortTitle(location);
   const description = voitureShortDescription(location);
-  const canonical = `${SITE_URL}/voiture/${location.slug}`;
+  // Autofill alias — prefer the fuller vente landing as canonical to avoid
+  // "Duplicate without user-selected canonical" clusters in GSC.
+  const canonical = `${SITE_URL}/voitures-a-vendre/${location.slug}`;
   return {
     title: { absolute: title },
     description,
     keywords: locationAutofillPhrases(location),
     alternates: { canonical },
-    openGraph: { title, description, url: canonical, type: "website" },
+    openGraph: {
+      title,
+      description,
+      url: canonical,
+      type: "website",
+    },
   };
 }
 

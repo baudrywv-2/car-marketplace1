@@ -1082,8 +1082,8 @@ function CarsPageContent({
             stagger
             className={
               density === "compact"
-                ? "mb-6 grid grid-cols-2 gap-1.5 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6"
-                : "mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 sm:gap-4"
+                ? "mb-4 grid grid-cols-2 gap-0.5 sm:grid-cols-3 sm:gap-2 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6"
+                : "mb-4 grid grid-cols-2 gap-1 sm:grid-cols-3 sm:gap-2.5 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6"
             }
           >
             {newArrivals.map((car, i) => (
@@ -1175,8 +1175,8 @@ function CarsPageContent({
               <div
                 className={
                   density === "compact"
-                    ? "grid grid-cols-2 gap-1.5 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6"
-                    : "grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 sm:gap-4"
+                    ? "grid grid-cols-2 gap-0.5 sm:grid-cols-3 sm:gap-2 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6"
+                    : "grid grid-cols-2 gap-1 sm:grid-cols-3 sm:gap-2.5 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6"
                 }
               >
                 {visibleCars.map((car, i) => (

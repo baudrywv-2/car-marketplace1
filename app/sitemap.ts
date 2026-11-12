@@ -58,12 +58,8 @@ const seoLocationPages: MetadataRoute.Sitemap = [
       changeFrequency: "weekly" as const,
       priority: top(slug) ? 0.9 : 0.75,
     },
-    {
-      url: `${SITE_URL}/voiture/${slug}`,
-      lastModified: new Date(),
-      changeFrequency: "weekly" as const,
-      priority: top(slug) ? 0.92 : 0.78,
-    },
+    // /voiture/[slug] is an autofill alias; canonical → /voitures-a-vendre/[slug]
+    // Keep it out of the sitemap so Google doesn't treat it as a competing URL.
     {
       url: `${SITE_URL}/location-voiture/${slug}`,
       lastModified: new Date(),
