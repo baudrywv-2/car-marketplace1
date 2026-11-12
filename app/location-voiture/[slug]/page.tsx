@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { SITE_URL } from "@/lib/constants";
 import { SEO_CITIES, allSeoLocationSlugs, getSeoLocation } from "@/lib/seo-locations";
-import { seoSocialImages } from "@/lib/seo-og";
+import { seoSocialImages, seoTwitterImages } from "@/lib/seo-og";
 import {
   SEO_RENT_EVENTS,
   rentBrowseHref,
@@ -39,7 +39,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       card: "summary_large_image",
       title,
       description,
-      images: images.map((i) => (typeof i === "string" ? i : String(i.url))),
+      images: seoTwitterImages(images),
     },
   };
 }

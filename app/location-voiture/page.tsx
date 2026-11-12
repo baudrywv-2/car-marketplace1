@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SITE_URL } from "@/lib/constants";
 import { SEO_CITIES } from "@/lib/seo-locations";
-import { seoSocialImages } from "@/lib/seo-og";
+import { seoSocialImages, seoTwitterImages } from "@/lib/seo-og";
 import { SEO_RENT_EVENTS } from "@/lib/seo-rent";
 
 const TITLE = "Location voiture & véhicule RDC | Mariage voyage tourisme ONG — DRCCARS";
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: TITLE,
     description: DESCRIPTION,
-    images: OG_IMAGES.map((i) => (typeof i === "string" ? i : String(i.url))),
+    images: seoTwitterImages(OG_IMAGES),
   },
 };
 

@@ -4,7 +4,7 @@ import Link from "next/link";
 import OptimizedCarImage from "@/app/components/OptimizedCarImage";
 import { SITE_URL } from "@/lib/constants";
 import { fetchSeoSampleCars } from "@/lib/seo-location-cars";
-import { firstSampleImage, seoSocialImages } from "@/lib/seo-og";
+import { firstSampleImage, seoSocialImages, seoTwitterImages } from "@/lib/seo-og";
 import {
   SEO_CITIES,
   allSeoLocationSlugs,
@@ -51,7 +51,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       card: "summary_large_image",
       title,
       description,
-      images: images.map((i) => (typeof i === "string" ? i : String(i.url))),
+      images: seoTwitterImages(images),
     },
   };
 }

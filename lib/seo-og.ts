@@ -4,17 +4,24 @@ import { SITE_URL } from "@/lib/constants";
 /** Default social preview — always absolute for Google/Facebook crawlers. */
 export const DEFAULT_OG_IMAGE_PATH = "/og-image.png";
 
+export type SeoOgImage = {
+  url: string;
+  width: number;
+  height: number;
+  alt: string;
+};
+
 export function absoluteAssetUrl(url: string | null | undefined): string {
   if (!url) return `${SITE_URL}${DEFAULT_OG_IMAGE_PATH}`;
   if (/^https?:\/\//i.test(url)) return url;
   return `${SITE_URL}${url.startsWith("/") ? url : `/${url}`}`;
 }
 
-/** Open Graph + Twitter image list. Prefer a real listing photo when available. */
+/** Open Graph image list. Prefer a real listing photo when available. */
 export function seoSocialImages(
   primaryImage?: string | null,
   alt = "DRCCARS – Voitures d'occasion en RDC"
-): NonNullable<NonNullable<Metadata["openGraph"]>["images"]> {
+): SeoOgImage[] {
   return [
     {
       url: absoluteAssetUrl(primaryImage),
@@ -25,6 +32,10 @@ export function seoSocialImages(
   ];
 }
 
+export function seoTwitterImages(images: SeoOgImage[]): string[] {
+  return images.map((i) => i.url);
+}
+
 export function firstSampleImage(
   cars: { image?: string | null }[] | null | undefined
 ): string | null {
@@ -33,4 +44,15 @@ export function firstSampleImage(
     if (car.image) return car.image;
   }
   return null;
+}
+
+/** Convenience: OG + Twitter image fields for Metadata. */
+export function seoSocialImageFields(
+  primaryImage?: string | null,
+  alt?: string
+): Pick<NonNullable<Metadata["openGraph"]>, "images"> & {
+  twitterImages: string[];
+} {
+  const images = seoSocialImages(primaryImage, alt);
+  return { images, twitterImages: seoTwitterImages(images) };
 }

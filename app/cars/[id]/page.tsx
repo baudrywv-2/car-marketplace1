@@ -5,7 +5,7 @@ import { Suspense } from "react";
 import { createClient } from "@/lib/supabase-server";
 import { SITE_URL } from "@/lib/constants";
 import { getCarImageUrl, GALLERY_HERO_WIDTH } from "@/lib/image-utils";
-import { seoSocialImages } from "@/lib/seo-og";
+import { seoSocialImages, seoTwitterImages } from "@/lib/seo-og";
 import CarProductJsonLd from "@/app/components/CarProductJsonLd";
 import CarDetailSkeleton from "@/app/components/CarDetailSkeleton";
 import CarDetailClient, { type CarDetailInitial } from "./CarDetailClient";
@@ -78,7 +78,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       card: "summary_large_image",
       title,
       description,
-      images: images.map((i) => (typeof i === "string" ? i : String(i.url))),
+      images: seoTwitterImages(images),
     },
   };
 }

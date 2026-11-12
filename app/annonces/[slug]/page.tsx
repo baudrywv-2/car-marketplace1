@@ -7,7 +7,7 @@ import {
   seoPhraseCanonical,
 } from "@/lib/seo-phrases";
 import { SEO_CITIES } from "@/lib/seo-locations";
-import { seoSocialImages } from "@/lib/seo-og";
+import { seoSocialImages, seoTwitterImages } from "@/lib/seo-og";
 
 export const revalidate = 600;
 
@@ -39,7 +39,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       card: "summary_large_image",
       title: page.title,
       description: page.description,
-      images: images.map((i) => (typeof i === "string" ? i : String(i.url))),
+      images: seoTwitterImages(images),
     },
   };
 }

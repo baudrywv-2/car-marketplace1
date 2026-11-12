@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { SITE_URL } from "@/lib/constants";
-import { seoSocialImages } from "@/lib/seo-og";
+import { seoSocialImages, seoTwitterImages } from "@/lib/seo-og";
 
 const TITLE = "Location voiture & véhicule RDC | Mariage voyage tourisme ONG — DRCCARS";
 const DESCRIPTION =
@@ -38,7 +38,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: OG_TITLE,
     description: OG_DESCRIPTION,
-    images: images.map((i) => (typeof i === "string" ? i : String(i.url))),
+    images: seoTwitterImages(images),
   },
 };
 
