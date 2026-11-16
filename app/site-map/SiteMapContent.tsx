@@ -19,6 +19,8 @@ export default function SiteMapContent() {
           <li><Link href="/" className="text-[var(--foreground)] hover:text-[var(--accent)] hover:underline">{t("home")}</Link></li>
           <li><Link href="/cars" className="text-[var(--foreground)] hover:text-[var(--accent)] hover:underline">{t("browseCars")}</Link></li>
           <li><Link href="/voitures-a-vendre" className="text-[var(--foreground)] hover:text-[var(--accent)] hover:underline">Voitures à vendre (par ville)</Link></li>
+          <li><Link href="/voitures" className="text-[var(--foreground)] hover:text-[var(--accent)] hover:underline">Modèles (Prado, Hilux…)</Link></li>
+          <li><Link href="/voitures-a-vendre/budget" className="text-[var(--foreground)] hover:text-[var(--accent)] hover:underline">Voitures par budget</Link></li>
           <li><Link href="/acheter-voiture" className="text-[var(--foreground)] hover:text-[var(--accent)] hover:underline">Acheter une voiture (par ville)</Link></li>
           <li><Link href="/voiture/goma" className="text-[var(--foreground)] hover:text-[var(--accent)] hover:underline">Voiture Goma</Link></li>
           <li><Link href="/voiture/kinshasa" className="text-[var(--foreground)] hover:text-[var(--accent)] hover:underline">Voiture Kinshasa</Link></li>
@@ -29,6 +31,9 @@ export default function SiteMapContent() {
           <li><Link href="/location-voiture/pour/ong" className="text-[var(--foreground)] hover:text-[var(--accent)] hover:underline">Location véhicule ONG</Link></li>
           <li><Link href="/annonces/voiture-de-location" className="text-[var(--foreground)] hover:text-[var(--accent)] hover:underline">Voiture de location</Link></li>
           <li><Link href="/guides/acheter-voiture-rdc" className="text-[var(--foreground)] hover:text-[var(--accent)] hover:underline">Guide : acheter en RDC</Link></li>
+          <li><Link href="/guides/importer-voiture-japon-rdc" className="text-[var(--foreground)] hover:text-[var(--accent)] hover:underline">Guide : importer du Japon</Link></li>
+          <li><Link href="/guides/voiture-japonaise-occasion-rdc" className="text-[var(--foreground)] hover:text-[var(--accent)] hover:underline">Guide : voiture japonaise</Link></li>
+          <li><Link href="/guides/prix-voiture-occasion-goma-kinshasa" className="text-[var(--foreground)] hover:text-[var(--accent)] hover:underline">Guide : prix Goma & Kinshasa</Link></li>
           <li><Link href="/guides/vendre-voiture-rdc" className="text-[var(--foreground)] hover:text-[var(--accent)] hover:underline">Guide : vendre en RDC</Link></li>
           <li><Link href="/guides/location-voiture-evenement" className="text-[var(--foreground)] hover:text-[var(--accent)] hover:underline">Guide : location événement</Link></li>
           <li><Link href="/rent" className="text-[var(--foreground)] hover:text-[var(--accent)] hover:underline">{t("rentCars")}</Link></li>

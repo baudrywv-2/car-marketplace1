@@ -146,6 +146,20 @@ export default async function VoituresAVendreHubPage() {
         </Link>
       </p>
       <p className="mt-3 text-[12px] text-[var(--muted-foreground)]">
+        Modèles & budgets :{" "}
+        <Link href="/voitures" className="text-[var(--accent)] hover:underline">
+          Prado, Hilux…
+        </Link>
+        {" · "}
+        <Link href="/voitures-a-vendre/budget" className="text-[var(--accent)] hover:underline">
+          Par budget
+        </Link>
+        {" · "}
+        <Link href="/voitures-a-vendre/budget/sous-5000" className="text-[var(--accent)] hover:underline">
+          Sous 5 000 $
+        </Link>
+      </p>
+      <p className="mt-3 text-[12px] text-[var(--muted-foreground)]">
         Guides :{" "}
         <Link href="/guides/vendre-voiture-rdc" className="text-[var(--accent)] hover:underline">
           Vendre sa voiture
@@ -153,6 +167,10 @@ export default async function VoituresAVendreHubPage() {
         {" · "}
         <Link href="/guides/acheter-voiture-rdc" className="text-[var(--accent)] hover:underline">
           Acheter en RDC
+        </Link>
+        {" · "}
+        <Link href="/guides/voiture-japonaise-occasion-rdc" className="text-[var(--accent)] hover:underline">
+          Voiture japonaise
         </Link>
         {" · "}
         <Link href="/location-voiture" className="text-[var(--accent)] hover:underline">

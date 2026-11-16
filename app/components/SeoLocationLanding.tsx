@@ -12,6 +12,8 @@ import {
   venteH1,
   type SeoLocation,
 } from "@/lib/seo-locations";
+import { SEO_CAR_MODELS, SEO_MODEL_CITY_SLUGS, seoModelPath } from "@/lib/seo-models";
+import { SEO_BUDGET_HUBS } from "@/lib/seo-budget";
 
 type Intent = "vente" | "acheter";
 
@@ -256,6 +258,41 @@ export default function SeoLocationLanding({ location, intent, sampleCars = [] }
           </p>
         </section>
       )}
+
+      {(location.kind === "city" || location.kind === "national") &&
+        (SEO_MODEL_CITY_SLUGS as readonly string[]).includes(location.slug) && (
+          <section className="mt-12">
+            <h2 className="text-[11px] font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">
+              Modèles populaires à {location.name}
+            </h2>
+            <ul className="mt-3 flex flex-wrap gap-2">
+              {SEO_CAR_MODELS.map((m) => (
+                <li key={m.modelSlug}>
+                  <Link
+                    href={seoModelPath(m, location.slug)}
+                    className="inline-block rounded-full border border-[var(--border)] px-3 py-1.5 text-[11px] hover:border-[var(--accent)]/45"
+                  >
+                    {m.make} {m.modelLabel}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+            {intent === "vente" && (
+              <ul className="mt-3 flex flex-wrap gap-2">
+                {SEO_BUDGET_HUBS.slice(0, 3).map((h) => (
+                  <li key={h.slug}>
+                    <Link
+                      href={`/voitures-a-vendre/budget/${h.slug}`}
+                      className="inline-block rounded-full border border-[var(--border)] px-3 py-1.5 text-[11px] text-[var(--muted-foreground)] hover:border-[var(--accent)]/40"
+                    >
+                      {h.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        )}
 
       <section className="mt-12">
         <h2 className="text-[11px] font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">

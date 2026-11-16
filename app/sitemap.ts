@@ -1,7 +1,9 @@
 import type { MetadataRoute } from "next";
 import { createClient } from "@supabase/supabase-js";
 import { SITE_URL } from "@/lib/constants";
+import { allSeoBudgetSlugs } from "@/lib/seo-budget";
 import { allSeoLocationSlugs } from "@/lib/seo-locations";
+import { allSeoModelCityParams } from "@/lib/seo-models";
 import { allSeoPhraseSlugs } from "@/lib/seo-phrases";
 import { allSeoRentEventSlugs } from "@/lib/seo-rent";
 
@@ -45,6 +47,48 @@ const seoLocationPages: MetadataRoute.Sitemap = [
     changeFrequency: "monthly",
     priority: 0.7,
   },
+  {
+    url: `${SITE_URL}/guides/importer-voiture-japon-rdc`,
+    lastModified: new Date(),
+    changeFrequency: "monthly",
+    priority: 0.72,
+  },
+  {
+    url: `${SITE_URL}/guides/voiture-japonaise-occasion-rdc`,
+    lastModified: new Date(),
+    changeFrequency: "monthly",
+    priority: 0.72,
+  },
+  {
+    url: `${SITE_URL}/guides/prix-voiture-occasion-goma-kinshasa`,
+    lastModified: new Date(),
+    changeFrequency: "monthly",
+    priority: 0.72,
+  },
+  {
+    url: `${SITE_URL}/voitures`,
+    lastModified: new Date(),
+    changeFrequency: "weekly",
+    priority: 0.86,
+  },
+  {
+    url: `${SITE_URL}/voitures-a-vendre/budget`,
+    lastModified: new Date(),
+    changeFrequency: "weekly",
+    priority: 0.8,
+  },
+  ...allSeoBudgetSlugs().map((slug) => ({
+    url: `${SITE_URL}/voitures-a-vendre/budget/${slug}`,
+    lastModified: new Date(),
+    changeFrequency: "weekly" as const,
+    priority: 0.82,
+  })),
+  ...allSeoModelCityParams().map(({ make, model, city }) => ({
+    url: `${SITE_URL}/voitures/${make}/${model}/${city}`,
+    lastModified: new Date(),
+    changeFrequency: "weekly" as const,
+    priority: city === "rdc" || city === "goma" || city === "kinshasa" ? 0.88 : 0.8,
+  })),
   ...allSeoLocationSlugs().flatMap((slug) => [
     {
       url: `${SITE_URL}/voitures-a-vendre/${slug}`,

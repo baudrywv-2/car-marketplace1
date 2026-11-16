@@ -1,9 +1,12 @@
 import Link from "next/link";
+import { SEO_BUDGET_HUBS } from "@/lib/seo-budget";
 import { SEO_CITIES } from "@/lib/seo-locations";
+import { SEO_CAR_MODELS, seoModelPath } from "@/lib/seo-models";
 
 /** Crawlable French SEO block on the homepage — links prefer canonical vente/acheter URLs. */
 export default function HomeSeoBlock() {
   const topCities = SEO_CITIES.slice(0, 12);
+  const topModels = SEO_CAR_MODELS.slice(0, 6);
 
   return (
     <section className="border-t border-white/10 bg-gradient-to-b from-[#0a0a0b] to-black px-4 py-11 sm:px-6 sm:py-14">
@@ -105,10 +108,60 @@ export default function HomeSeoBlock() {
           ))}
         </ul>
 
+        <h3 className="mt-7 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/45">
+          Modèles populaires
+        </h3>
+        <ul className="mt-3.5 flex flex-wrap gap-2">
+          {topModels.map((m) => (
+            <li key={m.modelSlug}>
+              <Link
+                href={seoModelPath(m, "rdc")}
+                className="inline-block rounded-full border border-white/15 px-3 py-1.5 text-[11px] text-white/70 transition hover:border-[var(--accent)]/50 hover:bg-[var(--accent-muted)]/25 hover:text-white"
+              >
+                {m.make} {m.modelLabel}
+              </Link>
+            </li>
+          ))}
+          <li>
+            <Link
+              href="/voitures"
+              className="inline-block rounded-full border border-[var(--accent)]/40 px-3 py-1.5 text-[11px] text-[var(--accent)]"
+            >
+              Tous les modèles
+            </Link>
+          </li>
+        </ul>
+
+        <h3 className="mt-7 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/45">Par budget</h3>
+        <ul className="mt-3.5 flex flex-wrap gap-2">
+          {SEO_BUDGET_HUBS.map((h) => (
+            <li key={h.slug}>
+              <Link
+                href={`/voitures-a-vendre/budget/${h.slug}`}
+                className="inline-block rounded-full border border-white/15 px-3 py-1.5 text-[11px] text-white/70 transition hover:border-[var(--accent)]/50 hover:bg-[var(--accent-muted)]/25 hover:text-white"
+              >
+                {h.label}
+              </Link>
+            </li>
+          ))}
+        </ul>
+
         <p className="mt-6 text-[12px] text-white/50">
           Guides :{" "}
           <Link href="/guides/acheter-voiture-rdc" className="text-[var(--accent)] hover:underline">
             Acheter une voiture en RDC
+          </Link>
+          {" · "}
+          <Link href="/guides/voiture-japonaise-occasion-rdc" className="text-[var(--accent)] hover:underline">
+            Voiture japonaise
+          </Link>
+          {" · "}
+          <Link href="/guides/importer-voiture-japon-rdc" className="text-[var(--accent)] hover:underline">
+            Importer du Japon
+          </Link>
+          {" · "}
+          <Link href="/guides/prix-voiture-occasion-goma-kinshasa" className="text-[var(--accent)] hover:underline">
+            Prix Goma & Kinshasa
           </Link>
           {" · "}
           <Link href="/guides/vendre-voiture-rdc" className="text-[var(--accent)] hover:underline">

@@ -61,6 +61,28 @@ export default function GuideAcheterPage() {
           vente en ligne opaque.
         </li>
       </ol>
+      <p className="mt-8 text-[14px] leading-relaxed text-[var(--muted-foreground)]">
+        Voir aussi :{" "}
+        <Link href="/voitures/toyota/prado/rdc" className="text-[var(--accent)] hover:underline">
+          Toyota Prado
+        </Link>
+        {" · "}
+        <Link href="/voitures/toyota/hilux/goma" className="text-[var(--accent)] hover:underline">
+          Hilux Goma
+        </Link>
+        {" · "}
+        <Link href="/voitures-a-vendre/budget/sous-5000" className="text-[var(--accent)] hover:underline">
+          Budget sous 5 000 $
+        </Link>
+        {" · "}
+        <Link href="/guides/importer-voiture-japon-rdc" className="text-[var(--accent)] hover:underline">
+          Importer du Japon vs local
+        </Link>
+        {" · "}
+        <Link href="/guides/prix-voiture-occasion-goma-kinshasa" className="text-[var(--accent)] hover:underline">
+          Prix Goma & Kinshasa
+        </Link>
+      </p>
       <p className="mt-8">
         <Link href="/acheter-voiture/rdc" className="btn-primary inline-flex min-h-11 items-center px-5 text-[13px]">
           Acheter une voiture en RDC
