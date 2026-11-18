@@ -4,6 +4,7 @@ import { SITE_URL } from "@/lib/constants";
 import { allSeoBudgetSlugs } from "@/lib/seo-budget";
 import { allSeoLocationSlugs } from "@/lib/seo-locations";
 import { allSeoModelCityParams } from "@/lib/seo-models";
+import { allSeoNeighborSlugs } from "@/lib/seo-neighbors";
 import { allSeoPhraseSlugs } from "@/lib/seo-phrases";
 import { allSeoRentEventSlugs } from "@/lib/seo-rent";
 
@@ -65,6 +66,30 @@ const seoLocationPages: MetadataRoute.Sitemap = [
     changeFrequency: "monthly",
     priority: 0.72,
   },
+  {
+    url: `${SITE_URL}/guides/buy-used-car-drc`,
+    lastModified: new Date(),
+    changeFrequency: "monthly",
+    priority: 0.74,
+  },
+  {
+    url: `${SITE_URL}/guides/used-cars-east-africa-drc`,
+    lastModified: new Date(),
+    changeFrequency: "monthly",
+    priority: 0.74,
+  },
+  {
+    url: `${SITE_URL}/markets`,
+    lastModified: new Date(),
+    changeFrequency: "weekly",
+    priority: 0.84,
+  },
+  ...allSeoNeighborSlugs().map((slug) => ({
+    url: `${SITE_URL}/markets/${slug}`,
+    lastModified: new Date(),
+    changeFrequency: "weekly" as const,
+    priority: 0.83,
+  })),
   {
     url: `${SITE_URL}/voitures`,
     lastModified: new Date(),

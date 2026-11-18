@@ -124,10 +124,15 @@ export function seoModelDescription(model: SeoCarModel, location: SeoLocation): 
 
 export function seoModelKeywords(model: SeoCarModel, location: SeoLocation): string[] {
   const n = location.name;
+  const place = location.kind === "national" ? "DRC" : n;
   return [
     ...model.keywords.map((k) => (location.kind === "national" ? `${k} RDC` : `${k} ${n}`)),
     `${model.make} ${model.modelLabel} ${n}`,
     `acheter ${model.modelLabel} ${n}`,
+    // English long-tails (metadata only — French H1/title unchanged)
+    `buy ${model.modelLabel} ${place}`,
+    `used ${model.make} ${model.modelLabel} ${place}`,
+    `${model.modelLabel} for sale ${place}`,
   ];
 }
 

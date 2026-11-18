@@ -146,10 +146,56 @@ export default function HomeSeoBlock() {
           ))}
         </ul>
 
+        <h3 className="mt-7 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/45">
+          English & nearby countries
+        </h3>
+        <ul className="mt-3.5 flex flex-wrap gap-2">
+          <li>
+            <Link
+              href="/annonces/used-cars-drc"
+              className="inline-block rounded-full border border-white/15 px-3 py-1.5 text-[11px] text-white/70 transition hover:border-[var(--accent)]/50 hover:text-white"
+            >
+              Used cars DRC
+            </Link>
+          </li>
+          <li>
+            <Link
+              href="/annonces/buy-car-kinshasa"
+              className="inline-block rounded-full border border-white/15 px-3 py-1.5 text-[11px] text-white/70 transition hover:border-[var(--accent)]/50 hover:text-white"
+            >
+              Buy car Kinshasa
+            </Link>
+          </li>
+          <li>
+            <Link
+              href="/annonces/buy-car-goma"
+              className="inline-block rounded-full border border-white/15 px-3 py-1.5 text-[11px] text-white/70 transition hover:border-[var(--accent)]/50 hover:text-white"
+            >
+              Buy car Goma
+            </Link>
+          </li>
+          <li>
+            <Link
+              href="/markets"
+              className="inline-block rounded-full border border-[var(--accent)]/40 px-3 py-1.5 text-[11px] text-[var(--accent)]"
+            >
+              Rwanda · Uganda · Zambia · Angola · Brazza
+            </Link>
+          </li>
+        </ul>
+
         <p className="mt-6 text-[12px] text-white/50">
           Guides :{" "}
           <Link href="/guides/acheter-voiture-rdc" className="text-[var(--accent)] hover:underline">
             Acheter une voiture en RDC
+          </Link>
+          {" · "}
+          <Link href="/guides/buy-used-car-drc" className="text-[var(--accent)] hover:underline">
+            Buy used car (EN)
+          </Link>
+          {" · "}
+          <Link href="/guides/used-cars-east-africa-drc" className="text-[var(--accent)] hover:underline">
+            Nearby countries (EN)
           </Link>
           {" · "}
           <Link href="/guides/voiture-japonaise-occasion-rdc" className="text-[var(--accent)] hover:underline">
