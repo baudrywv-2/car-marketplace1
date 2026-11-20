@@ -62,6 +62,8 @@ export default function JsonLd() {
     "@context": "https://schema.org",
     "@type": "Service",
     name: "Marketplace voitures & location en RDC",
+    description:
+      "Service de mise en relation pour acheter, vendre ou louer une voiture en RDC — annonces locales, contact vendeur, rendez-vous sur place via DRCCARS.",
     provider: { "@type": "Organization", name: "DRCCARS", url: SITE_URL },
     areaServed: "CD",
     serviceType: ["Vente automobile", "Achat voiture occasion", "Location de véhicule"],

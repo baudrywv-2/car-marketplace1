@@ -56,6 +56,9 @@ export default function SeoLocationLanding({ location, intent, sampleCars = [] }
             item: {
               "@type": "Product",
               name: car.title,
+              description: `${car.title} — annonce à vendre sur DRCCARS${
+                car.city || car.province ? ` (${[car.city, car.province].filter(Boolean).join(", ")})` : ""
+              }.`,
               url: `${SITE_URL}/cars/${car.id}`,
               ...(car.image ? { image: car.image } : {}),
               offers: {
